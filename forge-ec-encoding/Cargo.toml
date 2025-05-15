@@ -1,0 +1,28 @@
+[package]
+name = "forge-ec-encoding"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+description = "Encoding and serialization formats for the forge-ec elliptic curve cryptography library"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+forge-ec-core = { workspace = true }
+forge-ec-curves = { workspace = true }
+base64 = { version = "0.21", default-features = false }
+base58 = { workspace = true, optional = true }
+der = { version = "0.7", features = ["alloc", "oid"] }
+pem-rfc7468 = { version = "0.7" }
+subtle = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["base64/std"]
+alloc = ["base64/alloc"]
+bitcoin = ["base58"]

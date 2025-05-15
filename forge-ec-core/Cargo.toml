@@ -1,0 +1,24 @@
+[package]
+name = "forge-ec-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+description = "Core traits and abstractions for the forge-ec elliptic curve cryptography library"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+subtle = { workspace = true }
+zeroize = { workspace = true }
+rand_core = { workspace = true }
+digest = { workspace = true }
+
+[features]
+default = ["std"]
+std = []
+alloc = [] 

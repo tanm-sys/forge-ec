@@ -1,0 +1,31 @@
+[package]
+name = "forge-ec-hash"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+description = "Cryptographic hash functions for the forge-ec elliptic curve cryptography library"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+forge-ec-core = { workspace = true }
+forge-ec-curves = { workspace = true, optional = true }
+digest = { workspace = true }
+sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10", default-features = false }
+blake2 = { version = "0.10", default-features = false }
+hex-literal = { version = "0.4", optional = true }
+subtle = { workspace = true }
+zeroize = { workspace = true }
+rand_core = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = ["sha2/std", "sha3/std", "blake2/std"]
+test-utils = ["hex-literal", "forge-ec-curves", "rand_core"]
+alloc = []

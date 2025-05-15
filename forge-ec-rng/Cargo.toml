@@ -1,0 +1,32 @@
+[package]
+name = "forge-ec-rng"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+description = "Random number generation for the forge-ec elliptic curve cryptography library"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+forge-ec-core = { workspace = true }
+forge-ec-curves = { workspace = true } # For test vectors
+forge-ec-hash = { workspace = true }
+rand_core = { workspace = true, features = ["getrandom"] }
+getrandom = { version = "0.2", features = ["std"] }
+hmac = { version = "0.12", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+subtle = { workspace = true }
+zeroize = { workspace = true }
+hex = { version = "0.4", optional = true }
+hex-literal = { version = "0.4", optional = true }
+
+[features]
+default = ["std", "test-utils"]
+std = ["getrandom/std"]
+alloc = []
+test-utils = ["hex", "hex-literal"]
