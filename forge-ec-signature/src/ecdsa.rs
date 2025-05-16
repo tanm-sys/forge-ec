@@ -3,14 +3,13 @@
 //! This module implements ECDSA signatures with RFC6979 deterministic k generation
 //! and low-S normalization for compatibility with Bitcoin and other systems.
 
-use core::fmt;
 use core::marker::PhantomData;
 
 use digest::Digest;
-use forge_ec_core::{Curve, Error, FieldElement, PointAffine, PointProjective, Scalar, SignatureScheme};
+use forge_ec_core::{Curve, FieldElement, PointAffine, PointProjective, Scalar, SignatureScheme};
 use forge_ec_hash::Sha256;
 use forge_ec_rng::Rfc6979;
-use subtle::{Choice, ConstantTimeEq, CtOption};
+use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
 /// An ECDSA signature.

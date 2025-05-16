@@ -4,7 +4,6 @@
 //! which offers simplicity, efficiency, and support for batch verification.
 //! The implementation is compatible with BIP-340 (Bitcoin's Schnorr signature scheme).
 
-use core::fmt;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 #[cfg(feature = "alloc")]
@@ -12,8 +11,8 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use digest::Digest;
-use forge_ec_core::{Curve, Error, FieldElement, PointAffine, Scalar, SignatureScheme};
-use subtle::{Choice, ConstantTimeEq, CtOption};
+use forge_ec_core::{Curve, FieldElement, PointAffine, Scalar, SignatureScheme};
+use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
 /// A Schnorr signature.
@@ -177,7 +176,7 @@ impl BipSchnorr {
     ///
     /// The private key should be a 32-byte array.
     pub fn sign(private_key: &[u8; 32], msg: &[u8]) -> [u8; 64] {
-        use forge_ec_curves::secp256k1::{FieldElement, Scalar, Secp256k1};
+        use forge_ec_curves::secp256k1::{Scalar, Secp256k1};
         use sha2::{Digest, Sha256};
 
         // Convert private key to scalar
