@@ -7,10 +7,14 @@
 use std::string::String;
 #[cfg(feature = "std")]
 use std::vec::Vec;
+#[cfg(feature = "std")]
+use std::format;
 #[cfg(feature = "alloc")]
 use alloc::string::String;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use alloc::format;
 
 /// Error type for PEM encoding/decoding operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

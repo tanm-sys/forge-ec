@@ -20,6 +20,7 @@ base58 = { workspace = true, optional = true }
 der = { version = "0.7", features = ["alloc", "oid"] }
 pem-rfc7468 = { version = "0.7" }
 subtle = { workspace = true }
+sha2 = { workspace = true }
 
 [features]
 default = ["std"]

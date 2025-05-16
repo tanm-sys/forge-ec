@@ -16,7 +16,7 @@
 use core::marker::PhantomData;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
-use forge_ec_core::{Curve, Scalar};
+use forge_ec_core::{Curve, Scalar, FieldElement};
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -88,7 +88,7 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         // Step 7: Check if the scalar is valid (not zero and less than the curve order)
         if scalar_option.is_some().unwrap_u8() == 1 {
             let scalar = scalar_option.unwrap();
-            if !scalar.is_zero().into() {
+            if !bool::from(<C::Scalar as FieldElement>::is_zero(&scalar)) {
                 // We have a valid k value
                 // Zeroize sensitive data before returning
                 seed.zeroize();
@@ -100,7 +100,7 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         // If we get here, we need to retry with a modified seed
         // For simplicity, we'll just return a default value (this is not RFC6979 compliant)
         // In a real implementation, we would retry with a modified seed
-        C::Scalar::one()
+        <C::Scalar as FieldElement>::one()
     }
 }
 
