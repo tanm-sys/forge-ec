@@ -65,7 +65,7 @@ impl<'a> EcdsaSignature<'a> {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::Incomplete { expected_len: 1, actual_len: 0 }))
+        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
     }
 }
 
@@ -156,7 +156,7 @@ impl EcPublicKey {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::Incomplete { expected_len: 1, actual_len: 0 }))
+        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
     }
 }
 
