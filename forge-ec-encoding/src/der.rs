@@ -4,10 +4,11 @@
 //! following the ASN.1 structures defined in RFC5480 and SEC1.
 
 use std::vec::Vec;
-use std::format;
+use std::string::ToString;
+use std::vec;
 use der::{
-    asn1::{ObjectIdentifier},
-    Decode, Encode, Error, ErrorKind, Sequence,
+    asn1::ObjectIdentifier,
+    Error, ErrorKind, Tag,
 };
 
 /// ASN.1 DER bit string.
@@ -24,12 +25,12 @@ impl BitString {
     pub fn new(data: &[u8], unused_bits: u8) -> Result<Self, Error> {
         // Validate unused_bits
         if unused_bits > 7 {
-            return Err(Error::from(ErrorKind::Value { tag: der::Tag::BitString }));
+            return Err(Error::from(ErrorKind::Value { tag: Tag::BitString }));
         }
 
         // If data is empty, unused_bits must be 0
         if data.is_empty() && unused_bits != 0 {
-            return Err(Error::from(ErrorKind::Value { tag: der::Tag::BitString }));
+            return Err(Error::from(ErrorKind::Value { tag: Tag::BitString }));
         }
 
         Ok(Self {
@@ -137,37 +138,37 @@ impl<'a> EcdsaSignature<'a> {
     }
 
     /// Decodes a DER-encoded signature.
-    pub fn from_der<'b>(bytes: &'b [u8]) -> Result<Self, Error> {
+    pub fn from_der(bytes: &'a [u8]) -> Result<Self, Error> {
         // Check minimum length for a valid DER ECDSA signature
         if bytes.len() < 8 {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
         }
 
         // Check SEQUENCE tag
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::Sequence),
-                actual: der::Tag::from(bytes[0])
+                expected: Some(Tag::Sequence),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         // Get sequence length
         let seq_len = bytes[1] as usize;
         if seq_len + 2 != bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
         }
 
         // Parse r INTEGER
         if bytes[2] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::Integer),
-                actual: der::Tag::from(bytes[2])
+                expected: Some(Tag::Integer),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         let r_len = bytes[3] as usize;
         if 4 + r_len > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Integer }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Integer }));
         }
 
         let r = &bytes[4..4 + r_len];
@@ -175,14 +176,14 @@ impl<'a> EcdsaSignature<'a> {
         // Parse s INTEGER
         if bytes[4 + r_len] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::Integer),
-                actual: der::Tag::from(bytes[4 + r_len])
+                expected: Some(Tag::Integer),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         let s_len = bytes[5 + r_len] as usize;
         if 6 + r_len + s_len > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Integer }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Integer }));
         }
 
         let s = &bytes[6 + r_len..6 + r_len + s_len];
@@ -326,47 +327,47 @@ impl EcPublicKey {
     pub fn from_der<'a>(bytes: &'a [u8]) -> Result<Self, Error> {
         // Check minimum length for a valid DER EC public key
         if bytes.len() < 8 {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
         }
 
         // Check SEQUENCE tag
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::Sequence),
-                actual: der::Tag::from(bytes[0])
+                expected: Some(Tag::Sequence),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         // Get sequence length
         let seq_len = bytes[1] as usize;
         if seq_len + 2 > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
         }
 
         // Parse algorithm identifier SEQUENCE
         if bytes[2] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::Sequence),
-                actual: der::Tag::from(bytes[2])
+                expected: Some(Tag::Sequence),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         let alg_seq_len = bytes[3] as usize;
         if 4 + alg_seq_len > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
         }
 
         // Parse algorithm OID
         if bytes[4] != 0x06 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::ObjectIdentifier),
-                actual: der::Tag::from(bytes[4])
+                expected: Some(Tag::ObjectIdentifier),
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
         let alg_oid_len = bytes[5] as usize;
         if 6 + alg_oid_len > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::ObjectIdentifier }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::ObjectIdentifier }));
         }
 
         // For simplicity, we'll use a hardcoded OID for ecPublicKey
@@ -380,7 +381,7 @@ impl EcPublicKey {
             if bytes[offset] == 0x06 {
                 let params_oid_len = bytes[offset + 1] as usize;
                 if offset + 2 + params_oid_len > bytes.len() {
-                    return Err(Error::from(ErrorKind::Length { tag: der::Tag::ObjectIdentifier }));
+                    return Err(Error::from(ErrorKind::Length { tag: Tag::ObjectIdentifier }));
                 }
 
                 // For simplicity, we'll use a hardcoded OID for the curve
@@ -394,14 +395,14 @@ impl EcPublicKey {
         // Parse public key BIT STRING
         if offset >= bytes.len() || bytes[offset] != 0x03 {
             return Err(Error::from(ErrorKind::TagUnexpected {
-                expected: Some(der::Tag::BitString),
-                actual: if offset < bytes.len() { der::Tag::from(bytes[offset]) } else { der::Tag::Null }
+                expected: Some(Tag::BitString),
+                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null }
             }));
         }
 
         let bit_string_len = bytes[offset + 1] as usize;
         if offset + 2 + bit_string_len > bytes.len() {
-            return Err(Error::from(ErrorKind::Length { tag: der::Tag::BitString }));
+            return Err(Error::from(ErrorKind::Length { tag: Tag::BitString }));
         }
 
         let unused_bits = bytes[offset + 2];
@@ -573,7 +574,7 @@ impl<'a> EcPrivateKey<'a> {
     }
 
     /// Decodes a DER-encoded private key.
-    pub fn from_der<'b>(bytes: &'b [u8]) -> Result<Self, Error> {
+    pub fn from_der(bytes: &'a [u8]) -> Result<Self, Error> {
         // Check minimum length for a valid DER EC private key
         if bytes.len() < 8 {
             return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
@@ -583,7 +584,7 @@ impl<'a> EcPrivateKey<'a> {
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::Sequence),
-                actual: der::Tag::from(bytes[0])
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -597,7 +598,7 @@ impl<'a> EcPrivateKey<'a> {
         if bytes[2] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::Integer),
-                actual: der::Tag::from(bytes[2])
+                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -613,7 +614,7 @@ impl<'a> EcPrivateKey<'a> {
         if offset >= bytes.len() || bytes[offset] != 0x04 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::OctetString),
-                actual: if offset < bytes.len() { der::Tag::from(bytes[offset]) } else { der::Tag::Null }
+                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null }
             }));
         }
 
@@ -633,7 +634,7 @@ impl<'a> EcPrivateKey<'a> {
         if current_offset < bytes.len() && bytes[current_offset] == 0xA0 {
             let params_len = bytes[current_offset + 1] as usize;
             if current_offset + 2 + params_len > bytes.len() {
-                return Err(Error::from(ErrorKind::Length { tag: der::Tag::ContextSpecific0 }));
+                return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
             }
 
             // For simplicity, we'll use a hardcoded OID for the curve
@@ -647,14 +648,14 @@ impl<'a> EcPrivateKey<'a> {
         if current_offset < bytes.len() && bytes[current_offset] == 0xA1 {
             let public_key_wrapper_len = bytes[current_offset + 1] as usize;
             if current_offset + 2 + public_key_wrapper_len > bytes.len() {
-                return Err(Error::from(ErrorKind::Length { tag: der::Tag::ContextSpecific1 }));
+                return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
             }
 
             // Parse BIT STRING
             if bytes[current_offset + 2] != 0x03 {
                 return Err(Error::from(ErrorKind::TagUnexpected {
-                    expected: Some(der::Tag::BitString),
-                    actual: der::Tag::from(bytes[current_offset + 2])
+                    expected: Some(Tag::BitString),
+                    actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
                 }));
             }
 

@@ -31,11 +31,8 @@ const N: [u64; 4] = [
 ];
 
 /// A field element in the secp256k1 base field.
-#[derive(Clone, Debug, Default, zeroize::Zeroize)]
-#[zeroize(drop)]
+#[derive(Clone, Debug, Default, Copy, zeroize::Zeroize)]
 pub struct FieldElement([u64; 4]);
-
-impl Copy for FieldElement {}
 
 impl FieldElement {
     /// Creates a new field element from raw limbs.
@@ -474,15 +471,21 @@ impl forge_ec_core::FieldElement for FieldElement {
 // Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 /// A point in affine coordinates on the secp256k1 curve.
-#[derive(Clone, Debug, zeroize::Zeroize)]
-#[zeroize(drop)]
+#[derive(Clone, Debug, Copy)]
 pub struct AffinePoint {
     x: FieldElement,
     y: FieldElement,
     infinity: Choice,
 }
 
-impl Copy for AffinePoint {}
+impl Zeroize for AffinePoint {
+    fn zeroize(&mut self) {
+        self.x.zeroize();
+        self.y.zeroize();
+        // Choice doesn't implement Zeroize, but it's just a u8 wrapper
+        // so we don't need to zeroize it
+    }
+}
 
 impl Default for AffinePoint {
     fn default() -> Self {
@@ -711,15 +714,12 @@ impl ConstantTimeEq for AffinePoint {
 // Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 /// A point in projective coordinates on the secp256k1 curve.
-#[derive(Clone, Debug, zeroize::Zeroize)]
-#[zeroize(drop)]
+#[derive(Clone, Debug, Copy, zeroize::Zeroize)]
 pub struct ProjectivePoint {
     x: FieldElement,
     y: FieldElement,
     z: FieldElement,
 }
-
-impl Copy for ProjectivePoint {}
 
 impl Default for ProjectivePoint {
     fn default() -> Self {
@@ -1027,11 +1027,8 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
 }
 
 /// A scalar value in the secp256k1 scalar field.
-#[derive(Clone, Debug, Default, zeroize::Zeroize)]
-#[zeroize(drop)]
+#[derive(Clone, Debug, Default, Copy, zeroize::Zeroize)]
 pub struct Scalar([u64; 4]);
-
-impl Copy for Scalar {}
 
 impl Scalar {
     /// Creates a new scalar from raw limbs.

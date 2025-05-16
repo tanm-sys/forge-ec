@@ -11,6 +11,8 @@ use forge_ec_hash::Sha256;
 use forge_ec_rng::Rfc6979;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
+use std::vec::Vec;
+use digest::core_api::BlockSizeUser;
 
 /// An ECDSA signature.
 #[derive(Copy, Clone, Debug)]
@@ -78,7 +80,7 @@ pub struct Ecdsa<C: Curve, D: Digest = Sha256> {
     _digest: PhantomData<D>,
 }
 
-impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D>
+impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Ecdsa<C, D>
 where
     C::Scalar: std::ops::Div<Output = C::Scalar> + PartialOrd
 {
@@ -102,7 +104,7 @@ where
         let r = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&r_bytes).unwrap();
 
         // If r is zero, use a hardcoded value instead of recursion to avoid stack overflow
-        if r.is_zero().unwrap_u8() == 1 {
+        if bool::from(r.is_zero()) {
             // Use a non-zero value for r
             let r = <C::Scalar as forge_ec_core::FieldElement>::one();
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
@@ -124,7 +126,7 @@ where
         let k_inv_opt = k.invert();
 
         // If k_inv is None, use a hardcoded value
-        if k_inv_opt.is_none().unwrap_u8() == 1 {
+        if bool::from(k_inv_opt.is_none()) {
             let r = <C::Scalar as forge_ec_core::FieldElement>::one();
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
             return Signature { r, s };
@@ -136,7 +138,7 @@ where
         let s = k_inv * h_plus_r_sk;
 
         // If s is zero, use a hardcoded value
-        if s.is_zero().unwrap_u8() == 1 {
+        if bool::from(s.is_zero()) {
             let r = <C::Scalar as forge_ec_core::FieldElement>::one();
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
             return Signature { r, s };
@@ -166,7 +168,7 @@ where
 
         // Standard implementation for other cases
         // Check that r, s are in [1, n-1]
-        if sig.r.is_zero().unwrap_u8() == 1 || sig.s.is_zero().unwrap_u8() == 1 {
+        if bool::from(sig.r.is_zero()) || bool::from(sig.s.is_zero()) {
             return false;
         }
 
@@ -196,7 +198,7 @@ where
         // Calculate u1 = h * s^-1 mod n
         // Calculate u2 = r * s^-1 mod n
         let s_inv_opt = sig.s.invert();
-        if s_inv_opt.is_none().unwrap_u8() == 1 {
+        if bool::from(s_inv_opt.is_none()) {
             return false;
         }
         let s_inv = s_inv_opt.unwrap();
@@ -210,7 +212,7 @@ where
         let r_point = r1 + r2;
 
         // Check if R is the point at infinity
-        if r_point.is_identity().unwrap_u8() == 1 {
+        if bool::from(r_point.is_identity()) {
             return false;
         }
 
@@ -260,7 +262,7 @@ where
 
         for i in 0..pks.len() {
             // Check that r, s are in [1, n-1]
-            if sigs[i].r.is_zero().unwrap_u8() == 1 || sigs[i].s.is_zero().unwrap_u8() == 1 {
+            if bool::from(sigs[i].r.is_zero()) || bool::from(sigs[i].s.is_zero()) {
                 return false;
             }
 
@@ -278,7 +280,7 @@ where
             // Calculate u1 = h * s^-1 mod n
             // Calculate u2 = r * s^-1 mod n
             let s_inv_opt = sigs[i].s.invert();
-            if s_inv_opt.is_none().unwrap_u8() == 1 {
+            if bool::from(s_inv_opt.is_none()) {
                 return false;
             }
             let s_inv = s_inv_opt.unwrap();
@@ -300,7 +302,7 @@ where
         }
 
         // Check if R is the point at infinity
-        if r_sum.is_identity().unwrap_u8() == 1 {
+        if bool::from(r_sum.is_identity()) {
             return false;
         }
 
@@ -322,7 +324,6 @@ where
         // Check that x_scalar == r_scalar_sum (mod n)
         bool::from(x_scalar.ct_eq(&r_scalar_sum))
     }
-}
 }
 
 /// Converts a field element to bytes.

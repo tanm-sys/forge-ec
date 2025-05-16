@@ -14,6 +14,7 @@ use digest::Digest;
 use forge_ec_core::{Curve, FieldElement, PointAffine, Scalar, SignatureScheme};
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
+use digest::core_api::BlockSizeUser;
 
 /// A Schnorr signature.
 #[derive(Copy, Clone, Debug, Zeroize)]
@@ -32,9 +33,9 @@ impl<C: Curve> ConstantTimeEq for Signature<C> {
 
 /// The Schnorr signature scheme.
 #[derive(Copy, Clone, Debug)]
-pub struct Schnorr<C: Curve, D: Digest>(PhantomData<(C, D)>);
+pub struct Schnorr<C: Curve, D: Digest + Clone + BlockSizeUser>(PhantomData<(C, D)>);
 
-impl<C: Curve, D: Digest> SignatureScheme for Schnorr<C, D> {
+impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C, D> {
     type Curve = C;
     type Signature = Signature<C>;
 
@@ -108,7 +109,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Schnorr<C, D> {
 
         // Standard implementation for other cases
         // Check that the signature point is on the curve
-        if sig.r.is_identity().unwrap_u8() == 1 {
+        if bool::from(sig.r.is_identity()) {
             return false;
         }
 
@@ -158,7 +159,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Schnorr<C, D> {
 ///
 /// This function verifies multiple Schnorr signatures in a batch, which is more
 /// efficient than verifying them individually.
-pub fn batch_verify<C: Curve, D: Digest>(
+pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     public_keys: &[C::PointAffine],
     messages: &[&[u8]],
     signatures: &[Signature<C>],

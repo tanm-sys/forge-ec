@@ -123,7 +123,7 @@ where
 
         // Step 6: b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
         let mut hasher = H::new();
-        hasher.update(b_0);
+        hasher.update(b_0.as_slice());
         hasher.update(&[1u8]);
         hasher.update(dst_prime);
         let b_1 = hasher.finalize();
@@ -284,7 +284,7 @@ where
 
         // Step 6: b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
         let mut hasher = H::new();
-        hasher.update(b_0);
+        hasher.update(b_0.as_slice());
         hasher.update(&[1u8]);
         hasher.update(dst_prime);
         let b_1 = hasher.finalize();

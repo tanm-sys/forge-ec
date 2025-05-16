@@ -18,10 +18,8 @@ use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
 use forge_ec_core::{Curve, Scalar, FieldElement};
 use subtle::ConstantTimeEq;
-use hmac::Hmac;
-
-extern crate alloc;
-use alloc::vec::Vec;
+use hmac::{Mac, SimpleHmac};
+use sha2::digest::core_api::BlockSizeUser;
 
 /// RFC6979 deterministic k-value generator.
 pub struct Rfc6979<C: Curve, D: Digest = Sha256> {
@@ -29,7 +27,7 @@ pub struct Rfc6979<C: Curve, D: Digest = Sha256> {
     _digest: PhantomData<D>,
 }
 
-impl<C: Curve, D: Digest> Rfc6979<C, D> {
+impl<C: Curve, D: Digest + Clone + BlockSizeUser> Rfc6979<C, D> {
     /// Generates a deterministic k-value according to RFC6979.
     ///
     /// # Arguments
@@ -117,7 +115,7 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         let mut k = [0x00u8; 32]; // K = 0x00 0x00 0x00 ... (same length as hash output)
 
         // 3.4: Initialize HMAC key with K
-        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
 
         // 3.5: K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
         hmac_key.update(&v);
@@ -127,15 +125,15 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         if !extra_data.is_empty() {
             hmac_key.update(extra_data);
         }
-        k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+        k = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
         // 3.6: V = HMAC_K(V)
-        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
         hmac_key.update(&v);
-        v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+        v = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
         // 3.7: K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
-        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
         hmac_key.update(&v);
         hmac_key.update(&[0x01]);
         hmac_key.update(&private_key_bytes);
@@ -143,12 +141,12 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         if !extra_data.is_empty() {
             hmac_key.update(extra_data);
         }
-        k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+        k = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
         // 3.8: V = HMAC_K(V)
-        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
         hmac_key.update(&v);
-        v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+        v = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
         // 3.9: Generate k
         let mut t = [0u8; 32];
@@ -161,9 +159,9 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
 
             // 3.9.2: While tlen < qlen, do V = HMAC_K(V), T = T || V
             while toff < rlen {
-                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
                 hmac_key.update(&v);
-                v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+                v = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
                 let remaining = rlen - toff;
                 let to_copy = core::cmp::min(remaining, v.len());
@@ -184,14 +182,14 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
 
             // 3.9.5: If not valid, update K and V and try again
             if !generated {
-                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
                 hmac_key.update(&v);
                 hmac_key.update(&[0x00]);
-                k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+                k = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
 
-                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                let mut hmac_key = SimpleHmac::<D>::new_from_slice(&k).unwrap();
                 hmac_key.update(&v);
-                v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+                v = hmac_key.finalize().into_bytes()[..32].try_into().unwrap();
             }
         }
 
