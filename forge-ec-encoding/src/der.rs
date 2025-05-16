@@ -31,7 +31,7 @@ impl<'a> EcdsaSignature<'a> {
 
     /// Encodes this signature as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let mut buf: Vec<u8> = Vec::new();
+        let _buf: Vec<u8> = Vec::new();
         // TODO: Fix DER encoding implementation
         // let mut encoder = der::Encode::new(&mut buf);
 
@@ -281,7 +281,7 @@ impl<'a> EcPrivateKey<'a> {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::Incomplete { expected_len: 1, actual_len: 0 }))
+        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
     }
 }
 
