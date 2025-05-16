@@ -7,7 +7,7 @@ use core::fmt;
 use core::marker::PhantomData;
 
 use digest::Digest;
-use forge_ec_core::{Curve, Error, FieldElement, PointAffine, Scalar, SignatureScheme};
+use forge_ec_core::{Curve, Error, FieldElement, PointAffine, PointProjective, Scalar, SignatureScheme};
 use forge_ec_curves::ed25519::Ed25519;
 use subtle::{Choice, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;

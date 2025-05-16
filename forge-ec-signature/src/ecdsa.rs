@@ -38,7 +38,10 @@ impl<C: Curve> Signature<C> {
 
     /// Normalizes the S value to be in the lower half of the curve order.
     /// This is required by some systems (e.g. Bitcoin) for signature malleability reasons.
-    pub fn normalize(&mut self) {
+    pub fn normalize(&mut self)
+    where
+        C::Scalar: std::ops::Div<Output = C::Scalar> + PartialOrd
+    {
         // Get the curve order
         let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -76,7 +79,10 @@ pub struct Ecdsa<C: Curve, D: Digest = Sha256> {
     _digest: PhantomData<D>,
 }
 
-impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
+impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D>
+where
+    C::Scalar: std::ops::Div<Output = C::Scalar> + PartialOrd
+{
     type Curve = C;
     type Signature = Signature<C>;
 
