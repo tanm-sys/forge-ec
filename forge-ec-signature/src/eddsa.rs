@@ -214,7 +214,7 @@ impl Ed25519Signature {
         let r_point = <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(&r_bytes_33).unwrap();
 
         // Convert S to a scalar
-        let s = <Ed25519 as Curve>::Scalar::from_bytes(&s_bytes).unwrap();
+        let s = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&s_bytes).unwrap();
 
         // Convert public key to a curve point
         let mut pk_bytes_33 = [0u8; 33];
