@@ -183,7 +183,7 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = <Ed25519 as Curve>::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate S = r + k*a
         let s = r + k * a;
@@ -211,7 +211,7 @@ impl Ed25519Signature {
         let mut r_bytes_33 = [0u8; 33];
         r_bytes_33[0] = 0x02; // Compressed point format
         r_bytes_33[1..33].copy_from_slice(&r_bytes);
-        let r_point = <Ed25519 as Curve>::PointAffine::from_bytes(&r_bytes_33).unwrap();
+        let r_point = <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(&r_bytes_33).unwrap();
 
         // Convert S to a scalar
         let s = <Ed25519 as Curve>::Scalar::from_bytes(&s_bytes).unwrap();
