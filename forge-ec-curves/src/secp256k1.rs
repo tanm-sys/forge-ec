@@ -31,7 +31,8 @@ const N: [u64; 4] = [
 ];
 
 /// A field element in the secp256k1 base field.
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, zeroize::Zeroize)]
+#[zeroize(drop)]
 pub struct FieldElement([u64; 4]);
 
 impl FieldElement {
@@ -468,14 +469,11 @@ impl forge_ec_core::FieldElement for FieldElement {
     }
 }
 
-impl Zeroize for FieldElement {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 /// A point in affine coordinates on the secp256k1 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, zeroize::Zeroize)]
+#[zeroize(drop)]
 pub struct AffinePoint {
     x: FieldElement,
     y: FieldElement,
@@ -706,15 +704,11 @@ impl ConstantTimeEq for AffinePoint {
     }
 }
 
-impl Zeroize for AffinePoint {
-    fn zeroize(&mut self) {
-        self.x.zeroize();
-        self.y.zeroize();
-    }
-}
+// Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 /// A point in projective coordinates on the secp256k1 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, zeroize::Zeroize)]
+#[zeroize(drop)]
 pub struct ProjectivePoint {
     x: FieldElement,
     y: FieldElement,
@@ -941,13 +935,7 @@ impl SubAssign for ProjectivePoint {
     }
 }
 
-impl Zeroize for ProjectivePoint {
-    fn zeroize(&mut self) {
-        self.x.zeroize();
-        self.y.zeroize();
-        self.z.zeroize();
-    }
-}
+// Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 impl ConditionallySelectable for ProjectivePoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
@@ -1033,7 +1021,8 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
 }
 
 /// A scalar value in the secp256k1 scalar field.
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, zeroize::Zeroize)]
+#[zeroize(drop)]
 pub struct Scalar([u64; 4]);
 
 impl Scalar {
@@ -1430,11 +1419,7 @@ impl ConditionallySelectable for Scalar {
     }
 }
 
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 impl PartialEq for Scalar {
     fn eq(&self, other: &Self) -> bool {

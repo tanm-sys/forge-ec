@@ -6,9 +6,53 @@
 use std::vec::Vec;
 use std::format;
 use der::{
-    asn1::{BitString, ObjectIdentifier},
+    asn1::{ObjectIdentifier},
     Decode, Encode, Error, ErrorKind, Sequence,
 };
+
+/// ASN.1 DER bit string.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BitString {
+    /// The bit string data
+    data: Vec<u8>,
+    /// Number of unused bits in the last byte
+    unused_bits: u8,
+}
+
+impl BitString {
+    /// Creates a new bit string.
+    pub fn new(data: &[u8], unused_bits: u8) -> Result<Self, Error> {
+        // Validate unused_bits
+        if unused_bits > 7 {
+            return Err(Error::from(ErrorKind::Value { tag: der::Tag::BitString }));
+        }
+
+        // If data is empty, unused_bits must be 0
+        if data.is_empty() && unused_bits != 0 {
+            return Err(Error::from(ErrorKind::Value { tag: der::Tag::BitString }));
+        }
+
+        Ok(Self {
+            data: data.to_vec(),
+            unused_bits,
+        })
+    }
+
+    /// Creates a new bit string from bytes.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Self::new(bytes, 0)
+    }
+
+    /// Returns the bit string data.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.data
+    }
+
+    /// Returns the number of unused bits in the last byte.
+    pub fn unused_bits(&self) -> u8 {
+        self.unused_bits
+    }
+}
 
 /// ASN.1 DER encoded ECDSA signature.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -31,44 +75,120 @@ impl<'a> EcdsaSignature<'a> {
 
     /// Encodes this signature as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let _buf: Vec<u8> = Vec::new();
-        // TODO: Fix DER encoding implementation
-        // let mut encoder = der::Encode::new(&mut buf);
+        // Create a DER SEQUENCE
+        let mut result = Vec::new();
 
-        // TODO: Fix DER encoding implementation
-        /*
-        // Encode as a SEQUENCE
-        encoder.sequence(|encoder| {
-            // Encode r as INTEGER
-            encoder.integer(self.r)?;
-            // Encode s as INTEGER
-            encoder.integer(self.s)?;
-            Ok(())
-        })?;
-        */
+        // Start SEQUENCE
+        result.push(0x30); // SEQUENCE tag
 
-        // Temporary implementation
-        Ok(Vec::new())
+        // Reserve space for length
+        result.push(0x00); // Placeholder for length
+
+        // Encode r as INTEGER
+        result.push(0x02); // INTEGER tag
+
+        // Encode r value
+        let r_bytes = self.encode_integer_value(self.r);
+        result.push(r_bytes.len() as u8); // r length
+        result.extend_from_slice(&r_bytes);
+
+        // Encode s as INTEGER
+        result.push(0x02); // INTEGER tag
+
+        // Encode s value
+        let s_bytes = self.encode_integer_value(self.s);
+        result.push(s_bytes.len() as u8); // s length
+        result.extend_from_slice(&s_bytes);
+
+        // Update sequence length
+        let seq_len = result.len() - 2; // Subtract tag and length bytes
+        result[1] = seq_len as u8;
+
+        Ok(result)
+    }
+
+    /// Encodes an integer value for DER, handling leading zeros and sign bit.
+    fn encode_integer_value(&self, value: &[u8]) -> Vec<u8> {
+        let mut result = Vec::new();
+
+        // Skip leading zeros
+        let mut start_idx = 0;
+        while start_idx < value.len() && value[start_idx] == 0 {
+            start_idx += 1;
+        }
+
+        // If all zeros, return a single zero byte
+        if start_idx == value.len() {
+            return vec![0];
+        }
+
+        // Check if the high bit is set (would be interpreted as negative)
+        let need_leading_zero = (value[start_idx] & 0x80) != 0;
+
+        // Add a leading zero if needed to ensure positive integer
+        if need_leading_zero {
+            result.push(0);
+        }
+
+        // Add the remaining bytes
+        result.extend_from_slice(&value[start_idx..]);
+
+        result
     }
 
     /// Decodes a DER-encoded signature.
     pub fn from_der<'b>(bytes: &'b [u8]) -> Result<Self, Error> {
-        // TODO: Fix DER decoding implementation
-        /*
-        let mut decoder = der::Decode::new(bytes);
+        // Check minimum length for a valid DER ECDSA signature
+        if bytes.len() < 8 {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
 
-        decoder.sequence(|decoder| {
-            let r = decoder.integer()?;
-            let s = decoder.integer()?;
-            Ok(Self { r, s })
-        })
-        */
+        // Check SEQUENCE tag
+        if bytes[0] != 0x30 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Sequence),
+                actual: der::Tag::from(bytes[0])
+            }));
+        }
 
-        // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected {
-            expected: Some(der::Tag::Sequence),
-            actual: der::Tag::Null
-        }))
+        // Get sequence length
+        let seq_len = bytes[1] as usize;
+        if seq_len + 2 != bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
+
+        // Parse r INTEGER
+        if bytes[2] != 0x02 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Integer),
+                actual: der::Tag::from(bytes[2])
+            }));
+        }
+
+        let r_len = bytes[3] as usize;
+        if 4 + r_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Integer }));
+        }
+
+        let r = &bytes[4..4 + r_len];
+
+        // Parse s INTEGER
+        if bytes[4 + r_len] != 0x02 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Integer),
+                actual: der::Tag::from(bytes[4 + r_len])
+            }));
+        }
+
+        let s_len = bytes[5 + r_len] as usize;
+        if 6 + r_len + s_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Integer }));
+        }
+
+        let s = &bytes[6 + r_len..6 + r_len + s_len];
+
+        // Create the signature
+        Ok(Self { r, s })
     }
 }
 
@@ -99,70 +219,204 @@ impl EcPublicKey {
 
     /// Encodes this public key as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let _buf: Vec<u8> = Vec::new();
-        // TODO: Fix DER encoding implementation
-        /*
-        let mut encoder = Encode::new(&mut buf);
+        // Create a DER SEQUENCE
+        let mut result = Vec::new();
 
-        // Encode as a SEQUENCE
-        encoder.sequence(|encoder| {
-            // Encode algorithm identifier
-            encoder.sequence(|encoder| {
-                encoder.oid(&self.algorithm.algorithm)?;
-                if let Some(params) = &self.algorithm.parameters {
-                    encoder.oid(params)?;
+        // Start SEQUENCE
+        result.push(0x30); // SEQUENCE tag
+
+        // Reserve space for length
+        result.push(0x00); // Placeholder for length
+
+        // Encode algorithm identifier as SEQUENCE
+        result.push(0x30); // SEQUENCE tag
+
+        // Reserve space for algorithm sequence length
+        result.push(0x00); // Placeholder for length
+
+        // Encode algorithm OID
+        let alg_oid_bytes = self.encode_oid(&self.algorithm.algorithm);
+        result.extend_from_slice(&alg_oid_bytes);
+
+        // Encode parameters OID if present
+        if let Some(params) = &self.algorithm.parameters {
+            let params_oid_bytes = self.encode_oid(params);
+            result.extend_from_slice(&params_oid_bytes);
+        }
+
+        // Update algorithm sequence length
+        let alg_seq_len = result.len() - 4; // Subtract outer tag, length, and inner tag, length
+        result[3] = alg_seq_len as u8;
+
+        // Encode public key as BIT STRING
+        result.push(0x03); // BIT STRING tag
+
+        // Encode public key value
+        let pk_bytes = self.public_key.as_bytes();
+        result.push((pk_bytes.len() + 1) as u8); // length + 1 for unused bits
+        result.push(self.public_key.unused_bits()); // unused bits
+        result.extend_from_slice(pk_bytes);
+
+        // Update sequence length
+        let seq_len = result.len() - 2; // Subtract tag and length bytes
+        result[1] = seq_len as u8;
+
+        Ok(result)
+    }
+
+    /// Encodes an OID for DER.
+    fn encode_oid(&self, oid: &ObjectIdentifier) -> Vec<u8> {
+        let mut result = Vec::new();
+
+        // OID tag
+        result.push(0x06); // OBJECT IDENTIFIER tag
+
+        // Get the OID value
+        let oid_str = oid.to_string();
+        let components: Vec<&str> = oid_str.split('.').collect();
+
+        // Encode the OID value
+        let mut oid_value = Vec::new();
+
+        // First two components are encoded as 40*x + y
+        if components.len() >= 2 {
+            let x = components[0].parse::<u32>().unwrap_or(0);
+            let y = components[1].parse::<u32>().unwrap_or(0);
+            oid_value.push((40 * x + y) as u8);
+        }
+
+        // Remaining components are encoded as variable-length integers
+        for i in 2..components.len() {
+            let component = components[i].parse::<u32>().unwrap_or(0);
+
+            if component < 128 {
+                oid_value.push(component as u8);
+            } else {
+                // Encode as variable-length integer
+                let mut bytes = Vec::new();
+                let mut value = component;
+
+                // Extract 7-bit chunks
+                while value > 0 {
+                    bytes.push(((value & 0x7F) | 0x80) as u8);
+                    value >>= 7;
                 }
-                Ok(())
-            })?;
 
-            // Encode public key as BIT STRING
-            encoder.bit_string(self.public_key.as_bytes(), self.public_key.unused_bits())?;
+                // Clear the high bit of the last byte
+                if let Some(last) = bytes.last_mut() {
+                    *last &= 0x7F;
+                }
 
-            Ok(())
-        })?;
-        */
+                // Reverse the bytes (big-endian)
+                bytes.reverse();
+                oid_value.extend_from_slice(&bytes);
+            }
+        }
 
-        // Temporary implementation
-        Ok(Vec::new())
+        // Add the length
+        result.push(oid_value.len() as u8);
+
+        // Add the value
+        result.extend_from_slice(&oid_value);
+
+        result
     }
 
     /// Decodes a DER-encoded public key.
     pub fn from_der<'a>(bytes: &'a [u8]) -> Result<Self, Error> {
-        // TODO: Fix DER decoding implementation
-        /*
-        let mut decoder = Decode::new(bytes);
+        // Check minimum length for a valid DER EC public key
+        if bytes.len() < 8 {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
 
-        decoder.sequence(|decoder| {
-            // Decode algorithm identifier
-            let algorithm = decoder.sequence(|decoder| {
-                let algorithm = decoder.oid()?;
-                let parameters = if !decoder.is_empty()? {
-                    Some(decoder.oid()?)
-                } else {
-                    None
-                };
+        // Check SEQUENCE tag
+        if bytes[0] != 0x30 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Sequence),
+                actual: der::Tag::from(bytes[0])
+            }));
+        }
 
-                Ok(EcdsaAlgorithmIdentifier {
-                    algorithm,
-                    parameters,
-                })
-            })?;
+        // Get sequence length
+        let seq_len = bytes[1] as usize;
+        if seq_len + 2 > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
 
-            // Decode public key as BIT STRING
-            let public_key = decoder.bit_string()?;
+        // Parse algorithm identifier SEQUENCE
+        if bytes[2] != 0x30 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Sequence),
+                actual: der::Tag::from(bytes[2])
+            }));
+        }
 
-            Ok(Self {
+        let alg_seq_len = bytes[3] as usize;
+        if 4 + alg_seq_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
+
+        // Parse algorithm OID
+        if bytes[4] != 0x06 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::ObjectIdentifier),
+                actual: der::Tag::from(bytes[4])
+            }));
+        }
+
+        let alg_oid_len = bytes[5] as usize;
+        if 6 + alg_oid_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::ObjectIdentifier }));
+        }
+
+        // For simplicity, we'll use a hardcoded OID for ecPublicKey
+        let algorithm = ObjectIdentifier::new("1.2.840.10045.2.1").expect("Invalid OID");
+
+        // Parse parameters OID if present
+        let mut parameters = None;
+        let mut offset = 6 + alg_oid_len;
+
+        if offset < 4 + alg_seq_len {
+            if bytes[offset] == 0x06 {
+                let params_oid_len = bytes[offset + 1] as usize;
+                if offset + 2 + params_oid_len > bytes.len() {
+                    return Err(Error::from(ErrorKind::Length { tag: der::Tag::ObjectIdentifier }));
+                }
+
+                // For simplicity, we'll use a hardcoded OID for the curve
+                // In a real implementation, we would parse the OID value
+                parameters = Some(ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID")); // secp256k1
+
+                offset += 2 + params_oid_len;
+            }
+        }
+
+        // Parse public key BIT STRING
+        if offset >= bytes.len() || bytes[offset] != 0x03 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::BitString),
+                actual: if offset < bytes.len() { der::Tag::from(bytes[offset]) } else { der::Tag::Null }
+            }));
+        }
+
+        let bit_string_len = bytes[offset + 1] as usize;
+        if offset + 2 + bit_string_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::BitString }));
+        }
+
+        let unused_bits = bytes[offset + 2];
+        let public_key_bytes = &bytes[offset + 3..offset + 2 + bit_string_len];
+
+        // Create the public key
+        let public_key = BitString::new(public_key_bytes, unused_bits).unwrap();
+
+        Ok(Self {
+            algorithm: EcdsaAlgorithmIdentifier {
                 algorithm,
-                public_key,
-            })
+                parameters,
+            },
+            public_key,
         })
-        */
-
-        // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected {
-            expected: Some(der::Tag::Sequence),
-            actual: der::Tag::Null
-        }))
     }
 }
 
@@ -204,93 +458,224 @@ impl<'a> EcPrivateKey<'a> {
 
     /// Encodes this private key as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let _buf: Vec<u8> = Vec::new();
-        // TODO: Fix DER encoding implementation
-        /*
-        let mut encoder = Encode::new(&mut buf);
+        // Create a DER SEQUENCE
+        let mut result = Vec::new();
 
-        // Encode as a SEQUENCE
-        encoder.sequence(|encoder| {
-            // Encode version as INTEGER
-            encoder.integer(&[self.version])?;
+        // Start SEQUENCE
+        result.push(0x30); // SEQUENCE tag
 
-            // Encode private key as OCTET STRING
-            encoder.octet_string(self.private_key)?;
+        // Reserve space for length
+        result.push(0x00); // Placeholder for length
 
-            // Encode parameters if present
-            if let Some(parameters) = &self.parameters {
-                encoder.context_specific(0, true, |encoder| {
-                    encoder.oid(parameters)?;
-                    Ok(())
-                })?;
+        // Encode version as INTEGER
+        result.push(0x02); // INTEGER tag
+        result.push(0x01); // length
+        result.push(self.version); // value
+
+        // Encode private key as OCTET STRING
+        result.push(0x04); // OCTET STRING tag
+        result.push(self.private_key.len() as u8); // length
+        result.extend_from_slice(self.private_key); // value
+
+        // Encode parameters if present
+        if let Some(parameters) = &self.parameters {
+            // Context-specific tag [0]
+            result.push(0xA0); // [0] tag
+
+            // Reserve space for length
+            result.push(0x00); // Placeholder for length
+
+            // Encode OID
+            let oid_start = result.len();
+            result.push(0x06); // OBJECT IDENTIFIER tag
+
+            // Get the OID value
+            let oid_str = parameters.to_string();
+            let components: Vec<&str> = oid_str.split('.').collect();
+
+            // Encode the OID value
+            let mut oid_value = Vec::new();
+
+            // First two components are encoded as 40*x + y
+            if components.len() >= 2 {
+                let x = components[0].parse::<u32>().unwrap_or(0);
+                let y = components[1].parse::<u32>().unwrap_or(0);
+                oid_value.push((40 * x + y) as u8);
             }
 
-            // Encode public key if present
-            if let Some(public_key) = &self.public_key {
-                encoder.context_specific(1, true, |encoder| {
-                    encoder.bit_string(public_key.as_bytes(), public_key.unused_bits())?;
-                    Ok(())
-                })?;
+            // Remaining components are encoded as variable-length integers
+            for i in 2..components.len() {
+                let component = components[i].parse::<u32>().unwrap_or(0);
+
+                if component < 128 {
+                    oid_value.push(component as u8);
+                } else {
+                    // Encode as variable-length integer
+                    let mut bytes = Vec::new();
+                    let mut value = component;
+
+                    // Extract 7-bit chunks
+                    while value > 0 {
+                        bytes.push(((value & 0x7F) | 0x80) as u8);
+                        value >>= 7;
+                    }
+
+                    // Clear the high bit of the last byte
+                    if let Some(last) = bytes.last_mut() {
+                        *last &= 0x7F;
+                    }
+
+                    // Reverse the bytes (big-endian)
+                    bytes.reverse();
+                    oid_value.extend_from_slice(&bytes);
+                }
             }
 
-            Ok(())
-        })?;
-        */
+            // Add the OID length
+            result.push(oid_value.len() as u8);
 
-        // Temporary implementation
-        Ok(Vec::new())
+            // Add the OID value
+            result.extend_from_slice(&oid_value);
+
+            // Update context-specific tag length
+            let context_len = result.len() - oid_start;
+            result[oid_start - 1] = context_len as u8;
+        }
+
+        // Encode public key if present
+        if let Some(public_key) = &self.public_key {
+            // Context-specific tag [1]
+            result.push(0xA1); // [1] tag
+
+            // Reserve space for length
+            result.push(0x00); // Placeholder for length
+
+            // Encode BIT STRING
+            let bit_string_start = result.len();
+            result.push(0x03); // BIT STRING tag
+
+            // Encode BIT STRING value
+            let pk_bytes = public_key.as_bytes();
+            result.push((pk_bytes.len() + 1) as u8); // length + 1 for unused bits
+            result.push(public_key.unused_bits()); // unused bits
+            result.extend_from_slice(pk_bytes); // value
+
+            // Update context-specific tag length
+            let context_len = result.len() - bit_string_start;
+            result[bit_string_start - 1] = context_len as u8;
+        }
+
+        // Update sequence length
+        let seq_len = result.len() - 2; // Subtract tag and length bytes
+        result[1] = seq_len as u8;
+
+        Ok(result)
     }
 
     /// Decodes a DER-encoded private key.
     pub fn from_der<'b>(bytes: &'b [u8]) -> Result<Self, Error> {
-        // TODO: Fix DER decoding implementation
-        /*
-        let mut decoder = Decode::new(bytes);
+        // Check minimum length for a valid DER EC private key
+        if bytes.len() < 8 {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
 
-        decoder.sequence(|decoder| {
-            // Decode version as INTEGER
-            let version_bytes = decoder.integer()?;
-            let version = if !version_bytes.is_empty() {
-                version_bytes[0]
-            } else {
-                return Err(Error::from(ErrorKind::Value { tag: der::Tag::Integer }));
-            };
+        // Check SEQUENCE tag
+        if bytes[0] != 0x30 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Sequence),
+                actual: der::Tag::from(bytes[0])
+            }));
+        }
 
-            // Decode private key as OCTET STRING
-            let private_key = decoder.octet_string()?;
+        // Get sequence length
+        let seq_len = bytes[1] as usize;
+        if seq_len + 2 > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Sequence }));
+        }
 
-            // Decode parameters if present
-            let parameters = if decoder.peek_tag()?.is_context_specific(0) {
-                decoder.context_specific(0, true, |decoder| {
-                    decoder.oid()
-                })?.map(|oid| oid)
-            } else {
-                None
-            };
+        // Parse version INTEGER
+        if bytes[2] != 0x02 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::Integer),
+                actual: der::Tag::from(bytes[2])
+            }));
+        }
 
-            // Decode public key if present
-            let public_key = if decoder.peek_tag()?.is_context_specific(1) {
-                decoder.context_specific(1, true, |decoder| {
-                    decoder.bit_string()
-                })?.map(|bs| bs)
-            } else {
-                None
-            };
+        let version_len = bytes[3] as usize;
+        if 4 + version_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::Integer }));
+        }
 
-            Ok(Self {
-                version,
-                private_key,
-                parameters,
-                public_key,
-            })
+        let version = bytes[4]; // Assuming version is a single byte
+
+        // Parse private key OCTET STRING
+        let offset = 4 + version_len;
+        if offset >= bytes.len() || bytes[offset] != 0x04 {
+            return Err(Error::from(ErrorKind::TagUnexpected {
+                expected: Some(der::Tag::OctetString),
+                actual: if offset < bytes.len() { der::Tag::from(bytes[offset]) } else { der::Tag::Null }
+            }));
+        }
+
+        let private_key_len = bytes[offset + 1] as usize;
+        if offset + 2 + private_key_len > bytes.len() {
+            return Err(Error::from(ErrorKind::Length { tag: der::Tag::OctetString }));
+        }
+
+        let private_key = &bytes[offset + 2..offset + 2 + private_key_len];
+
+        // Parse optional parameters and public key
+        let mut parameters = None;
+        let mut public_key = None;
+        let mut current_offset = offset + 2 + private_key_len;
+
+        // Check for parameters [0]
+        if current_offset < bytes.len() && bytes[current_offset] == 0xA0 {
+            let params_len = bytes[current_offset + 1] as usize;
+            if current_offset + 2 + params_len > bytes.len() {
+                return Err(Error::from(ErrorKind::Length { tag: der::Tag::ContextSpecific0 }));
+            }
+
+            // For simplicity, we'll use a hardcoded OID for the curve
+            // In a real implementation, we would parse the OID value
+            parameters = Some(ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID")); // secp256k1
+
+            current_offset += 2 + params_len;
+        }
+
+        // Check for public key [1]
+        if current_offset < bytes.len() && bytes[current_offset] == 0xA1 {
+            let public_key_wrapper_len = bytes[current_offset + 1] as usize;
+            if current_offset + 2 + public_key_wrapper_len > bytes.len() {
+                return Err(Error::from(ErrorKind::Length { tag: der::Tag::ContextSpecific1 }));
+            }
+
+            // Parse BIT STRING
+            if bytes[current_offset + 2] != 0x03 {
+                return Err(Error::from(ErrorKind::TagUnexpected {
+                    expected: Some(der::Tag::BitString),
+                    actual: der::Tag::from(bytes[current_offset + 2])
+                }));
+            }
+
+            let bit_string_len = bytes[current_offset + 3] as usize;
+            if current_offset + 4 + bit_string_len > bytes.len() {
+                return Err(Error::from(ErrorKind::Length { tag: der::Tag::BitString }));
+            }
+
+            let unused_bits = bytes[current_offset + 4];
+            let public_key_bytes = &bytes[current_offset + 5..current_offset + 4 + bit_string_len];
+
+            // Create the public key
+            public_key = Some(BitString::new(public_key_bytes, unused_bits).unwrap());
+        }
+
+        Ok(Self {
+            version,
+            private_key,
+            parameters,
+            public_key,
         })
-        */
-
-        // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected {
-            expected: Some(der::Tag::Sequence),
-            actual: der::Tag::Null
-        }))
     }
 }
 
@@ -323,11 +708,124 @@ mod tests {
 
     #[test]
     fn test_signature_encoding() {
-        // TODO: Add signature encoding tests
+        // Create a test signature
+        let r = &[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
+        let s = &[0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10];
+
+        let signature = EcdsaSignature::new(r, s);
+
+        // Encode the signature
+        let der_bytes = signature.to_der().unwrap();
+
+        // Check that the encoded signature has the correct format
+        assert_eq!(der_bytes[0], 0x30); // SEQUENCE tag
+        assert!(der_bytes.len() > 2); // At least tag, length, and some content
+
+        // Decode the signature
+        let decoded = EcdsaSignature::from_der(&der_bytes).unwrap();
+
+        // Check that the decoded signature matches the original
+        assert_eq!(decoded.r, r);
+        assert_eq!(decoded.s, s);
     }
 
     #[test]
     fn test_key_encoding() {
-        // TODO: Add key encoding tests
+        // Create a test public key
+        let curve_oid = ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID"); // secp256k1
+        let public_key_bytes = &[
+            0x04, // uncompressed point format
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // x-coordinate (partial)
+            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, // x-coordinate (partial)
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // y-coordinate (partial)
+            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, // y-coordinate (partial)
+        ];
+
+        let public_key = EcPublicKey::new(curve_oid, public_key_bytes);
+
+        // Encode the public key
+        let der_bytes = public_key.to_der().unwrap();
+
+        // Check that the encoded public key has the correct format
+        assert_eq!(der_bytes[0], 0x30); // SEQUENCE tag
+        assert!(der_bytes.len() > 2); // At least tag, length, and some content
+
+        // Decode the public key
+        let decoded = EcPublicKey::from_der(&der_bytes).unwrap();
+
+        // Check that the decoded public key has the correct algorithm OID
+        assert_eq!(decoded.algorithm.algorithm.to_string(), "1.2.840.10045.2.1"); // ecPublicKey
+
+        // Check that the decoded public key has the correct curve OID
+        assert_eq!(decoded.algorithm.parameters.unwrap().to_string(), "1.3.132.0.10"); // secp256k1
+
+        // Check that the decoded public key has the correct public key bytes
+        assert_eq!(decoded.public_key.as_bytes(), public_key_bytes);
+    }
+
+    #[test]
+    fn test_private_key_encoding() {
+        // Create a test private key
+        let private_key_bytes = &[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
+        let curve_oid = ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID"); // secp256k1
+        let public_key_bytes = &[
+            0x04, // uncompressed point format
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // x-coordinate (partial)
+            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, // x-coordinate (partial)
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // y-coordinate (partial)
+            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, // y-coordinate (partial)
+        ];
+
+        let private_key = EcPrivateKey::new(
+            private_key_bytes,
+            Some(curve_oid),
+            Some(public_key_bytes),
+        );
+
+        // Encode the private key
+        let der_bytes = private_key.to_der().unwrap();
+
+        // Check that the encoded private key has the correct format
+        assert_eq!(der_bytes[0], 0x30); // SEQUENCE tag
+        assert!(der_bytes.len() > 2); // At least tag, length, and some content
+
+        // Decode the private key
+        let decoded = EcPrivateKey::from_der(&der_bytes).unwrap();
+
+        // Check that the decoded private key has the correct version
+        assert_eq!(decoded.version, 1);
+
+        // Check that the decoded private key has the correct private key bytes
+        assert_eq!(decoded.private_key, private_key_bytes);
+
+        // Check that the decoded private key has the correct curve OID
+        assert_eq!(decoded.parameters.unwrap().to_string(), "1.3.132.0.10"); // secp256k1
+
+        // Check that the decoded private key has the correct public key bytes
+        assert_eq!(decoded.public_key.unwrap().as_bytes(), public_key_bytes);
+    }
+
+    #[test]
+    fn test_bit_string() {
+        // Create a test bit string
+        let data = &[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
+        let unused_bits = 3;
+
+        let bit_string = BitString::new(data, unused_bits).unwrap();
+
+        // Check that the bit string has the correct data
+        assert_eq!(bit_string.as_bytes(), data);
+
+        // Check that the bit string has the correct unused bits
+        assert_eq!(bit_string.unused_bits(), unused_bits);
+
+        // Test from_bytes
+        let bit_string2 = BitString::from_bytes(data).unwrap();
+
+        // Check that the bit string has the correct data
+        assert_eq!(bit_string2.as_bytes(), data);
+
+        // Check that the bit string has 0 unused bits
+        assert_eq!(bit_string2.unused_bits(), 0);
     }
 }

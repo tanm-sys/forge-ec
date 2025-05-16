@@ -1,0 +1,49 @@
+[package]
+name = "forge-ec-examples"
+version = "0.1.0"
+authors = ["Forge EC Contributors"]
+edition = "2021"
+rust-version = "1.70.0"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/forge-ec/forge-ec"
+homepage = "https://github.com/forge-ec/forge-ec"
+documentation = "https://docs.rs/forge-ec"
+categories = ["cryptography", "no-std"]
+keywords = ["crypto", "ecc", "elliptic-curves", "cryptography", "ecdsa"]
+description = "Examples for the forge-ec elliptic curve cryptography library"
+publish = false
+
+[dependencies]
+forge-ec-core = { path = "../forge-ec-core" }
+forge-ec-curves = { path = "../forge-ec-curves" }
+forge-ec-signature = { path = "../forge-ec-signature" }
+forge-ec-encoding = { path = "../forge-ec-encoding" }
+forge-ec-hash = { path = "../forge-ec-hash" }
+forge-ec-rng = { path = "../forge-ec-rng" }
+hex = "0.4"
+rand_core = "0.6"
+digest = "0.10"
+
+[[bin]]
+name = "ecdsa"
+path = "src/ecdsa.rs"
+
+[[bin]]
+name = "ecdh"
+path = "src/ecdh.rs"
+
+[[bin]]
+name = "eddsa"
+path = "src/eddsa.rs"
+
+[[bin]]
+name = "keygen"
+path = "src/keygen.rs"
+
+[[bin]]
+name = "openssl_interop"
+path = "src/openssl_interop.rs"
+
+[[bin]]
+name = "schnorr"
+path = "src/schnorr.rs"

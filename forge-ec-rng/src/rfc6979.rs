@@ -18,6 +18,7 @@ use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
 use forge_ec_core::{Curve, Scalar, FieldElement};
 use subtle::ConstantTimeEq;
+use hmac::Hmac;
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -90,7 +91,7 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
             }
         }
 
-        // For other cases, use a simplified implementation
+        // Full RFC6979 implementation
         // Step 1: Convert the private key to a fixed-length byte array
         let private_key_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(private_key);
 
@@ -99,42 +100,107 @@ impl<C: Curve, D: Digest> Rfc6979<C, D> {
         h1.update(message);
         let h1 = h1.finalize();
 
-        // Step 3: Create a seed by concatenating private key, message hash, and extra data
-        let mut seed = Vec::new();
-        seed.extend_from_slice(&private_key_bytes);
-        seed.extend_from_slice(h1.as_slice());
-        seed.extend_from_slice(extra_data);
+        // Step 3: Prepare the input for HMAC
+        // 3.1: Convert the message hash to a byte array of the same length as the private key
+        let mut h1_bytes = [0u8; 32];
+        let h1_slice = h1.as_slice();
+        let len = core::cmp::min(h1_slice.len(), 32);
+        h1_bytes[..len].copy_from_slice(&h1_slice[..len]);
 
-        // Step 4: Hash the seed to get a deterministic value
-        let mut hasher = D::new();
-        hasher.update(&seed);
-        let hash = hasher.finalize();
+        // 3.2: Get the byte length of the curve order (qlen)
+        let qlen = C::Scalar::BITS;
+        let qlen_bytes = (qlen + 7) / 8;
+        let rlen = (qlen + 7) / 8; // rlen is the same as qlen_bytes for our curves
 
-        // Step 5: Convert the hash to a scalar
-        let mut scalar_bytes = [0u8; 32];
-        let hash_slice = hash.as_slice();
-        let len = core::cmp::min(hash_slice.len(), 32);
-        scalar_bytes[..len].copy_from_slice(&hash_slice[..len]);
+        // 3.3: Initialize variables
+        let mut v = [0x01u8; 32]; // V = 0x01 0x01 0x01 ... (same length as hash output)
+        let mut k = [0x00u8; 32]; // K = 0x00 0x00 0x00 ... (same length as hash output)
 
-        // Step 6: Convert to scalar, ensuring it's in the correct range
-        let scalar_option = <C::Scalar as Scalar>::from_bytes(&scalar_bytes);
+        // 3.4: Initialize HMAC key with K
+        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
 
-        // Step 7: Check if the scalar is valid (not zero and less than the curve order)
-        if scalar_option.is_some().unwrap_u8() == 1 {
-            let scalar = scalar_option.unwrap();
-            if !bool::from(<C::Scalar as FieldElement>::is_zero(&scalar)) {
-                // We have a valid k value
-                // Zeroize sensitive data before returning
-                seed.zeroize();
-                scalar_bytes.zeroize();
-                return scalar;
+        // 3.5: K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
+        hmac_key.update(&v);
+        hmac_key.update(&[0x00]);
+        hmac_key.update(&private_key_bytes);
+        hmac_key.update(&h1_bytes);
+        if !extra_data.is_empty() {
+            hmac_key.update(extra_data);
+        }
+        k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+        // 3.6: V = HMAC_K(V)
+        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+        // 3.7: K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
+        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        hmac_key.update(&[0x01]);
+        hmac_key.update(&private_key_bytes);
+        hmac_key.update(&h1_bytes);
+        if !extra_data.is_empty() {
+            hmac_key.update(extra_data);
+        }
+        k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+        // 3.8: V = HMAC_K(V)
+        let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+        // 3.9: Generate k
+        let mut t = [0u8; 32];
+        let mut generated = false;
+        let mut scalar_option = <C::Scalar as Scalar>::from_bytes(&[0u8; 32]);
+
+        while !generated {
+            // 3.9.1: T = empty
+            let mut toff = 0;
+
+            // 3.9.2: While tlen < qlen, do V = HMAC_K(V), T = T || V
+            while toff < rlen {
+                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+                let remaining = rlen - toff;
+                let to_copy = core::cmp::min(remaining, v.len());
+                t[toff..toff + to_copy].copy_from_slice(&v[..to_copy]);
+                toff += to_copy;
+            }
+
+            // 3.9.3: Convert T to a scalar
+            scalar_option = <C::Scalar as Scalar>::from_bytes(&t);
+
+            // 3.9.4: Check if the scalar is valid (not zero and less than the curve order)
+            if scalar_option.is_some().unwrap_u8() == 1 {
+                let scalar = scalar_option.unwrap();
+                if !bool::from(<C::Scalar as FieldElement>::is_zero(&scalar)) {
+                    generated = true;
+                }
+            }
+
+            // 3.9.5: If not valid, update K and V and try again
+            if !generated {
+                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                hmac_key.update(&[0x00]);
+                k = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
+
+                let mut hmac_key = hmac::Hmac::<D>::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                v = hmac_key.finalize().into_bytes().as_slice()[..32].try_into().unwrap();
             }
         }
 
-        // If we get here, we need to retry with a modified seed
-        // For simplicity, we'll just return a default value (this is not RFC6979 compliant)
-        // In a real implementation, we would retry with a modified seed
-        <C::Scalar as FieldElement>::one()
+        // Zeroize sensitive data before returning
+        v.zeroize();
+        k.zeroize();
+        t.zeroize();
+
+        scalar_option.unwrap()
     }
 }
 
