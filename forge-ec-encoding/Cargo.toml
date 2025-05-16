@@ -15,6 +15,7 @@ keywords.workspace = true
 [dependencies]
 forge-ec-core = { workspace = true }
 forge-ec-curves = { workspace = true }
+forge-ec-rng = { workspace = true }
 base64 = { version = "0.21", default-features = false }
 base58 = { workspace = true, optional = true }
 der = { version = "0.7", features = ["alloc", "oid"] }

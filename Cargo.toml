@@ -21,6 +21,30 @@ documentation = "https://docs.rs/forge-ec"
 categories = ["cryptography", "no-std"]
 keywords = ["crypto", "ecc", "elliptic-curves", "cryptography", "ecdsa"]
 
+[[example]]
+name = "ecdsa"
+path = "examples/ecdsa.rs"
+
+[[example]]
+name = "ecdh"
+path = "examples/ecdh.rs"
+
+[[example]]
+name = "eddsa"
+path = "examples/eddsa.rs"
+
+[[example]]
+name = "keygen"
+path = "examples/keygen.rs"
+
+[[example]]
+name = "openssl_interop"
+path = "examples/openssl_interop.rs"
+
+[[example]]
+name = "schnorr"
+path = "examples/schnorr.rs"
+
 [workspace.dependencies]
 # Core dependencies
 subtle = "2.5"
