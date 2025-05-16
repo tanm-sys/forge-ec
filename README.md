@@ -1,4 +1,4 @@
-# forge-ec
+# Forge EC
 
 [![Crates.io](https://img.shields.io/crates/v/forge-ec-core.svg)](https://crates.io/crates/forge-ec-core)
 [![Documentation](https://docs.rs/forge-ec-core/badge.svg)](https://docs.rs/forge-ec-core)
@@ -6,6 +6,8 @@
 [![dependency status](https://deps.rs/repo/github/forge-ec/forge-ec/status.svg)](https://deps.rs/repo/github/forge-ec/forge-ec)
 
 A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust.
+
+Forge EC provides a modular, secure, and efficient framework for elliptic curve cryptography operations, with a focus on constant-time implementations to prevent side-channel attacks.
 
 ## ⚠️ Security Warning
 
@@ -154,6 +156,35 @@ The library provides high-performance implementations:
 - Batch verification for Schnorr signatures
 - Multi-threaded operations via rayon
 
+## Comparison with Other Libraries
+
+Forge EC aims to provide a balance of security, performance, and usability. Here's how it compares to other Rust cryptography libraries:
+
+| Feature | Forge EC | RustCrypto | Dalek | ring |
+|---------|----------|------------|-------|------|
+| Pure Rust | ✅ | ✅ | ✅ | ❌ (C/ASM) |
+| No unsafe code | ✅ | ⚠️ (minimal) | ⚠️ (minimal) | ❌ |
+| Constant-time | ✅ | ✅ | ✅ | ✅ |
+| secp256k1 | ✅ | ✅ | ❌ | ❌ |
+| P-256 | ✅ | ✅ | ❌ | ✅ |
+| Curve25519 | ✅ | ✅ | ✅ | ✅ |
+| Ed25519 | ✅ | ✅ | ✅ | ✅ |
+| ECDSA | ✅ | ✅ | ❌ | ✅ |
+| EdDSA | ✅ | ✅ | ✅ | ✅ |
+| Schnorr | ✅ | ⚠️ (limited) | ❌ | ❌ |
+| Hash-to-curve | ✅ | ⚠️ (limited) | ⚠️ (limited) | ❌ |
+| Batch verification | ✅ | ⚠️ (limited) | ✅ | ❌ |
+| no_std support | ✅ | ✅ | ✅ | ❌ |
+| SIMD acceleration | ✅ | ⚠️ (limited) | ✅ | ✅ |
+| Documentation | ✅ | ✅ | ✅ | ✅ |
+| Test coverage | ✅ | ✅ | ✅ | ✅ |
+
+### Key Differences
+
+- **RustCrypto**: Forge EC provides a more cohesive API across different curves and algorithms, while RustCrypto consists of many smaller crates with varying interfaces.
+- **Dalek**: Forge EC supports more curves (including secp256k1 and P-256) and signature schemes (ECDSA, Schnorr), while Dalek focuses primarily on Curve25519/Ed25519.
+- **ring**: Forge EC is pure Rust with no unsafe code in the public API, while ring uses C and assembly code for performance. Forge EC also supports more curves and signature schemes.
+
 ## Security Features
 
 ### Constant-Time Operations
@@ -246,6 +277,65 @@ Shows how to create and verify Schnorr signatures, including batch verification.
 ```bash
 cargo run --example schnorr
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Build Failures
+
+**Issue**: Compilation errors related to missing features.
+
+**Solution**: Ensure you're using Rust 1.70.0 or later and check that you've enabled the necessary features in your `Cargo.toml`:
+
+```toml
+forge-ec = { version = "0.1.0", features = ["std"] }
+```
+
+#### Performance Issues
+
+**Issue**: Cryptographic operations are slower than expected.
+
+**Solution**: Enable the appropriate feature flags for your target architecture:
+
+```toml
+forge-ec = { version = "0.1.0", features = ["std", "simd"] }
+```
+
+#### Compatibility with Other Libraries
+
+**Issue**: Interoperability issues with other cryptographic libraries.
+
+**Solution**: Use the encoding/decoding functions in `forge-ec-encoding` to convert between formats:
+
+```rust
+// Convert from forge-ec to raw bytes
+let forge_ec_signature = Ecdsa::<Secp256k1, Sha256>::sign(&secret_key, message);
+let der_signature = EcdsaSignature::from_signature::<Secp256k1>(&forge_ec_signature).to_der();
+
+// Convert from raw bytes to forge-ec
+let forge_ec_signature = EcdsaSignature::from_der(&der_signature)
+    .unwrap()
+    .to_signature::<Secp256k1>();
+```
+
+#### no_std Environment Issues
+
+**Issue**: Compilation errors in `no_std` environments.
+
+**Solution**: Disable the `std` feature and enable the `alloc` feature:
+
+```toml
+forge-ec = { version = "0.1.0", default-features = false, features = ["alloc"] }
+```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. Check the [GitHub issues](https://github.com/forge-ec/forge-ec/issues) to see if your problem has been reported
+2. Review the documentation for the specific crate you're using
+3. Open a new issue with a minimal reproducible example
 
 ## Contributing
 

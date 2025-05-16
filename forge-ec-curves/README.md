@@ -6,6 +6,48 @@
 
 Elliptic curve implementations for the Forge EC cryptography library.
 
+## Getting Started
+
+### Installation
+
+Add `forge-ec-curves` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+forge-ec-curves = "0.1.0"
+```
+
+For a `no_std` environment:
+
+```toml
+[dependencies]
+forge-ec-curves = { version = "0.1.0", default-features = false }
+```
+
+### Basic Usage
+
+```rust
+use forge_ec_core::{Curve, FieldElement, PointAffine, PointProjective, Scalar};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate a random scalar (private key)
+let mut rng = OsRng::new();
+let private_key = Secp256k1::random_scalar(&mut rng);
+
+// Compute the corresponding public key
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
+let public_key_affine = Secp256k1::to_affine(&public_key);
+
+// Serialize the public key
+let public_key_bytes = public_key_affine.to_bytes();
+println!("Public key: {:?}", public_key_bytes);
+
+// Deserialize a public key
+let deserialized_public_key = Secp256k1::PointAffine::from_bytes(&public_key_bytes).unwrap();
+assert_eq!(public_key_affine, deserialized_public_key);
+```
+
 ## Overview
 
 `forge-ec-curves` provides concrete implementations of various elliptic curves used in cryptography. Each curve implementation adheres to the traits defined in `forge-ec-core`, ensuring a consistent API across different curve types.
@@ -201,6 +243,196 @@ let g3_affine = Secp256k1::to_affine(&g3);
 // Get coordinates
 let x = g3_affine.x();
 let y = g3_affine.y();
+```
+
+## Advanced Usage Examples
+
+### Custom Point Multiplication
+
+```rust
+use forge_ec_core::{Curve, FieldElement, PointAffine, PointProjective, Scalar};
+use forge_ec_curves::secp256k1::Secp256k1;
+
+// Define a scalar
+let scalar_bytes = [
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+    0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+    0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+];
+let scalar = Secp256k1::Scalar::from_bytes(&scalar_bytes).unwrap();
+
+// Get the generator point
+let generator = Secp256k1::generator();
+
+// Perform scalar multiplication
+let result = Secp256k1::multiply(&generator, &scalar);
+
+// Convert to affine coordinates
+let result_affine = Secp256k1::to_affine(&result);
+
+// Access the coordinates
+let x = result_affine.x();
+let y = result_affine.y();
+```
+
+### Point Addition and Doubling
+
+```rust
+use forge_ec_core::{Curve, PointProjective};
+use forge_ec_curves::secp256k1::Secp256k1;
+
+// Get two points
+let p1 = Secp256k1::generator();
+let p2 = p1.double(); // 2G
+
+// Add the points
+let p3 = p1.add(&p2); // 3G
+
+// Double a point
+let p4 = p2.double(); // 4G
+
+// Subtract points
+let p1_again = p3.sub(&p2); // 3G - 2G = G
+```
+
+### Field Arithmetic
+
+```rust
+use forge_ec_core::FieldElement;
+use forge_ec_curves::secp256k1::FieldElement as Secp256k1FieldElement;
+
+// Create field elements
+let a = Secp256k1FieldElement::from_bytes(&[1, 0, 0, 0, /* ... */]).unwrap();
+let b = Secp256k1FieldElement::from_bytes(&[2, 0, 0, 0, /* ... */]).unwrap();
+
+// Perform field operations
+let sum = a.add(&b);
+let product = a.mul(&b);
+let squared = a.square();
+let inverse = a.invert().unwrap();
+
+// Check if a field element is zero
+let is_zero = a.is_zero();
+```
+
+## Security Considerations
+
+### Constant-Time Operations
+
+All curve implementations in this crate are designed to be constant-time to prevent timing attacks:
+
+- Field arithmetic operations run in constant time
+- Point multiplication uses constant-time algorithms
+- Equality checks and other conditional operations use the `subtle` crate
+
+Example of constant-time scalar multiplication:
+
+```rust
+use forge_ec_core::Curve;
+use forge_ec_curves::secp256k1::Secp256k1;
+
+// This operation runs in constant time regardless of the scalar value
+let scalar = Secp256k1::Scalar::from_bytes(&[/* ... */]).unwrap();
+let point = Secp256k1::multiply(&Secp256k1::generator(), &scalar);
+```
+
+### Zeroization
+
+Sensitive data like private keys are automatically zeroized when dropped:
+
+```rust
+use forge_ec_core::Scalar;
+use forge_ec_curves::secp256k1::Scalar as Secp256k1Scalar;
+use zeroize::Zeroize;
+
+{
+    let private_key = Secp256k1Scalar::from_bytes(&[/* ... */]).unwrap();
+    // Use the private key...
+} // private_key is automatically zeroized here
+```
+
+### Side-Channel Resistance
+
+The curve implementations include protections against various side-channel attacks:
+
+- Constant-time operations to prevent timing attacks
+- Regular execution patterns to prevent power analysis
+- No secret-dependent branches or memory accesses
+
+## Standards Compliance
+
+The curve implementations in this crate comply with the following standards:
+
+- **secp256k1**: [SEC 2: Recommended Elliptic Curve Domain Parameters](https://www.secg.org/sec2-v2.pdf)
+- **P-256**: [FIPS 186-4: Digital Signature Standard (DSS)](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf)
+- **Curve25519**: [RFC 7748: Elliptic Curves for Security](https://tools.ietf.org/html/rfc7748)
+- **Ed25519**: [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)](https://tools.ietf.org/html/rfc8032)
+
+## Troubleshooting
+
+### Common Issues
+
+#### Invalid Point Encoding
+
+**Issue**: `from_bytes` returns `None` when deserializing a point.
+
+**Solution**: Ensure that the byte representation is valid for the curve:
+
+```rust
+use forge_ec_core::PointAffine;
+use forge_ec_curves::secp256k1::PointAffine as Secp256k1PointAffine;
+
+let bytes = [/* ... */];
+match Secp256k1PointAffine::from_bytes(&bytes) {
+    Some(point) => {
+        // Valid point
+    },
+    None => {
+        // Invalid encoding or point not on the curve
+        // Check the format and ensure the point satisfies the curve equation
+    }
+}
+```
+
+#### Performance Issues
+
+**Issue**: Point multiplication is slower than expected.
+
+**Solution**: For repeated operations with the same base point, consider using precomputation:
+
+```rust
+use forge_ec_core::Curve;
+use forge_ec_curves::secp256k1::Secp256k1;
+
+// Precompute multiples of the base point (done once)
+let base_point = Secp256k1::generator();
+let precomputed = precompute_multiples(&base_point);
+
+// Use precomputed values for faster multiplication
+let scalar = Secp256k1::Scalar::from_bytes(&[/* ... */]).unwrap();
+let result = multiply_with_precomputation(&precomputed, &scalar);
+```
+
+#### Curve-Specific Issues
+
+**Issue**: Operations on one curve don't work with points from another curve.
+
+**Solution**: Ensure you're using the correct curve implementation for your points:
+
+```rust
+use forge_ec_core::Curve;
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_curves::p256::P256;
+
+// This is correct
+let secp256k1_point = Secp256k1::generator();
+let secp256k1_scalar = Secp256k1::Scalar::from_bytes(&[/* ... */]).unwrap();
+let result = Secp256k1::multiply(&secp256k1_point, &secp256k1_scalar);
+
+// This would cause a type error
+// let p256_point = P256::generator();
+// let result = Secp256k1::multiply(&p256_point, &secp256k1_scalar); // Error!
 ```
 
 ## License

@@ -6,6 +6,78 @@
 
 Digital signature algorithms for the Forge EC cryptography library.
 
+## Getting Started
+
+### Installation
+
+Add `forge-ec-signature` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+forge-ec-signature = "0.1.0"
+forge-ec-curves = "0.1.0"  # For curve implementations
+forge-ec-hash = "0.1.0"    # For hash functions
+```
+
+For a `no_std` environment:
+
+```toml
+[dependencies]
+forge-ec-signature = { version = "0.1.0", default-features = false }
+forge-ec-curves = { version = "0.1.0", default-features = false }
+forge-ec-hash = { version = "0.1.0", default-features = false }
+```
+
+### Basic Usage
+
+#### ECDSA Signatures
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::Sha256;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate a key pair
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+let public_key_affine = Secp256k1::to_affine(&public_key);
+
+// Sign a message
+let message = b"This is a test message for ECDSA signing";
+let signature = Ecdsa::<Secp256k1, Sha256>::sign(&secret_key, message);
+
+// Verify the signature
+let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);
+assert!(valid);
+```
+
+#### Schnorr Signatures
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::schnorr::Schnorr;
+use forge_ec_hash::sha2::Sha256;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate a key pair
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+let public_key_affine = Secp256k1::to_affine(&public_key);
+
+// Sign a message
+let message = b"This is a test message for Schnorr signing";
+let signature = Schnorr::<Secp256k1, Sha256>::sign(&secret_key, message);
+
+// Verify the signature
+let valid = Schnorr::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);
+assert!(valid);
+```
+
 ## Overview
 
 `forge-ec-signature` provides implementations of various digital signature algorithms based on elliptic curve cryptography. The crate implements the `SignatureScheme` trait from `forge-ec-core` for each signature algorithm, ensuring a consistent API across different schemes.
@@ -162,10 +234,10 @@ for i in 0..5 {
     let sk = Secp256k1::random_scalar(&mut rng);
     let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
     let pk_affine = Secp256k1::to_affine(&pk);
-    
+
     let msg = format!("Message #{} for batch verification", i + 1).into_bytes();
     let sig = Ecdsa::<Secp256k1, Sha256>::sign(&sk, &msg);
-    
+
     public_keys.push(pk_affine);
     messages.push(msg);
     signatures.push(sig);
@@ -198,6 +270,226 @@ All cryptographically sensitive operations in this crate are implemented to run 
 ### RFC6979 Deterministic Nonce Generation
 
 The ECDSA implementation uses RFC6979 for deterministic nonce generation, which eliminates the risk of nonce reuse due to poor randomness. This is critical for ECDSA, as reusing a nonce can lead to private key recovery.
+
+## Advanced Usage Examples
+
+### Batch Verification
+
+Batch verification can significantly improve performance when verifying multiple signatures at once:
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::Sha256;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate multiple key pairs and signatures
+let mut rng = OsRng::new();
+let mut public_keys = Vec::new();
+let mut messages = Vec::new();
+let mut signatures = Vec::new();
+
+for i in 0..5 {
+    let sk = Secp256k1::random_scalar(&mut rng);
+    let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
+    let pk_affine = Secp256k1::to_affine(&pk);
+
+    let msg = format!("Message #{} for batch verification", i + 1).into_bytes();
+    let sig = Ecdsa::<Secp256k1, Sha256>::sign(&sk, &msg);
+
+    public_keys.push(pk_affine);
+    messages.push(msg);
+    signatures.push(sig);
+}
+
+// Convert messages to slices for batch verification
+let message_slices: Vec<&[u8]> = messages.iter().map(|m| m.as_slice()).collect();
+
+// Verify all signatures in a batch
+let valid = Ecdsa::<Secp256k1, Sha256>::batch_verify(&public_keys, &message_slices, &signatures);
+assert!(valid);
+```
+
+### BIP-340 Schnorr Signatures
+
+For Bitcoin-compatible Schnorr signatures:
+
+```rust
+use forge_ec_signature::schnorr::BipSchnorr;
+
+// Generate a key pair (or use an existing one)
+let private_key = [0u8; 32]; // Replace with your private key
+let public_key = [0u8; 32]; // Replace with your public key
+
+// Sign a message
+let message = b"This is a test message for BIP-340 Schnorr signing";
+let signature = BipSchnorr::sign(&private_key, message);
+
+// Verify the signature
+let valid = BipSchnorr::verify(&public_key, message, &signature);
+assert!(valid);
+```
+
+### Custom Hash Functions
+
+You can use any hash function that implements the `Digest` trait:
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha3::Sha3_256;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate a key pair
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+let public_key_affine = Secp256k1::to_affine(&public_key);
+
+// Sign a message using SHA3-256
+let message = b"This is a test message for ECDSA signing with SHA3";
+let signature = Ecdsa::<Secp256k1, Sha3_256>::sign(&secret_key, message);
+
+// Verify the signature
+let valid = Ecdsa::<Secp256k1, Sha3_256>::verify(&public_key_affine, message, &signature);
+assert!(valid);
+```
+
+## Security Considerations
+
+### RFC6979 Deterministic Nonce Generation
+
+The ECDSA implementation uses RFC6979 for deterministic nonce generation, which eliminates the risk of nonce reuse due to poor randomness. This is critical for ECDSA, as reusing a nonce can lead to private key recovery:
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::Sha256;
+
+// Even without a secure RNG, the nonce is generated deterministically
+let secret_key = Secp256k1::Scalar::from_bytes(&[/* ... */]).unwrap();
+let message = b"This is a test message";
+
+// This will always produce the same signature for the same key and message
+let signature = Ecdsa::<Secp256k1, Sha256>::sign(&secret_key, message);
+```
+
+### Constant-Time Operations
+
+All signature operations are implemented to run in constant time to prevent timing attacks:
+
+- Scalar multiplication uses constant-time algorithms
+- Signature generation and verification avoid secret-dependent branches
+- All equality checks use constant-time comparison
+
+### Zeroization
+
+Sensitive data like private keys and nonces are automatically zeroized when dropped:
+
+```rust
+use forge_ec_core::Scalar;
+use forge_ec_curves::secp256k1::Scalar as Secp256k1Scalar;
+use zeroize::Zeroize;
+
+{
+    let private_key = Secp256k1Scalar::from_bytes(&[/* ... */]).unwrap();
+    // Use the private key for signing...
+} // private_key is automatically zeroized here
+```
+
+### Side-Channel Resistance
+
+The signature implementations include protections against various side-channel attacks:
+
+- Constant-time operations to prevent timing attacks
+- Regular execution patterns to prevent power analysis
+- No secret-dependent branches or memory accesses
+
+## Standards Compliance
+
+The signature implementations in this crate comply with the following standards:
+
+- **ECDSA**: [FIPS 186-4: Digital Signature Standard (DSS)](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf)
+- **RFC6979**: [Deterministic Usage of the Digital Signature Algorithm (DSA) and Elliptic Curve Digital Signature Algorithm (ECDSA)](https://tools.ietf.org/html/rfc6979)
+- **EdDSA**: [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)](https://tools.ietf.org/html/rfc8032)
+- **BIP-340**: [Schnorr Signatures for secp256k1](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki)
+
+## Troubleshooting
+
+### Common Issues
+
+#### Invalid Signatures
+
+**Issue**: `verify` returns `false` for a signature that should be valid.
+
+**Solution**: Check that you're using the correct public key, message, and signature:
+
+```rust
+use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::Sha256;
+
+// Ensure the public key corresponds to the private key used for signing
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+let public_key_affine = Secp256k1::to_affine(&public_key);
+
+// Ensure the message is exactly the same as the one used for signing
+let message = b"This is a test message";
+
+// Verify the signature
+let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);
+if !valid {
+    // Check that the hash function is the same as the one used for signing
+    // Check that the curve is the same as the one used for signing
+    // Check that the signature hasn't been corrupted
+}
+```
+
+#### Signature Malleability
+
+**Issue**: Different signatures verify correctly for the same message and public key.
+
+**Solution**: ECDSA signatures are malleable by default. The library normalizes signatures to the "low-S" form to prevent malleability:
+
+```rust
+use forge_ec_signature::ecdsa::normalize_s;
+
+// Normalize an existing signature to low-S form
+let normalized_signature = normalize_s::<Secp256k1>(&signature);
+```
+
+#### Performance Issues
+
+**Issue**: Signature verification is slower than expected.
+
+**Solution**: Use batch verification for multiple signatures:
+
+```rust
+use forge_ec_core::SignatureScheme;
+use forge_ec_signature::ecdsa::Ecdsa;
+
+// Verify multiple signatures in a batch
+let valid = Ecdsa::<Secp256k1, Sha256>::batch_verify(&public_keys, &messages, &signatures);
+```
+
+#### Compatibility with Other Libraries
+
+**Issue**: Signatures created with this library don't verify with other libraries.
+
+**Solution**: Ensure you're using the same encoding format:
+
+```rust
+use forge_ec_encoding::der::EcdsaSignature;
+
+// Convert the signature to DER format
+let der_signature = EcdsaSignature::from_signature::<Secp256k1>(&signature).to_der();
+
+// Now you can use the DER-encoded signature with other libraries
+```
 
 ## License
 
