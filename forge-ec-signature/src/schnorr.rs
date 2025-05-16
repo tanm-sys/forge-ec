@@ -5,6 +5,10 @@
 //! The implementation is compatible with BIP-340 (Bitcoin's Schnorr signature scheme).
 
 use core::fmt;
+#[cfg(feature = "std")]
+use std::vec::Vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use digest::Digest;

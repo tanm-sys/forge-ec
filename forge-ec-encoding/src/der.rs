@@ -65,7 +65,10 @@ impl<'a> EcdsaSignature<'a> {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
+        Err(Error::from(ErrorKind::TagUnexpected {
+            expected: Some(der::Tag::Sequence),
+            actual: der::Tag::Null
+        }))
     }
 }
 
@@ -156,7 +159,10 @@ impl EcPublicKey {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
+        Err(Error::from(ErrorKind::TagUnexpected {
+            expected: Some(der::Tag::Sequence),
+            actual: der::Tag::Null
+        }))
     }
 }
 
@@ -281,7 +287,10 @@ impl<'a> EcPrivateKey<'a> {
         */
 
         // Temporary implementation
-        Err(Error::from(ErrorKind::TagUnexpected { expected: der::Tag::Sequence, actual: der::Tag::Null }))
+        Err(Error::from(ErrorKind::TagUnexpected {
+            expected: Some(der::Tag::Sequence),
+            actual: der::Tag::Null
+        }))
     }
 }
 
