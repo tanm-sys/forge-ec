@@ -1,0 +1,17 @@
+[package]
+name = "test_forge_ec"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+forge-ec-core = { path = "../forge-ec-core" }
+forge-ec-curves = { path = "../forge-ec-curves" }
+forge-ec-signature = { path = "../forge-ec-signature" }
+forge-ec-encoding = { path = "../forge-ec-encoding" }
+forge-ec-hash = { path = "../forge-ec-hash" }
+forge-ec-rng = { path = "../forge-ec-rng" }
+sha2 = "0.10"
+subtle = "2.6"
+der = "0.7"
