@@ -6,10 +6,9 @@
 //! defined over the prime field F_p where
 //! p = 2^256 - 2^224 + 2^192 + 2^96 - 1
 
-use core::fmt;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, Scalar as CoreScalar};
+use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 
@@ -203,7 +202,7 @@ impl forge_ec_core::FieldElement for FieldElement {
         s * s
     }
 
-    fn pow(&self, exp: &[u64]) -> Self {
+    fn pow(&self, _exp: &[u64]) -> Self {
         // TODO: Implement field exponentiation
         unimplemented!()
     }
@@ -253,7 +252,7 @@ impl Scalar {
     }
 
     /// Creates a scalar from a byte array.
-    pub fn from_bytes(bytes: &[u8; 32]) -> CtOption<Self> {
+    pub fn from_bytes(_bytes: &[u8; 32]) -> CtOption<Self> {
         // TODO: Implement conversion from bytes
         unimplemented!()
     }
@@ -283,7 +282,7 @@ impl forge_ec_core::FieldElement for Scalar {
         s * s
     }
 
-    fn pow(&self, exp: &[u64]) -> Self {
+    fn pow(&self, _exp: &[u64]) -> Self {
         // TODO: Implement scalar exponentiation
         unimplemented!()
     }
@@ -308,12 +307,12 @@ impl forge_ec_core::FieldElement for Scalar {
 impl forge_ec_core::Scalar for Scalar {
     const BITS: usize = 256;
 
-    fn random(mut rng: impl rand_core::RngCore) -> Self {
+    fn random(_rng: impl rand_core::RngCore) -> Self {
         // TODO: Implement random scalar generation
         unimplemented!()
     }
 
-    fn from_rfc6979(msg: &[u8], key: &[u8], extra: &[u8]) -> Self {
+    fn from_rfc6979(_msg: &[u8], _key: &[u8], _extra: &[u8]) -> Self {
         // TODO: Implement RFC6979 deterministic scalar generation
         unimplemented!()
     }
@@ -480,7 +479,7 @@ impl PointAffine for AffinePoint {
         self.y
     }
 
-    fn new(x: Self::Field, y: Self::Field) -> CtOption<Self> {
+    fn new(_x: Self::Field, _y: Self::Field) -> CtOption<Self> {
         // TODO: Implement point validation
         unimplemented!()
     }

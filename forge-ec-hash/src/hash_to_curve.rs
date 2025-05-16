@@ -5,7 +5,7 @@
 
 use core::marker::PhantomData;
 use digest::Digest;
-use forge_ec_core::{Curve, FieldElement, HashToCurve};
+use forge_ec_core::{FieldElement, HashToCurve};
 use subtle::ConditionallySelectable;
 
 /// Domain separation tag for hash-to-curve operations.

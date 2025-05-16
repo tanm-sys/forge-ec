@@ -6,10 +6,9 @@
 //! defined over the prime field F_p where
 //! p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
 
-use core::fmt;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, Scalar as CoreScalar};
+use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 
@@ -1211,7 +1210,7 @@ impl forge_ec_core::Scalar for Scalar {
         scalar
     }
 
-    fn from_rfc6979(msg: &[u8], key: &[u8], extra: &[u8]) -> Self {
+    fn from_rfc6979(_msg: &[u8], _key: &[u8], _extra: &[u8]) -> Self {
         // This will be implemented in the rfc6979 module
         // For now, we'll return a placeholder
         Self::one()
