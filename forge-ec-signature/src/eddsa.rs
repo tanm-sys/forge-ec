@@ -77,7 +77,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         // Hash R, A, and the message to derive k
         let mut h = D::new();
         h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&r_point_affine));
-        h.update(&public_key_affine.to_bytes());
+        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&public_key_affine));
         h.update(msg);
         let h = h.finalize();
 
@@ -99,19 +99,19 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         sig: &Self::Signature,
     ) -> bool {
         // Check that the signature point is on the curve
-        if sig.r.is_identity().unwrap_u8() == 1 {
+        if bool::from(<C::PointAffine as forge_ec_core::PointAffine>::is_identity(&sig.r)) {
             return false;
         }
 
         // Hash R, A, and the message to derive k
         let mut h = D::new();
-        h.update(&sig.r.to_bytes());
-        h.update(&pk.to_bytes());
+        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r));
+        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(pk));
         h.update(msg);
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = C::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <C::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate left side: S*G
         let s_g = C::multiply(&C::generator(), &sig.s);
@@ -121,7 +121,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         let r_plus_k_a = C::from_affine(&sig.r) + k_a;
 
         // Check if S*G = R + k*A
-        C::to_affine(&s_g).ct_eq(&C::to_affine(&r_plus_k_a)).unwrap_u8() == 1
+        bool::from(<C::PointAffine as forge_ec_core::PointAffine>::ct_eq(&C::to_affine(&s_g), &C::to_affine(&r_plus_k_a)))
     }
 }
 
@@ -154,7 +154,7 @@ impl Ed25519Signature {
         scalar_bytes[31] |= 64;
 
         // Convert to Ed25519 scalar
-        let a = <Ed25519 as Curve>::Scalar::from_bytes(&scalar_bytes).unwrap();
+        let a = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes).unwrap();
 
         // Derive the public key
         let public_key = Ed25519::multiply(&Ed25519::generator(), &a);
@@ -168,7 +168,7 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let r = <Ed25519 as Curve>::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let r = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate R = r*G
         let r_point = Ed25519::multiply(&Ed25519::generator(), &r);
@@ -187,7 +187,7 @@ impl Ed25519Signature {
 
         // Calculate S = r + k*a
         let s = r + k * a;
-        let s_bytes = s.to_bytes();
+        let s_bytes = <Ed25519 as Curve>::Scalar::to_bytes(&s);
 
         // Combine R and S to form the signature
         let mut signature = [0u8; 64];
@@ -268,7 +268,7 @@ impl Ed25519Signature {
 
         // Convert to bytes
         let mut public_key_bytes = [0u8; 32];
-        let pk_bytes = public_key_affine.to_bytes();
+        let pk_bytes = <Ed25519 as Curve>::PointAffine::to_bytes(&public_key_affine);
         public_key_bytes.copy_from_slice(&pk_bytes[0..32]);
 
         public_key_bytes
