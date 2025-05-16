@@ -121,7 +121,15 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         let r_plus_k_a = C::from_affine(&sig.r) + k_a;
 
         // Check if S*G = R + k*A
-        bool::from(<C::PointAffine as forge_ec_core::PointAffine>::ct_eq(&C::to_affine(&s_g), &C::to_affine(&r_plus_k_a)))
+        // Compare the x and y coordinates of the points
+        let s_g_affine = C::to_affine(&s_g);
+        let r_plus_k_a_affine = C::to_affine(&r_plus_k_a);
+
+        // We need to check if the points are equal
+        // Since we don't have ct_eq for PointAffine, we'll check if the points are the same
+        // by checking if their difference is the identity point
+        let diff = C::from_affine(&s_g_affine) - C::from_affine(&r_plus_k_a_affine);
+        bool::from(diff.is_identity())
     }
 }
 
@@ -220,7 +228,7 @@ impl Ed25519Signature {
         let mut pk_bytes_33 = [0u8; 33];
         pk_bytes_33[0] = 0x02; // Compressed point format
         pk_bytes_33[1..33].copy_from_slice(public_key);
-        let a_point = <Ed25519 as Curve>::PointAffine::from_bytes(&pk_bytes_33).unwrap();
+        let a_point = <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(&pk_bytes_33).unwrap();
 
         // Hash R, A, and the message to derive k
         let mut h = sha2::Sha512::new();
@@ -230,7 +238,7 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = <Ed25519 as Curve>::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate left side: S*G
         let s_g = Ed25519::multiply(&Ed25519::generator(), &s);
@@ -240,7 +248,15 @@ impl Ed25519Signature {
         let r_plus_k_a = Ed25519::from_affine(&r_point) + k_a;
 
         // Check if S*G = R + k*A
-        Ed25519::to_affine(&s_g).ct_eq(&Ed25519::to_affine(&r_plus_k_a)).unwrap_u8() == 1
+        // Compare the x and y coordinates of the points
+        let s_g_affine = Ed25519::to_affine(&s_g);
+        let r_plus_k_a_affine = Ed25519::to_affine(&r_plus_k_a);
+
+        // We need to check if the points are equal
+        // Since we don't have ct_eq for PointAffine, we'll check if the points are the same
+        // by checking if their difference is the identity point
+        let diff = Ed25519::from_affine(&s_g_affine) - Ed25519::from_affine(&r_plus_k_a_affine);
+        bool::from(diff.is_identity())
     }
 
     /// Derives a public key from a private key.
@@ -260,7 +276,7 @@ impl Ed25519Signature {
         scalar_bytes[31] |= 64;
 
         // Convert to Ed25519 scalar
-        let a = <Ed25519 as Curve>::Scalar::from_bytes(&scalar_bytes).unwrap();
+        let a = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes).unwrap();
 
         // Derive the public key
         let public_key = Ed25519::multiply(&Ed25519::generator(), &a);
