@@ -196,6 +196,32 @@ pub trait SignatureScheme: Sized {
         msg: &[u8],
         sig: &Self::Signature,
     ) -> bool;
+
+    /// Verifies multiple signatures in a batch.
+    /// This is more efficient than verifying each signature individually.
+    /// Returns true if all signatures are valid, false otherwise.
+    ///
+    /// Default implementation verifies each signature individually.
+    /// Implementations should override this with a more efficient batch verification algorithm.
+    fn batch_verify(
+        pks: &[<Self::Curve as Curve>::PointAffine],
+        msgs: &[&[u8]],
+        sigs: &[Self::Signature],
+    ) -> bool {
+        // Check that the number of public keys, messages, and signatures match
+        if pks.len() != msgs.len() || pks.len() != sigs.len() || pks.len() == 0 {
+            return false;
+        }
+
+        // Verify each signature individually
+        for i in 0..pks.len() {
+            if !Self::verify(&pks[i], msgs[i], &sigs[i]) {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 /// Trait for curves that support hashing to curve points.

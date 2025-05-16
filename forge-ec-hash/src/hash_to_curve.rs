@@ -10,6 +10,7 @@ use subtle::ConditionallySelectable;
 
 extern crate alloc;
 use alloc::vec::Vec;
+use alloc::vec;
 
 /// Domain separation tag for hash-to-curve operations.
 const DOMAIN_SEPARATOR: &[u8] = b"FORGE-EC-HASH-TO-CURVE-";
