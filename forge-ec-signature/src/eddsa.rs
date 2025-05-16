@@ -37,7 +37,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
 
     fn sign(sk: &<Self::Curve as Curve>::Scalar, msg: &[u8]) -> Self::Signature {
         // Convert private key to bytes
-        let sk_bytes = sk.to_bytes();
+        let sk_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(sk);
 
         // Hash the private key to derive the nonce and public key components
         let mut h = D::new();
@@ -57,7 +57,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         scalar_bytes[31] &= 127;
         scalar_bytes[31] |= 64;
 
-        let a = C::Scalar::from_bytes(&scalar_bytes).unwrap();
+        let a = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes).unwrap();
         let public_key = C::multiply(&C::generator(), &a);
         let public_key_affine = C::to_affine(&public_key);
 

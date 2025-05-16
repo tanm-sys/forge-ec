@@ -94,7 +94,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
         let x_field = r_affine.x();
         let x_bytes = field_to_bytes(x_field);
         r_bytes.copy_from_slice(&x_bytes[0..32]);
-        let r = C::Scalar::from_bytes(&r_bytes).unwrap();
+        let r = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&r_bytes).unwrap();
 
         // If r is zero, try again with a different k
         if r.is_zero().unwrap_u8() == 1 {
@@ -110,7 +110,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
         } else {
             h_bytes[0..h_slice.len()].copy_from_slice(h_slice);
         }
-        let h_scalar = C::Scalar::from_bytes(&h_bytes).unwrap();
+        let h_scalar = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&h_bytes).unwrap();
 
         // Calculate s = k^-1 * (h + r*sk) mod n
         let k_inv = k.invert().unwrap();
@@ -138,7 +138,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
         }
 
         // Get the curve order
-        let curve_order = C::Scalar::from_bytes(&[
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -161,7 +161,7 @@ impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
         } else {
             h_bytes[0..h_slice.len()].copy_from_slice(h_slice);
         }
-        let h_scalar = C::Scalar::from_bytes(&h_bytes).unwrap();
+        let h_scalar = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&h_bytes).unwrap();
 
         // Calculate u1 = h * s^-1 mod n
         // Calculate u2 = r * s^-1 mod n
@@ -191,10 +191,10 @@ impl<C: Curve, D: Digest> SignatureScheme for Ecdsa<C, D> {
         let x_field = r_affine.x();
         let r_x_bytes = field_to_bytes(x_field);
         x_bytes.copy_from_slice(&r_x_bytes[0..32]);
-        let x_scalar = C::Scalar::from_bytes(&x_bytes).unwrap();
+        let x_scalar = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&x_bytes).unwrap();
 
         // Check that r == x coordinate of R (mod n)
-        x_scalar.ct_eq(&sig.r).unwrap_u8() == 1
+        bool::from(x_scalar.ct_eq(&sig.r))
     }
 }
 
@@ -216,14 +216,14 @@ fn digest_to_scalar<C: Curve, D: Digest>(digest: D) -> C::Scalar {
         h_bytes[0..h_slice.len()].copy_from_slice(h_slice);
     }
 
-    C::Scalar::from_bytes(&h_bytes).unwrap()
+    <C::Scalar as forge_ec_core::Scalar>::from_bytes(&h_bytes).unwrap()
 }
 
 /// Normalizes an s value to be in the lower half of the curve order.
 fn normalize_s<C: Curve>(s: &C::Scalar) -> C::Scalar
 where C::Scalar: PartialOrd + core::ops::Div<Output = C::Scalar> {
     // Get the curve order
-    let curve_order = C::Scalar::from_bytes(&[
+    let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,

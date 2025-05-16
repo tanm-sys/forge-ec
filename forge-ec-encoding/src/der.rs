@@ -96,7 +96,7 @@ impl EcPublicKey {
 
     /// Encodes this public key as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let mut buf: Vec<u8> = Vec::new();
+        let _buf: Vec<u8> = Vec::new();
         // TODO: Fix DER encoding implementation
         /*
         let mut encoder = Encode::new(&mut buf);
@@ -198,7 +198,7 @@ impl<'a> EcPrivateKey<'a> {
 
     /// Encodes this private key as DER.
     pub fn to_der(&self) -> Result<Vec<u8>, Error> {
-        let mut buf: Vec<u8> = Vec::new();
+        let _buf: Vec<u8> = Vec::new();
         // TODO: Fix DER encoding implementation
         /*
         let mut encoder = Encode::new(&mut buf);
