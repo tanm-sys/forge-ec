@@ -68,7 +68,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let r = C::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let r = <C::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate R = r*G
         let r_point = C::multiply(&C::generator(), &r);
@@ -76,13 +76,13 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
 
         // Hash R, A, and the message to derive k
         let mut h = D::new();
-        h.update(&r_point_affine.to_bytes());
+        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&r_point_affine));
         h.update(&public_key_affine.to_bytes());
         h.update(msg);
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = C::Scalar::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <C::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
 
         // Calculate S = r + k*a
         let s = r + k * a;
