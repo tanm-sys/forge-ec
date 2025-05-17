@@ -1,0 +1,10 @@
+[package]
+name = "p256-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+forge-ec-core = { path = "../forge-ec-core" }
+subtle = "2.5.0"
+rand_core = "0.6.4"
+zeroize = "1.6.0"

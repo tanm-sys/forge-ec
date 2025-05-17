@@ -6,6 +6,7 @@ members = [
     "forge-ec-encoding",
     "forge-ec-hash",
     "forge-ec-rng",
+    "p256-test",
 ]
 resolver = "2"
 
