@@ -33,7 +33,7 @@ use forge_ec_rng::os_rng::OsRng;
 
 // Generate a random scalar (private key)
 let mut rng = OsRng::new();
-let private_key = Secp256k1::random_scalar(&mut rng);
+let private_key = Secp256k1::Scalar::random(&mut rng);
 
 // Compute the corresponding public key
 let public_key = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
@@ -69,17 +69,21 @@ The secp256k1 curve is defined by the equation y² = x³ + 7 over a prime field 
 
 ```rust
 use forge_ec_curves::secp256k1::Secp256k1;
-use forge_ec_core::Curve;
+use forge_ec_core::{Curve, PointFormat};
 use forge_ec_rng::os_rng::OsRng;
 
 // Generate a key pair
 let mut rng = OsRng::new();
-let secret_key = Secp256k1::random_scalar(&mut rng);
+let secret_key = Secp256k1::Scalar::random(&mut rng);
 let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
 let public_key_affine = Secp256k1::to_affine(&public_key);
 
 // Convert to compressed format
-let compressed_pubkey = public_key_affine.to_bytes_compressed();
+let compressed_pubkey = public_key_affine.to_bytes_with_format(PointFormat::Compressed);
+
+// Key exchange
+let peer_public_key = /* ... */;
+let shared_secret = Secp256k1::multiply(&peer_public_key, &secret_key);
 ```
 
 #### Implementation Details
@@ -88,6 +92,9 @@ let compressed_pubkey = public_key_affine.to_bytes_compressed();
 - Scalar multiplication uses windowed non-adjacent form (wNAF) for efficiency
 - Point addition and doubling use complete formulas to avoid exceptional cases
 - Constant-time operations throughout to prevent timing attacks
+- Full implementation of random number generation for field elements and scalars
+- Support for point encoding/decoding in various formats
+- Implementation of the KeyExchange trait for secure key derivation
 
 ### P-256 (NIST P-256)
 
@@ -121,20 +128,24 @@ Curve25519 is a Montgomery curve designed for efficient and secure Diffie-Hellma
 
 ```rust
 use forge_ec_curves::curve25519::Curve25519;
-use forge_ec_core::Curve;
+use forge_ec_core::{Curve, PointFormat, KeyExchange};
 use forge_ec_rng::os_rng::OsRng;
 
 // Generate a key pair
 let mut rng = OsRng::new();
-let secret_key = Curve25519::random_scalar(&mut rng);
+let secret_key = Curve25519::Scalar::random(&mut rng);
 let public_key = Curve25519::multiply(&Curve25519::generator(), &secret_key);
 
 // Perform X25519 key exchange
-let peer_public_key_bytes = [0u8; 32]; // Replace with actual peer public key
-let peer_public_key = Curve25519::PointAffine::from_bytes(&peer_public_key_bytes).unwrap();
+let peer_public_key_bytes = [0u8; 33]; // Replace with actual peer public key
+let peer_public_key = Curve25519::PointAffine::from_bytes_with_format(&peer_public_key_bytes, PointFormat::Compressed).unwrap();
 let peer_public_key_proj = Curve25519::from_affine(&peer_public_key);
 let shared_secret = Curve25519::multiply(&peer_public_key_proj, &secret_key);
 let shared_secret_bytes = Curve25519::to_affine(&shared_secret).x().to_bytes();
+
+// Derive a symmetric key
+let info = b"application specific info";
+let symmetric_key = Curve25519::derive_key(&shared_secret_bytes, info, 32).unwrap();
 ```
 
 #### Implementation Details
@@ -143,6 +154,9 @@ let shared_secret_bytes = Curve25519::to_affine(&shared_secret).x().to_bytes();
 - Scalar multiplication uses the Montgomery ladder for constant-time operation
 - X-coordinate-only operations for efficiency
 - Specialized X25519 function for key exchange
+- Full implementation of random number generation for field elements and scalars
+- Support for point encoding/decoding in various formats
+- Implementation of point operations (double, negate, is_on_curve, conditional_select)
 
 ### Ed25519
 
@@ -150,17 +164,24 @@ Ed25519 is a twisted Edwards curve used for EdDSA signatures. It offers high sec
 
 ```rust
 use forge_ec_curves::ed25519::Ed25519;
-use forge_ec_core::Curve;
+use forge_ec_core::{Curve, PointFormat};
 use forge_ec_rng::os_rng::OsRng;
 
 // Generate a key pair
 let mut rng = OsRng::new();
-let secret_key = Ed25519::random_scalar(&mut rng);
+let secret_key = Ed25519::Scalar::random(&mut rng);
 let public_key = Ed25519::multiply(&Ed25519::generator(), &secret_key);
 let public_key_affine = Ed25519::to_affine(&public_key);
 
 // Convert to compressed format (standard for Ed25519)
-let compressed_pubkey = public_key_affine.to_bytes_compressed();
+let compressed_pubkey = public_key_affine.to_bytes_with_format(PointFormat::Compressed);
+
+// Check if a point is on the curve
+let is_on_curve = public_key_affine.is_on_curve();
+assert!(bool::from(is_on_curve));
+
+// Negate a point
+let negated_point = public_key_affine.negate();
 ```
 
 #### Implementation Details
@@ -169,6 +190,10 @@ let compressed_pubkey = public_key_affine.to_bytes_compressed();
 - Extended coordinates for efficient point operations
 - Precomputed tables for the base point to accelerate scalar multiplication
 - Batch verification support for EdDSA signatures
+- Full implementation of random number generation for field elements and scalars
+- Support for point encoding/decoding in various formats
+- Implementation of point operations (double, negate, is_on_curve, conditional_select)
+- Proper handling of the curve's cofactor (8)
 
 ## Field Arithmetic
 
@@ -210,12 +235,21 @@ let a = Scalar::random(&mut rng);
 let b = Scalar::random(&mut rng);
 
 // Perform scalar operations
-let sum = a.add(&b);
-let product = a.mul(&b);
+let sum = a + b;
+let product = a * b;
 let inverse = a.invert().unwrap();
+
+// Get the curve order
+let order = Scalar::get_order();
 
 // Convert to bytes
 let a_bytes = a.to_bytes();
+
+// Create a scalar from RFC6979 deterministic generation
+let msg = b"message to sign";
+let key = b"private key";
+let extra = b"additional data";
+let k = Scalar::from_rfc6979(msg, key, extra);
 ```
 
 ## Point Operations
@@ -226,7 +260,7 @@ Each curve implementation provides efficient point operations in both affine and
 
 ```rust
 use forge_ec_curves::secp256k1::Secp256k1;
-use forge_ec_core::{Curve, PointAffine, PointProjective};
+use forge_ec_core::{Curve, PointAffine, PointProjective, PointFormat};
 
 // Get the generator point
 let g = Secp256k1::generator();
@@ -237,12 +271,28 @@ let g2 = g.double();
 // Add points
 let g3 = g.add(&g2);
 
+// Negate a point
+let neg_g = g.negate();
+
+// Check if a point is on the curve
+let is_on_curve = g.is_on_curve();
+assert!(bool::from(is_on_curve));
+
 // Convert to affine coordinates
 let g3_affine = Secp256k1::to_affine(&g3);
 
 // Get coordinates
 let x = g3_affine.x();
 let y = g3_affine.y();
+
+// Serialize in different formats
+let compressed = g3_affine.to_bytes_with_format(PointFormat::Compressed);
+let uncompressed = g3_affine.to_bytes_with_format(PointFormat::Uncompressed);
+let hybrid = g3_affine.to_bytes_with_format(PointFormat::Hybrid);
+
+// Deserialize from different formats
+let point1 = Secp256k1::PointAffine::from_bytes_with_format(&compressed, PointFormat::Compressed).unwrap();
+let point2 = Secp256k1::PointAffine::from_bytes_with_format(&uncompressed, PointFormat::Uncompressed).unwrap();
 ```
 
 ## Advanced Usage Examples
@@ -325,15 +375,20 @@ All curve implementations in this crate are designed to be constant-time to prev
 - Field arithmetic operations run in constant time
 - Point multiplication uses constant-time algorithms
 - Equality checks and other conditional operations use the `subtle` crate
+- Random number generation is implemented securely
 
 Example of constant-time scalar multiplication:
 
 ```rust
 use forge_ec_core::Curve;
 use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate a random scalar
+let mut rng = OsRng::new();
+let scalar = Secp256k1::Scalar::random(&mut rng);
 
 // This operation runs in constant time regardless of the scalar value
-let scalar = Secp256k1::Scalar::from_bytes(&[/* ... */]).unwrap();
 let point = Secp256k1::multiply(&Secp256k1::generator(), &scalar);
 ```
 
@@ -344,10 +399,12 @@ Sensitive data like private keys are automatically zeroized when dropped:
 ```rust
 use forge_ec_core::Scalar;
 use forge_ec_curves::secp256k1::Scalar as Secp256k1Scalar;
+use forge_ec_rng::os_rng::OsRng;
 use zeroize::Zeroize;
 
 {
-    let private_key = Secp256k1Scalar::from_bytes(&[/* ... */]).unwrap();
+    let mut rng = OsRng::new();
+    let private_key = Secp256k1Scalar::random(&mut rng);
     // Use the private key...
 } // private_key is automatically zeroized here
 ```
@@ -359,6 +416,9 @@ The curve implementations include protections against various side-channel attac
 - Constant-time operations to prevent timing attacks
 - Regular execution patterns to prevent power analysis
 - No secret-dependent branches or memory accesses
+- Secure random number generation for all cryptographic operations
+- Point validation to prevent invalid curve attacks
+- Proper handling of error cases without leaking sensitive information
 
 ## Standards Compliance
 
@@ -368,6 +428,9 @@ The curve implementations in this crate comply with the following standards:
 - **P-256**: [FIPS 186-4: Digital Signature Standard (DSS)](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf)
 - **Curve25519**: [RFC 7748: Elliptic Curves for Security](https://tools.ietf.org/html/rfc7748)
 - **Ed25519**: [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)](https://tools.ietf.org/html/rfc8032)
+- **RFC6979**: [Deterministic Usage of the Digital Signature Algorithm (DSA) and Elliptic Curve Digital Signature Algorithm (ECDSA)](https://tools.ietf.org/html/rfc6979)
+- **RFC9380**: [Hashing to Elliptic Curves](https://tools.ietf.org/html/rfc9380)
+- **SEC1**: [Elliptic Curve Cryptography](https://www.secg.org/sec1-v2.pdf) for point encoding/decoding
 
 ## Troubleshooting
 
