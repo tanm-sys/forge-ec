@@ -20,5 +20,6 @@ digest = { workspace = true }
 
 [features]
 default = ["std"]
-std = []
-alloc = [] 
+std = ["alloc"]
+alloc = []
+test-utils = ["std"]
