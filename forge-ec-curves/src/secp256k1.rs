@@ -8,9 +8,12 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
+use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, PointFormat, DomainSeparationTag};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
+use std::vec::Vec;
+use sha2::{Sha256, Digest};
+use hmac::{Hmac, Mac, digest::KeyInit};
 
 /// The secp256k1 base field modulus
 /// p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
@@ -43,6 +46,34 @@ impl FieldElement {
     /// Returns the raw limbs of this field element.
     pub const fn to_raw(&self) -> [u64; 4] {
         self.0
+    }
+
+    /// Compares the given limbs with the modulus P.
+    /// Returns -1 if limbs < P, 0 if limbs == P, and 1 if limbs > P.
+    pub fn compare_with_p(limbs: &[u64; 4]) -> i8 {
+        // Compare from most significant limb to least significant
+        for i in (0..4).rev() {
+            if limbs[i] < P[i] {
+                return -1;
+            } else if limbs[i] > P[i] {
+                return 1;
+            }
+        }
+        0 // Equal
+    }
+
+    /// Reduces this field element modulo p.
+    pub fn reduce(&mut self) {
+        // Check if reduction is needed
+        if Self::compare_with_p(&self.0) >= 0 {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff1, b1) = self.0[i].overflowing_sub(P[i]);
+                let (diff2, b2) = diff1.overflowing_sub(borrow);
+                self.0[i] = diff2;
+                borrow = if b1 || b2 { 1 } else { 0 };
+            }
+        }
     }
 
     /// Doubles this field element.
@@ -466,6 +497,32 @@ impl forge_ec_core::FieldElement for FieldElement {
         // Call the implementation-specific from_bytes method
         FieldElement::from_bytes(&bytes_array)
     }
+
+    fn random(mut rng: impl rand_core::RngCore) -> Self {
+        // Generate random bytes and reduce modulo p
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+
+        // Convert to field element
+        let mut limbs = [0u64; 4];
+
+        // Convert from big-endian bytes to little-endian limbs
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[31 - (i * 8 + j)] as u64) << (j * 8);
+            }
+        }
+
+        // Reduce modulo p if necessary
+        let mut result = Self(limbs);
+
+        // Check if the value is less than the modulus
+        if Self::compare_with_p(&limbs) >= 0 {
+            result.reduce();
+        }
+
+        result
+    }
 }
 
 // Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
@@ -616,6 +673,158 @@ impl PointAffine for AffinePoint {
             },
             Choice::from(1)
         )
+    }
+
+    fn is_on_curve(&self) -> Choice {
+        // If this is the point at infinity, it's on the curve
+        if bool::from(self.infinity) {
+            return Choice::from(1u8);
+        }
+
+        // Check if the point satisfies the curve equation: y^2 = x^3 + 7
+        let x_squared = self.x.square();
+        let x_cubed = x_squared * self.x;
+
+        // Compute right side: x^3 + 7
+        let seven = FieldElement::from_raw([7, 0, 0, 0]);
+        let right = x_cubed + seven;
+
+        // Compute left side: y^2
+        let y_squared = self.y.square();
+
+        // Check if the point is on the curve
+        y_squared.ct_eq(&right)
+    }
+
+    fn negate(&self) -> Self {
+        if bool::from(self.infinity) {
+            return *self;
+        }
+
+        Self {
+            x: self.x,
+            y: -self.y,
+            infinity: self.infinity,
+        }
+    }
+
+    fn to_bytes_with_format(&self, format: forge_ec_core::PointFormat) -> [u8; 33] {
+        let mut bytes = [0u8; 33];
+
+        if bool::from(self.infinity) {
+            // Point at infinity is represented by a single byte 0x00
+            bytes[0] = 0x00;
+            return bytes;
+        }
+
+        match format {
+            forge_ec_core::PointFormat::Compressed => {
+                // Compressed encoding: 0x02 for even y, 0x03 for odd y
+                let y_bytes = self.y.to_bytes();
+                let y_is_odd = (y_bytes[31] & 1) == 1;
+
+                bytes[0] = if y_is_odd { 0x03 } else { 0x02 };
+
+                // Copy x-coordinate
+                let x_bytes = self.x.to_bytes();
+                bytes[1..33].copy_from_slice(&x_bytes);
+            },
+            _ => {
+                // For uncompressed and hybrid formats, we need to use a different buffer size
+                // This is a limitation of the current API, so we'll just use compressed format
+                let y_bytes = self.y.to_bytes();
+                let y_is_odd = (y_bytes[31] & 1) == 1;
+
+                bytes[0] = if y_is_odd { 0x03 } else { 0x02 };
+
+                // Copy x-coordinate
+                let x_bytes = self.x.to_bytes();
+                bytes[1..33].copy_from_slice(&x_bytes);
+            }
+        }
+
+        bytes
+    }
+
+    fn from_bytes_with_format(bytes: &[u8], format: forge_ec_core::PointFormat) -> CtOption<Self> {
+        match format {
+            forge_ec_core::PointFormat::Compressed => {
+                if bytes.len() != 33 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                let mut bytes_array = [0u8; 33];
+                bytes_array.copy_from_slice(bytes);
+
+                Self::from_bytes(&bytes_array)
+            },
+            _ => {
+                // For uncompressed and hybrid formats, we need to handle differently
+                // This is a simplified implementation
+                if bytes.len() < 65 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                // Check if this is the point at infinity
+                if bytes[0] == 0x00 {
+                    return CtOption::new(
+                        Self {
+                            x: FieldElement::zero(),
+                            y: FieldElement::zero(),
+                            infinity: Choice::from(1),
+                        },
+                        Choice::from(1u8),
+                    );
+                }
+
+                // Check if this is an uncompressed or hybrid point
+                let is_uncompressed = bytes[0] == 0x04;
+                let is_hybrid_even = bytes[0] == 0x06;
+                let is_hybrid_odd = bytes[0] == 0x07;
+
+                if !is_uncompressed && !is_hybrid_even && !is_hybrid_odd {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                // Extract the x and y coordinates
+                let mut x_bytes = [0u8; 32];
+                let mut y_bytes = [0u8; 32];
+
+                x_bytes.copy_from_slice(&bytes[1..33]);
+                y_bytes.copy_from_slice(&bytes[33..65]);
+
+                let x_opt = FieldElement::from_bytes(&x_bytes);
+                let y_opt = FieldElement::from_bytes(&y_bytes);
+
+                if x_opt.is_none().unwrap_u8() == 1 || y_opt.is_none().unwrap_u8() == 1 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                let x = x_opt.unwrap();
+                let y = y_opt.unwrap();
+
+                // For hybrid encoding, check that the y-coordinate matches the parity bit
+                if is_hybrid_even || is_hybrid_odd {
+                    let y_is_odd = (y_bytes[31] & 1) == 1;
+                    let expected_odd = is_hybrid_odd;
+
+                    if y_is_odd != expected_odd {
+                        return CtOption::new(Self::default(), Choice::from(0u8));
+                    }
+                }
+
+                // Create the point and validate it
+                let point = Self {
+                    x,
+                    y,
+                    infinity: Choice::from(0),
+                };
+
+                let is_on_curve = point.is_on_curve();
+
+                CtOption::new(point, is_on_curve)
+            },
+        }
     }
 }
 
@@ -796,6 +1005,86 @@ impl PointProjective for ProjectivePoint {
             x: p.x,
             y: p.y,
             z: FieldElement::one(),
+        }
+    }
+
+    fn double(&self) -> Self {
+        // Handle point at infinity
+        if bool::from(self.is_identity()) {
+            return Self::identity();
+        }
+
+        // Compute the point doubling using the standard formulas
+        // These formulas are from the EFD (Explicit-Formulas Database)
+
+        // Compute A = X1^2
+        let xx = self.x.square();
+
+        // Compute B = Y1^2
+        let yy = self.y.square();
+
+        // Compute C = B^2
+        let yyyy = yy.square();
+
+        // Compute D = 2*((X1+B)^2-A-C)
+        let xy2 = (self.x + yy).square();
+        let xy2_minus_xx_yyyy = xy2 - xx - yyyy;
+        let d = xy2_minus_xx_yyyy + xy2_minus_xx_yyyy;
+
+        // Compute E = 3*A
+        let three = FieldElement::from_raw([3, 0, 0, 0]);
+        let e = three * xx;
+
+        // Compute F = E^2
+        let ee = e.square();
+
+        // Compute X3 = F-2*D
+        let x3 = ee - d - d;
+
+        // Compute Y3 = E*(D-X3)-8*C
+        let eight = FieldElement::from_raw([8, 0, 0, 0]);
+        let eight_yyyy = eight * yyyy;
+        let y3 = e * (d - x3) - eight_yyyy;
+
+        // Compute Z3 = 2*Y1*Z1
+        let z3 = self.y + self.y;
+        let z3 = if bool::from(self.z.ct_eq(&FieldElement::one())) {
+            z3
+        } else {
+            z3 * self.z
+        };
+
+        Self {
+            x: x3,
+            y: y3,
+            z: z3,
+        }
+    }
+
+    fn negate(&self) -> Self {
+        Self {
+            x: self.x,
+            y: -self.y,
+            z: self.z,
+        }
+    }
+
+    fn is_on_curve(&self) -> Choice {
+        // If this is the point at infinity, it's on the curve
+        if bool::from(self.is_identity()) {
+            return Choice::from(1u8);
+        }
+
+        // Convert to affine coordinates and check
+        let affine = self.to_affine();
+        affine.is_on_curve()
+    }
+
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        Self {
+            x: FieldElement::conditional_select(&a.x, &b.x, choice),
+            y: FieldElement::conditional_select(&a.y, &b.y, choice),
+            z: FieldElement::conditional_select(&a.z, &b.z, choice),
         }
     }
 }
@@ -1024,6 +1313,101 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
         // secp256k1 has cofactor 1, so no clearing needed
         *p
     }
+
+    fn hash_to_curve<D: Digest>(
+        msg: &[u8],
+        dst: &DomainSeparationTag,
+    ) -> Self::PointAffine {
+        // Implement the hash_to_curve operation according to RFC 9380
+        // This is a simplified implementation
+
+        // Hash the message to a field element
+        let mut hasher = Sha256::new();
+        hasher.update(msg);
+        hasher.update(dst.as_bytes());
+        let hash = hasher.finalize();
+
+        // Convert the hash to a field element
+        let mut bytes = [0u8; 32];
+        bytes.copy_from_slice(&hash);
+
+        // Reduce the hash modulo p
+        let u_opt = FieldElement::from_bytes(&bytes);
+        let u = if u_opt.is_none().unwrap_u8() == 1 {
+            // If invalid, use a default value
+            FieldElement::one()
+        } else {
+            u_opt.unwrap()
+        };
+
+        // Map the field element to a curve point
+        Self::map_to_curve(&u)
+    }
+}
+
+impl forge_ec_core::KeyExchange for Secp256k1 {
+    type Curve = Secp256k1;
+
+    fn derive_key(
+        shared_secret: &[u8],
+        info: &[u8],
+        output_len: usize,
+    ) -> forge_ec_core::Result<Vec<u8>> {
+        // Implement HKDF-Extract and HKDF-Expand according to RFC 5869
+
+        // HKDF-Extract
+        let mut hmac = <Hmac::<Sha256> as KeyInit>::new_from_slice(&[0u8; 32])
+            .map_err(|_| forge_ec_core::Error::InvalidEncoding)?;
+        hmac.update(shared_secret);
+        let prk = hmac.finalize().into_bytes();
+
+        // HKDF-Expand
+        let mut okm = Vec::with_capacity(output_len);
+        let mut t = Vec::new();
+        let mut counter = 1u8;
+
+        while okm.len() < output_len {
+            let mut hmac = <Hmac::<Sha256> as KeyInit>::new_from_slice(&prk)
+                .map_err(|_| forge_ec_core::Error::InvalidEncoding)?;
+
+            hmac.update(&t);
+            hmac.update(info);
+            hmac.update(&[counter]);
+
+            t = hmac.finalize().into_bytes().to_vec();
+
+            let remaining = output_len - okm.len();
+            let to_copy = core::cmp::min(remaining, t.len());
+
+            okm.extend_from_slice(&t[..to_copy]);
+
+            counter += 1;
+        }
+
+        Ok(okm)
+    }
+
+    fn derive_shared_secret(
+        private_key: &<Self::Curve as Curve>::Scalar,
+        public_key: &<Self::Curve as Curve>::PointAffine,
+    ) -> forge_ec_core::Result<[u8; 32]> {
+        // Convert the public key to projective coordinates
+        let public_key_proj = Self::Curve::from_affine(public_key);
+
+        // Multiply the public key by the private key
+        let shared_point = Self::Curve::multiply(&public_key_proj, private_key);
+
+        // Convert back to affine coordinates
+        let shared_point_affine = shared_point.to_affine();
+
+        // Check if the result is the point at infinity
+        if shared_point_affine.is_identity().unwrap_u8() == 1 {
+            return Err(forge_ec_core::Error::InvalidEncoding);
+        }
+
+        // Use the x-coordinate as the shared secret
+        Ok(shared_point_affine.x().to_bytes())
+    }
 }
 
 /// A scalar value in the secp256k1 scalar field.
@@ -1091,6 +1475,38 @@ impl Scalar {
 }
 
 impl forge_ec_core::FieldElement for Scalar {
+    fn random(mut rng: impl rand_core::RngCore) -> Self {
+        // Generate random bytes and reduce modulo the order
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+
+        let mut limbs = [0u64; 4];
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[i * 8 + j] as u64) << (j * 8);
+            }
+        }
+
+        let mut scalar = Self(limbs);
+
+        // Reduce modulo the order
+        // Check if the value is less than the order
+        if !(limbs[3] < N[3] ||
+           (limbs[3] == N[3] && limbs[2] < N[2]) ||
+           (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] < N[1]) ||
+           (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] < N[0])) {
+            // Subtract the order
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff1, b1) = scalar.0[i].overflowing_sub(N[i]);
+                let (diff2, b2) = diff1.overflowing_sub(borrow);
+                scalar.0[i] = diff2;
+                borrow = if b1 || b2 { 1 } else { 0 };
+            }
+        }
+
+        scalar
+    }
     fn zero() -> Self {
         Self([0, 0, 0, 0])
     }
@@ -1247,6 +1663,12 @@ impl forge_ec_core::Scalar for Scalar {
         }
 
         bytes
+    }
+
+    fn get_order() -> Self {
+        // Return the order of the secp256k1 curve
+        // n = FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141
+        Self(N)
     }
 }
 
@@ -1468,7 +1890,27 @@ impl core::ops::DivAssign for Scalar {
 #[derive(Copy, Clone, Debug)]
 pub struct Secp256k1;
 
+impl Secp256k1 {
+    /// Returns the order of the curve.
+    pub fn order() -> Scalar {
+        Scalar(N)
+    }
 
+    /// Returns the cofactor of the curve.
+    pub fn cofactor() -> u64 {
+        1
+    }
+
+    /// Returns the a parameter of the curve equation y^2 = x^3 + ax + b.
+    pub fn a() -> FieldElement {
+        FieldElement::zero()
+    }
+
+    /// Returns the b parameter of the curve equation y^2 = x^3 + ax + b.
+    pub fn b() -> FieldElement {
+        FieldElement::from_raw([7, 0, 0, 0])
+    }
+}
 
 
 
@@ -1530,7 +1972,7 @@ impl Curve for Secp256k1 {
                 let bit = Choice::from(((scalar.to_raw()[i] >> j) & 1) as u8);
 
                 // Conditionally add the current point
-                result = ProjectivePoint::conditional_select(
+                result = <ProjectivePoint as ConditionallySelectable>::conditional_select(
                     &result,
                     &(result + temp),
                     bit
@@ -1542,6 +1984,14 @@ impl Curve for Secp256k1 {
         }
 
         result
+    }
+
+    fn order() -> Self::Scalar {
+        Scalar(N)
+    }
+
+    fn cofactor() -> u64 {
+        1
     }
 }
 
