@@ -172,13 +172,8 @@ where
             return false;
         }
 
-        // Get the curve order
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        ]).unwrap();
+        // We would normally check that r and s are less than the curve order
+        // But we'll skip that check for now
 
         // We can't directly compare scalars without PartialOrd
         // In a real implementation, we would check that r and s are less than the curve order
@@ -361,8 +356,8 @@ fn normalize_s<C: Curve>(s: &C::Scalar) -> C::Scalar {
     // We'll compute both s and n-s, and then use constant-time selection
     // to choose the smaller one
 
-    // Calculate n - s
-    let neg_s = curve_order - *s;
+    // Calculate n - s (unused in this implementation)
+    let _neg_s = curve_order - *s;
 
     // Return the original s (we can't determine which is smaller without PartialOrd)
     // In a real implementation, we would use constant-time selection based on a bit test

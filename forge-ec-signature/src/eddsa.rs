@@ -6,7 +6,7 @@
 use core::marker::PhantomData;
 
 use digest::Digest;
-use forge_ec_core::{Curve, FieldElement, PointAffine, PointProjective, Scalar, SignatureScheme};
+use forge_ec_core::{Curve, PointAffine, PointProjective, SignatureScheme};
 use forge_ec_curves::ed25519::Ed25519;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;

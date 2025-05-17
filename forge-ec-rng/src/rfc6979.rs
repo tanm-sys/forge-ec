@@ -17,7 +17,6 @@ use core::marker::PhantomData;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
 use forge_ec_core::{Curve, Scalar, FieldElement};
-use subtle::ConstantTimeEq;
 use hmac::{Mac, SimpleHmac};
 use sha2::digest::core_api::BlockSizeUser;
 
@@ -107,8 +106,7 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> Rfc6979<C, D> {
 
         // 3.2: Get the byte length of the curve order (qlen)
         let qlen = C::Scalar::BITS;
-        let qlen_bytes = (qlen + 7) / 8;
-        let rlen = (qlen + 7) / 8; // rlen is the same as qlen_bytes for our curves
+        let rlen = (qlen + 7) / 8; // rlen is the byte length of the curve order
 
         // 3.3: Initialize variables
         let mut v = [0x01u8; 32]; // V = 0x01 0x01 0x01 ... (same length as hash output)

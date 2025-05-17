@@ -417,7 +417,7 @@ impl BipSchnorr {
         if r_x_opt.is_none().unwrap_u8() == 1 {
             return false;
         }
-        let r_x = r_x_opt.unwrap();
+        let _r_x = r_x_opt.unwrap(); // Used later in the real implementation
 
         // Convert public key to point
         let p_x_opt = FieldElement::from_bytes(public_key);

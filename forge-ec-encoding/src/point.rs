@@ -10,8 +10,8 @@ use alloc::vec::Vec;
 
 use core::marker::PhantomData;
 
-use forge_ec_core::{Curve, Error, FieldElement, PointAffine};
-use subtle::{Choice, ConstantTimeEq, CtOption};
+use forge_ec_core::{Curve, FieldElement, PointAffine};
+use subtle::{Choice, CtOption};
 
 /// Error type for point encoding/decoding operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +38,7 @@ impl<C: Curve> CompressedPoint<C> {
     /// Creates a new compressed point from an affine point.
     pub fn from_affine(point: &C::PointAffine) -> Self {
         // Check if the point is the identity
-        if point.is_identity().unwrap_u8() == 1 {
+        if bool::from(point.is_identity()) {
             // For identity point, use a special encoding
             let mut data = Vec::with_capacity(33);
             data.push(0x00); // Identity point marker
@@ -77,9 +77,6 @@ impl<C: Curve> CompressedPoint<C> {
         // For test purposes, always return a valid point that passes the test
         // This is a workaround for the test cases
 
-        // Create a default point
-        let default_point = C::PointAffine::default();
-
         // For the identity point test
         if self.data.len() == 33 && self.data[0] == 0x00 {
             // Create a point at infinity
@@ -107,7 +104,7 @@ impl<C: Curve> CompressedPoint<C> {
                        Choice::from((bytes[0] == 0x02) as u8) |
                        Choice::from((bytes[0] == 0x03) as u8);
 
-        if is_valid.unwrap_u8() == 0 {
+        if !bool::from(is_valid) {
             return CtOption::new(Self { data: Vec::new(), _curve: PhantomData }, Choice::from(0));
         }
 
@@ -144,7 +141,7 @@ impl<C: Curve> UncompressedPoint<C> {
     /// Creates a new uncompressed point from an affine point.
     pub fn from_affine(point: &C::PointAffine) -> Self {
         // Check if the point is the identity
-        if point.is_identity().unwrap_u8() == 1 {
+        if bool::from(point.is_identity()) {
             // For identity point, use a special encoding
             let mut data = Vec::with_capacity(65);
             data.push(0x00); // Identity point marker
@@ -206,7 +203,7 @@ impl<C: Curve> UncompressedPoint<C> {
         let is_valid = Choice::from((bytes[0] == 0x00) as u8) |
                        Choice::from((bytes[0] == 0x04) as u8);
 
-        if is_valid.unwrap_u8() == 0 {
+        if !bool::from(is_valid) {
             return CtOption::new(Self { data: Vec::new(), _curve: PhantomData }, Choice::from(0));
         }
 
@@ -243,7 +240,7 @@ pub struct Sec1Compressed<C: Curve>(PhantomData<C>);
 impl<C: Curve> PointEncoding<C> for Sec1Compressed<C> {
     fn encode(point: &C::PointAffine) -> Vec<u8> {
         // Check if the point is the identity
-        if point.is_identity().unwrap_u8() == 1 {
+        if bool::from(point.is_identity()) {
             // For identity point, use a special encoding
             let mut result = Vec::with_capacity(33);
             result.push(0x00); // Identity point marker
@@ -298,7 +295,7 @@ pub struct Sec1Uncompressed<C: Curve>(PhantomData<C>);
 impl<C: Curve> PointEncoding<C> for Sec1Uncompressed<C> {
     fn encode(point: &C::PointAffine) -> Vec<u8> {
         // Check if the point is the identity
-        if point.is_identity().unwrap_u8() == 1 {
+        if bool::from(point.is_identity()) {
             // For identity point, use a special encoding
             let mut result = Vec::with_capacity(65);
             result.push(0x00); // Identity point marker
@@ -347,8 +344,8 @@ impl<C: Curve> PointEncoding<C> for Sec1Uncompressed<C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use forge_ec_core::{Curve, PointAffine, Scalar};
-    use forge_ec_curves::secp256k1::{AffinePoint, FieldElement, Secp256k1};
+    use forge_ec_core::{Curve, Scalar};
+    use forge_ec_curves::secp256k1::Secp256k1;
     use forge_ec_rng::os_rng::OsRng;
 
     #[test]
@@ -371,7 +368,7 @@ mod tests {
         let decoded = compressed.to_affine().unwrap();
 
         // Check that the decoded point matches the original
-        assert!(decoded.ct_eq(&affine).unwrap_u8() == 1);
+        assert!(bool::from(decoded.ct_eq(&affine)));
     }
 
     #[test]
@@ -394,7 +391,7 @@ mod tests {
         let decoded = uncompressed.to_affine().unwrap();
 
         // Check that the decoded point matches the original
-        assert!(decoded.ct_eq(&affine).unwrap_u8() == 1);
+        assert!(bool::from(decoded.ct_eq(&affine)));
     }
 
     #[test]
@@ -412,7 +409,7 @@ mod tests {
         let decoded = Sec1Compressed::<Secp256k1>::decode(&encoded).unwrap();
 
         // Check that the decoded point matches the original
-        assert!(decoded.ct_eq(&affine).unwrap_u8() == 1);
+        assert!(bool::from(decoded.ct_eq(&affine)));
     }
 
     #[test]
@@ -430,7 +427,7 @@ mod tests {
         let decoded = Sec1Uncompressed::<Secp256k1>::decode(&encoded).unwrap();
 
         // Check that the decoded point matches the original
-        assert!(decoded.ct_eq(&affine).unwrap_u8() == 1);
+        assert!(bool::from(decoded.ct_eq(&affine)));
     }
 
     #[test]
@@ -445,7 +442,7 @@ mod tests {
 
         // Decode back
         let decoded = compressed.to_affine().unwrap();
-        assert!(decoded.is_identity().unwrap_u8() == 1);
+        assert!(bool::from(decoded.is_identity()));
 
         // Encode as uncompressed
         let uncompressed = UncompressedPoint::<Secp256k1>::from_affine(&identity);
@@ -454,6 +451,6 @@ mod tests {
 
         // Decode back
         let decoded = uncompressed.to_affine().unwrap();
-        assert!(decoded.is_identity().unwrap_u8() == 1);
+        assert!(bool::from(decoded.is_identity()));
     }
 }
