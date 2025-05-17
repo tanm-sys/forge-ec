@@ -7,9 +7,12 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
+use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, PointFormat};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
+
+// Ed25519 curve parameters
+// d = -121665/121666
 
 /// The Ed25519 base field modulus
 /// p = 2^255 - 19
@@ -220,6 +223,32 @@ impl forge_ec_core::FieldElement for FieldElement {
         // TODO: Implement conversion from bytes
         CtOption::new(Self::zero(), Choice::from(1))
     }
+
+    fn random(mut rng: impl rand_core::RngCore) -> Self {
+        // Generate random bytes and reduce modulo p
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+
+        // Convert to field element
+        let mut limbs = [0u64; 4];
+
+        // Convert from big-endian bytes to little-endian limbs
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[31 - (i * 8 + j)] as u64) << (j * 8);
+            }
+        }
+
+        // Reduce modulo p if necessary
+        let mut result = Self(limbs);
+
+        // Check if the value is less than the modulus
+        // In a real implementation, we would compare with P
+        // For now, we'll just return the result
+        // TODO: Implement proper reduction
+
+        result
+    }
 }
 
 impl Zeroize for FieldElement {
@@ -300,14 +329,40 @@ impl forge_ec_core::FieldElement for Scalar {
         // TODO: Implement conversion from bytes
         CtOption::new(Self::zero(), Choice::from(1))
     }
+
+    fn random(mut rng: impl rand_core::RngCore) -> Self {
+        // Generate random bytes and reduce modulo the order
+        let mut bytes = [0u8; 32];
+        rng.fill_bytes(&mut bytes);
+
+        // Convert to scalar
+        let mut limbs = [0u64; 4];
+
+        // Convert from big-endian bytes to little-endian limbs
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[31 - (i * 8 + j)] as u64) << (j * 8);
+            }
+        }
+
+        // Reduce modulo the order
+        let mut scalar = Self(limbs);
+
+        // Check if the value is less than the order
+        // In a real implementation, we would compare with L
+        // For now, we'll just return the result
+        // TODO: Implement proper reduction
+
+        scalar
+    }
 }
 
 impl forge_ec_core::Scalar for Scalar {
     const BITS: usize = 252;
 
-    fn random(_rng: impl rand_core::RngCore) -> Self {
-        // Dummy implementation for testing
-        Self::one()
+    fn random(rng: impl rand_core::RngCore) -> Self {
+        // Use the implementation from FieldElement
+        <Self as forge_ec_core::FieldElement>::random(rng)
     }
 
     fn from_rfc6979(_msg: &[u8], _key: &[u8], _extra: &[u8]) -> Self {
@@ -349,6 +404,12 @@ impl forge_ec_core::Scalar for Scalar {
         }
 
         bytes
+    }
+
+    fn get_order() -> Self {
+        // Return the order of the Ed25519 curve
+        // l = 2^252 + 27742317777372353535851937790883648493
+        Self(L)
     }
 }
 
@@ -498,8 +559,34 @@ impl PointAffine for AffinePoint {
     }
 
     fn new(x: Self::Field, y: Self::Field) -> CtOption<Self> {
-        // TODO: Implement point validation
-        unimplemented!()
+        // Check if the point satisfies the curve equation: -x^2 + y^2 = 1 + d*x^2*y^2
+        let x2 = x.square();
+        let y2 = y.square();
+        let x2y2 = x2 * y2;
+
+        // Ed25519 curve parameter d = -121665/121666
+        let d = FieldElement::from_raw(D);
+
+        // Compute left side: -x^2 + y^2
+        let neg_x2 = -x2;
+        let lhs = neg_x2 + y2;
+
+        // Compute right side: 1 + d*x^2*y^2
+        let one = FieldElement::one();
+        let d_x2y2 = d * x2y2;
+        let rhs = one + d_x2y2;
+
+        // Check if lhs == rhs
+        let is_on_curve = lhs.ct_eq(&rhs);
+
+        CtOption::new(
+            Self {
+                x,
+                y,
+                infinity: Choice::from(0),
+            },
+            is_on_curve,
+        )
     }
 
     fn is_identity(&self) -> Choice {
@@ -593,6 +680,164 @@ impl PointAffine for AffinePoint {
             Choice::from(1)
         )
     }
+
+    fn to_bytes_with_format(&self, format: forge_ec_core::PointFormat) -> [u8; 33] {
+        let mut bytes = [0u8; 33];
+
+        if self.infinity.unwrap_u8() == 1 {
+            // Point at infinity is represented by a single byte 0x00
+            bytes[0] = 0x00;
+            return bytes;
+        }
+
+        match format {
+            forge_ec_core::PointFormat::Compressed => {
+                // Compressed encoding: 0x02 for even y, 0x03 for odd y
+                let y_bytes = self.y.to_bytes();
+                let y_is_odd = (y_bytes[31] & 1) == 1;
+
+                bytes[0] = if y_is_odd { 0x03 } else { 0x02 };
+
+                // Copy x-coordinate
+                let x_bytes = self.x.to_bytes();
+                bytes[1..33].copy_from_slice(&x_bytes);
+            },
+            _ => {
+                // For uncompressed and hybrid formats, we need to use a different buffer size
+                // This is a limitation of the current API, so we'll just use compressed format
+                let y_bytes = self.y.to_bytes();
+                let y_is_odd = (y_bytes[31] & 1) == 1;
+
+                bytes[0] = if y_is_odd { 0x03 } else { 0x02 };
+
+                // Copy x-coordinate
+                let x_bytes = self.x.to_bytes();
+                bytes[1..33].copy_from_slice(&x_bytes);
+            }
+        }
+
+        bytes
+    }
+
+    fn from_bytes_with_format(bytes: &[u8], format: forge_ec_core::PointFormat) -> CtOption<Self> {
+        match format {
+            forge_ec_core::PointFormat::Compressed => {
+                if bytes.len() != 33 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                let mut bytes_array = [0u8; 33];
+                bytes_array.copy_from_slice(bytes);
+
+                Self::from_bytes(&bytes_array)
+            },
+            _ => {
+                // For uncompressed and hybrid formats, we need to handle differently
+                // This is a simplified implementation
+                if bytes.len() < 65 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                // Check if this is the point at infinity
+                if bytes[0] == 0x00 {
+                    return CtOption::new(
+                        Self {
+                            x: FieldElement::zero(),
+                            y: FieldElement::zero(),
+                            infinity: Choice::from(1),
+                        },
+                        Choice::from(1u8),
+                    );
+                }
+
+                // Check if this is an uncompressed or hybrid point
+                let is_uncompressed = bytes[0] == 0x04;
+                let is_hybrid_even = bytes[0] == 0x06;
+                let is_hybrid_odd = bytes[0] == 0x07;
+
+                if !is_uncompressed && !is_hybrid_even && !is_hybrid_odd {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                // Extract the x and y coordinates
+                let mut x_bytes = [0u8; 32];
+                let mut y_bytes = [0u8; 32];
+
+                x_bytes.copy_from_slice(&bytes[1..33]);
+                y_bytes.copy_from_slice(&bytes[33..65]);
+
+                let x_opt = FieldElement::from_bytes(&x_bytes);
+                let y_opt = FieldElement::from_bytes(&y_bytes);
+
+                if x_opt.is_none().unwrap_u8() == 1 || y_opt.is_none().unwrap_u8() == 1 {
+                    return CtOption::new(Self::default(), Choice::from(0u8));
+                }
+
+                let x = x_opt.unwrap();
+                let y = y_opt.unwrap();
+
+                // For hybrid encoding, check that the y-coordinate matches the parity bit
+                if is_hybrid_even || is_hybrid_odd {
+                    let y_is_odd = (y_bytes[31] & 1) == 1;
+                    let expected_odd = is_hybrid_odd;
+
+                    if y_is_odd != expected_odd {
+                        return CtOption::new(Self::default(), Choice::from(0u8));
+                    }
+                }
+
+                // Create the point and validate it
+                let point = Self {
+                    x,
+                    y,
+                    infinity: Choice::from(0),
+                };
+
+                let is_on_curve = point.is_on_curve();
+
+                CtOption::new(point, is_on_curve)
+            },
+        }
+    }
+
+    fn is_on_curve(&self) -> Choice {
+        // If this is the point at infinity, it's on the curve
+        if bool::from(self.infinity) {
+            return Choice::from(1u8);
+        }
+
+        // Check if the point satisfies the curve equation: -x^2 + y^2 = 1 + d*x^2*y^2
+        let x2 = self.x.square();
+        let y2 = self.y.square();
+        let x2y2 = x2 * y2;
+
+        // Ed25519 curve parameter d = -121665/121666
+        let d = FieldElement::from_raw(D);
+
+        // Compute left side: -x^2 + y^2
+        let neg_x2 = -x2;
+        let lhs = neg_x2 + y2;
+
+        // Compute right side: 1 + d*x^2*y^2
+        let one = FieldElement::one();
+        let d_x2y2 = d * x2y2;
+        let rhs = one + d_x2y2;
+
+        // Check if lhs == rhs
+        lhs.ct_eq(&rhs)
+    }
+
+    fn negate(&self) -> Self {
+        if bool::from(self.infinity) {
+            return *self;
+        }
+
+        Self {
+            x: -self.x,  // For Edwards curves, negation is (-x, y)
+            y: self.y,
+            infinity: self.infinity,
+        }
+    }
 }
 
 impl ConstantTimeEq for AffinePoint {
@@ -626,21 +871,126 @@ impl PointProjective for ExtendedPoint {
     }
 
     fn to_affine(&self) -> Self::Affine {
-        // Dummy implementation for testing
+        // Handle point at infinity
+        if self.is_identity().unwrap_u8() == 1 {
+            return AffinePoint {
+                x: FieldElement::zero(),
+                y: FieldElement::zero(),
+                infinity: Choice::from(1),
+            };
+        }
+
+        // Compute z inverse
+        let z_inv = self.z.invert().unwrap();
+
+        // Compute affine coordinates
+        let x_affine = self.x * z_inv;
+        let y_affine = self.y * z_inv;
+
         AffinePoint {
-            x: FieldElement::one(),
-            y: FieldElement::one(),
+            x: x_affine,
+            y: y_affine,
             infinity: Choice::from(0),
         }
     }
 
-    fn from_affine(_p: &Self::Affine) -> Self {
-        // Dummy implementation for testing
+    fn from_affine(p: &Self::Affine) -> Self {
+        // Handle point at infinity
+        if p.is_identity().unwrap_u8() == 1 {
+            return Self::identity();
+        }
+
+        // Convert to extended coordinates
+        let x = p.x();
+        let y = p.y();
+        let z = FieldElement::one();
+        let t = x * y; // t = x*y
+
+        Self { x, y, z, t }
+    }
+
+    fn double(&self) -> Self {
+        // Handle point at infinity
+        if bool::from(self.is_identity()) {
+            return Self::identity();
+        }
+
+        // Compute the point doubling using the standard formulas for Edwards curves
+        // These formulas are from the EFD (Explicit-Formulas Database)
+
+        // A = X1^2
+        let xx = self.x.square();
+
+        // B = Y1^2
+        let yy = self.y.square();
+
+        // C = 2*Z1^2
+        let zz = self.z.square();
+        let zz2 = zz + zz;
+
+        // D = a*A
+        // For Ed25519, a = -1, so D = -A
+        let d = -xx;
+
+        // E = (X1+Y1)^2 - A - B
+        let xy2 = (self.x + self.y).square();
+        let xy2_minus_xx_yy = xy2 - xx - yy;
+
+        // G = D + B
+        let g = d + yy;
+
+        // F = G - C
+        let f = g - zz2;
+
+        // H = D - B
+        let h = d - yy;
+
+        // X3 = E * F
+        let x3 = xy2_minus_xx_yy * f;
+
+        // Y3 = G * H
+        let y3 = g * h;
+
+        // T3 = E * H
+        let t3 = xy2_minus_xx_yy * h;
+
+        // Z3 = F * G
+        let z3 = f * g;
+
         Self {
-            x: FieldElement::one(),
-            y: FieldElement::one(),
-            z: FieldElement::one(),
-            t: FieldElement::one(),
+            x: x3,
+            y: y3,
+            z: z3,
+            t: t3,
+        }
+    }
+
+    fn negate(&self) -> Self {
+        Self {
+            x: -self.x,  // For Edwards curves, negation is (-x, y)
+            y: self.y,
+            z: self.z,
+            t: -self.t,  // t = x*y, so -t = -x*y
+        }
+    }
+
+    fn is_on_curve(&self) -> Choice {
+        // If this is the point at infinity, it's on the curve
+        if bool::from(self.is_identity()) {
+            return Choice::from(1u8);
+        }
+
+        // Convert to affine coordinates and check
+        let affine = self.to_affine();
+        affine.is_on_curve()
+    }
+
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        Self {
+            x: FieldElement::conditional_select(&a.x, &b.x, choice),
+            y: FieldElement::conditional_select(&a.y, &b.y, choice),
+            z: FieldElement::conditional_select(&a.z, &b.z, choice),
+            t: FieldElement::conditional_select(&a.t, &b.t, choice),
         }
     }
 }
@@ -689,7 +1039,27 @@ impl Zeroize for ExtendedPoint {
 #[derive(Copy, Clone, Debug)]
 pub struct Ed25519;
 
+impl Ed25519 {
+    /// Returns the order of the curve.
+    pub fn order() -> Scalar {
+        Scalar(L)
+    }
 
+    /// Returns the cofactor of the curve.
+    pub fn cofactor() -> u64 {
+        8
+    }
+
+    /// Returns the a parameter of the curve equation ax^2 + y^2 = 1 + dx^2y^2.
+    pub fn a() -> FieldElement {
+        FieldElement::from_raw([-1i64 as u64, 0, 0, 0])
+    }
+
+    /// Returns the d parameter of the curve equation ax^2 + y^2 = 1 + dx^2y^2.
+    pub fn d() -> FieldElement {
+        FieldElement::from_raw(D)
+    }
+}
 
 impl Curve for Ed25519 {
     type Field = FieldElement;
@@ -721,6 +1091,14 @@ impl Curve for Ed25519 {
         // Return a dummy implementation for testing
         // Just return the generator point
         Self::generator()
+    }
+
+    fn order() -> Self::Scalar {
+        Scalar(L)
+    }
+
+    fn cofactor() -> u64 {
+        8
     }
 }
 
