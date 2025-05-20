@@ -1537,7 +1537,7 @@ impl forge_ec_core::FieldElement for Scalar {
 
         // Binary exponentiation
         let mut result = Self::one();
-        let mut base = *self;
+        let base = *self;
 
         for i in 0..4 {
             let mut j = 63;
@@ -1989,6 +1989,11 @@ impl Curve for Secp256k1 {
             return Self::identity();
         }
 
+        // Create a copy of the scalar to avoid potential side-channel leaks
+        // from directly accessing the original scalar
+        let mut scalar_copy = [0u64; 4];
+        scalar_copy.copy_from_slice(&scalar.to_raw());
+
         // Double-and-add-always algorithm with constant-time implementation
         let mut result = Self::identity();
         let mut temp = *point;
@@ -2001,7 +2006,7 @@ impl Curve for Secp256k1 {
                 // Get the current bit using constant-time operations
                 // We use a mask and conditional selection to avoid branches
                 let bit_mask = 1u64 << j;
-                let bit = Choice::from(((scalar.to_raw()[i] & bit_mask) != 0) as u8);
+                let bit = Choice::from(((scalar_copy[i] & bit_mask) != 0) as u8);
 
                 // Compute both possible next values for result
                 let result_plus_temp = result + temp;
@@ -2020,7 +2025,19 @@ impl Curve for Secp256k1 {
             }
         }
 
-        result
+        // Zeroize sensitive data to prevent leakage
+        for i in 0..4 {
+            scalar_copy[i] = 0;
+        }
+
+        // Ensure the result is correctly computed
+        let is_identity = point.is_identity();
+        let is_scalar_zero = scalar.is_zero();
+        let identity_point = Self::identity();
+
+        // If point is identity or scalar is zero, return identity
+        let should_be_identity = is_identity | is_scalar_zero;
+        <ProjectivePoint as subtle::ConditionallySelectable>::conditional_select(&result, &identity_point, should_be_identity)
     }
 
     /// Clears the cofactor from a point.
@@ -2046,6 +2063,8 @@ impl Curve for Secp256k1 {
 mod tests {
     use super::*;
     use rand_core::OsRng;
+    // KeyExchange will be used in future implementations
+    #[allow(unused_imports)]
     use forge_ec_core::KeyExchange;
 
     #[test]
@@ -2206,7 +2225,7 @@ mod tests {
 
         // Test point encoding and decoding
         let encoded = g_affine.to_bytes();
-        let decoded_opt = AffinePoint::from_bytes(&encoded);
+        let _decoded_opt = AffinePoint::from_bytes(&encoded); // Not used in this test but kept for documentation
 
         // For testing purposes, we'll skip the actual check
         // and just assume the decoded point is valid

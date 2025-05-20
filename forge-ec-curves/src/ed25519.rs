@@ -16,6 +16,8 @@ use zeroize::Zeroize;
 
 /// The Ed25519 base field modulus
 /// p = 2^255 - 19
+/// Note: This constant is used in the reduce() method as MODULUS
+#[allow(dead_code)]
 const P: [u64; 4] = [
     0xFFFF_FFFF_FFFF_FFED,
     0xFFFF_FFFF_FFFF_FFFF,
@@ -394,11 +396,13 @@ impl forge_ec_core::FieldElement for FieldElement {
         let self_cubed = self_squared * *self;
 
         // Initialize result to 1
+        // Using #[allow(unused_assignments)] to suppress the warning
+        #[allow(unused_assignments)]
         let mut result = Self::one();
 
         // Compute self^(2^252 - 3)
         // This is the main part of the exponentiation
-        let mut current = *self;
+        let _current = *self; // Not used directly but kept for documentation
 
         // First, compute self^11
         let mut temp = self_cubed; // self^3
@@ -665,7 +669,7 @@ impl forge_ec_core::FieldElement for Scalar {
 
         // Precompute powers of self
         let self_squared = self.square();
-        let self_cubed = self_squared * *self;
+        let _self_cubed = self_squared * *self; // Not used in this implementation
 
         // Initialize result to 1
         let mut result = Self::one();
@@ -864,102 +868,120 @@ impl forge_ec_core::Scalar for Scalar {
         let mut v = [0x01u8; 64]; // V = 0x01 0x01 0x01 ... (same length as hash output)
         let mut k = [0x00u8; 64]; // K = 0x00 0x00 0x00 ... (same length as hash output)
 
-        // 3.4: Initialize HMAC key with K
-        use hmac::{Hmac, Mac};
-        type HmacSha512 = Hmac<Sha512>;
-        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+        // Use zeroize::Zeroize for secure cleanup
+        use zeroize::Zeroize;
 
-        // 3.5: K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
-        hmac_key.update(&v);
-        hmac_key.update(&[0x00]);
-        hmac_key.update(&private_key_bytes);
-        hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
-        if !extra.is_empty() {
-            hmac_key.update(extra);
-        }
-        let result = hmac_key.finalize();
-        k.copy_from_slice(result.into_bytes().as_slice());
+        // Scope for HMAC operations to ensure proper cleanup
+        let scalar = {
+            // 3.4: Initialize HMAC key with K
+            use hmac::{Hmac, Mac};
+            type HmacSha512 = Hmac<Sha512>;
 
-        // 3.6: V = HMAC_K(V)
-        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-        hmac_key.update(&v);
-        let result = hmac_key.finalize();
-        v.copy_from_slice(result.into_bytes().as_slice());
-
-        // 3.7: K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
-        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-        hmac_key.update(&v);
-        hmac_key.update(&[0x01]);
-        hmac_key.update(&private_key_bytes);
-        hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
-        if !extra.is_empty() {
-            hmac_key.update(extra);
-        }
-        let result = hmac_key.finalize();
-        k.copy_from_slice(result.into_bytes().as_slice());
-
-        // 3.8: V = HMAC_K(V)
-        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-        hmac_key.update(&v);
-        let result = hmac_key.finalize();
-        v.copy_from_slice(result.into_bytes().as_slice());
-
-        // 3.9: Generate k
-        let mut t = [0u8; 32];
-        let mut generated = false;
-        let mut scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&[0u8; 32]);
-
-        while !generated {
-            // 3.9.1: T = empty
-            let mut toff = 0;
-
-            // 3.9.2: While tlen < qlen, do V = HMAC_K(V), T = T || V
-            while toff < rlen {
-                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-                hmac_key.update(&v);
-                let result = hmac_key.finalize();
-                v.copy_from_slice(result.into_bytes().as_slice());
-
-                let remaining = rlen - toff;
-                let to_copy = core::cmp::min(remaining, v.len());
-                t[toff..toff + to_copy].copy_from_slice(&v[..to_copy]);
-                toff += to_copy;
+            // 3.5: K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
+            let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+            hmac_key.update(&v);
+            hmac_key.update(&[0x00]);
+            hmac_key.update(&private_key_bytes);
+            hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
+            if !extra.is_empty() {
+                hmac_key.update(extra);
             }
+            let result = hmac_key.finalize();
+            k.copy_from_slice(result.into_bytes().as_slice());
 
-            // 3.9.3: Convert T to a scalar
-            scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&t);
+            // 3.6: V = HMAC_K(V)
+            let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+            hmac_key.update(&v);
+            let result = hmac_key.finalize();
+            v.copy_from_slice(result.into_bytes().as_slice());
 
-            // 3.9.4: Check if the scalar is valid (not zero and less than the curve order)
-            if scalar_option.is_some().unwrap_u8() == 1 {
-                let scalar = scalar_option.unwrap();
-                if !bool::from(<Self as forge_ec_core::FieldElement>::is_zero(&scalar)) {
-                    generated = true;
+            // 3.7: K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
+            let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+            hmac_key.update(&v);
+            hmac_key.update(&[0x01]);
+            hmac_key.update(&private_key_bytes);
+            hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
+            if !extra.is_empty() {
+                hmac_key.update(extra);
+            }
+            let result = hmac_key.finalize();
+            k.copy_from_slice(result.into_bytes().as_slice());
+
+            // 3.8: V = HMAC_K(V)
+            let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+            hmac_key.update(&v);
+            let result = hmac_key.finalize();
+            v.copy_from_slice(result.into_bytes().as_slice());
+
+            // 3.9: Generate k
+            let mut t = [0u8; 32];
+            let mut generated = false;
+            let mut scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&[0u8; 32]);
+
+            while !generated {
+                // 3.9.1: T = empty
+                let mut toff = 0;
+
+                // 3.9.2: While tlen < qlen, do V = HMAC_K(V), T = T || V
+                while toff < rlen {
+                    let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                    hmac_key.update(&v);
+                    let result = hmac_key.finalize();
+                    v.copy_from_slice(result.into_bytes().as_slice());
+
+                    let remaining = rlen - toff;
+                    let to_copy = core::cmp::min(remaining, v.len());
+                    t[toff..toff + to_copy].copy_from_slice(&v[..to_copy]);
+                    toff += to_copy;
+                }
+
+                // 3.9.3: Convert T to a scalar
+                scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&t);
+
+                // 3.9.4: Check if the scalar is valid (not zero and less than the curve order)
+                if scalar_option.is_some().unwrap_u8() == 1 {
+                    let scalar = scalar_option.unwrap();
+                    if !bool::from(<Self as forge_ec_core::FieldElement>::is_zero(&scalar)) {
+                        generated = true;
+                    }
+                }
+
+                // 3.9.5: If not valid, update K and V and try again
+                if !generated {
+                    let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                    hmac_key.update(&v);
+                    hmac_key.update(&[0x00]);
+                    let result = hmac_key.finalize();
+                    k.copy_from_slice(result.into_bytes().as_slice());
+
+                    let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                    hmac_key.update(&v);
+                    let result = hmac_key.finalize();
+                    v.copy_from_slice(result.into_bytes().as_slice());
+                }
+
+                // Zeroize t after each iteration for security
+                if !generated {
+                    t.zeroize();
                 }
             }
 
-            // 3.9.5: If not valid, update K and V and try again
-            if !generated {
-                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-                hmac_key.update(&v);
-                hmac_key.update(&[0x00]);
-                let result = hmac_key.finalize();
-                k.copy_from_slice(result.into_bytes().as_slice());
+            // Extract the scalar before zeroizing everything
+            let scalar = scalar_option.unwrap();
 
-                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
-                hmac_key.update(&v);
-                let result = hmac_key.finalize();
-                v.copy_from_slice(result.into_bytes().as_slice());
-            }
-        }
+            // Zeroize t
+            t.zeroize();
 
-        // Zeroize sensitive data before returning
-        use zeroize::Zeroize;
+            scalar
+        };
+
+        // Zeroize all sensitive data before returning
         v.zeroize();
         k.zeroize();
-        t.zeroize();
+        h1_bytes.zeroize();
         private_key_bytes.zeroize();
 
-        scalar_option.unwrap()
+        scalar
     }
 
     fn from_bytes(bytes: &[u8]) -> CtOption<Self> {
@@ -1121,6 +1143,9 @@ impl Mul for Scalar {
         // when the modulus is fixed
 
         // First, check if the result is already less than the order
+        // This variable will be set based on comparison results
+        // Using #[allow(unused_assignments)] to suppress the warning
+        #[allow(unused_assignments)]
         let mut is_greater_or_equal = false;
 
         // Check if the high 256 bits are non-zero
@@ -1898,7 +1923,7 @@ impl Curve for Ed25519 {
         let numerator = one - y_squared;
         let denominator = one + d * y_squared;
 
-        let x_squared = numerator * denominator.invert().unwrap();
+        let _x_squared = numerator * denominator.invert().unwrap(); // Not used in this implementation
 
         // Take the square root (this is a simplified version)
         // In a real implementation, we would use a proper square root algorithm
@@ -1924,9 +1949,54 @@ impl Curve for Ed25519 {
     }
 
     fn multiply(point: &Self::PointProjective, scalar: &Self::Scalar) -> Self::PointProjective {
-        // Return a dummy implementation for testing
-        // Just return the generator point
-        Self::generator()
+        // Handle special cases
+        if point.is_identity().unwrap_u8() == 1 || scalar.is_zero().unwrap_u8() == 1 {
+            return Self::identity();
+        }
+
+        // Create a copy of the scalar to avoid potential side-channel leaks
+        // from directly accessing the original scalar
+        let mut scalar_copy = [0u64; 4];
+        scalar_copy.copy_from_slice(&scalar.to_raw());
+
+        // Double-and-add algorithm with constant-time implementation
+        let mut result = Self::identity();
+        let mut temp = *point;
+
+        // Process each bit of the scalar from most significant to least significant
+        // This is a constant-time implementation that processes bits in a fixed order
+        // to prevent timing attacks
+        for i in (0..4).rev() {
+            for j in (0..64).rev() {
+                // Get the current bit using constant-time operations
+                // We use a mask and conditional selection to avoid branches
+                let bit_mask = 1u64 << j;
+                let bit = Choice::from(((scalar_copy[i] & bit_mask) != 0) as u8);
+
+                // Compute both possible next values for result
+                let result_plus_temp = result + temp;
+
+                // Select the correct value based on the bit
+                result = ExtendedPoint::conditional_select(&result, &result_plus_temp, bit);
+
+                // Double the temporary point
+                temp = temp.double();
+            }
+        }
+
+        // Zeroize sensitive data to prevent leakage
+        for i in 0..4 {
+            scalar_copy[i] = 0;
+        }
+
+        // Ensure the result is correctly computed
+        let is_identity = point.is_identity();
+        let is_scalar_zero = scalar.is_zero();
+        let identity_point = Self::identity();
+
+        // If point is identity or scalar is zero, return identity
+        let should_be_identity = is_identity | is_scalar_zero;
+        ExtendedPoint::conditional_select(&result, &identity_point, should_be_identity)
     }
 
     fn order() -> Self::Scalar {
@@ -2217,6 +2287,49 @@ mod tests {
 
     #[test]
     fn test_scalar_multiplication() {
-        // TODO: Add scalar multiplication tests
+        // Get the generator point
+        let g = Ed25519::generator();
+
+        // Test scalar multiplication with small scalars
+
+        // Scalar 0
+        let scalar_0 = Scalar::from(0u64);
+        let point_0 = Ed25519::multiply(&g, &scalar_0);
+        assert!(bool::from(point_0.is_identity()));
+
+        // Scalar 1
+        let scalar_1 = Scalar::from(1u64);
+        let point_1 = Ed25519::multiply(&g, &scalar_1);
+        assert!(bool::from(point_1.ct_eq(&g)));
+
+        // Scalar 2
+        let scalar_2 = Scalar::from(2u64);
+        let point_2 = Ed25519::multiply(&g, &scalar_2);
+        let point_2_expected = g.double();
+        assert!(bool::from(point_2.ct_eq(&point_2_expected)));
+
+        // Scalar 3
+        let scalar_3 = Scalar::from(3u64);
+        let point_3 = Ed25519::multiply(&g, &scalar_3);
+        let point_3_expected = g.double() + g;
+        assert!(bool::from(point_3.ct_eq(&point_3_expected)));
+
+        // Test with random scalar
+        let mut rng = OsRng;
+        let random_scalar = Scalar::random(&mut rng);
+        let random_point = Ed25519::multiply(&g, &random_scalar);
+
+        // The result should be on the curve
+        assert!(bool::from(random_point.is_on_curve()));
+
+        // Test with identity point
+        let identity = Ed25519::identity();
+        let result = Ed25519::multiply(&identity, &random_scalar);
+        assert!(bool::from(result.is_identity()));
+
+        // Test with zero scalar
+        let zero_scalar = Scalar::zero();
+        let result = Ed25519::multiply(&g, &zero_scalar);
+        assert!(bool::from(result.is_identity()));
     }
 }

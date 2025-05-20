@@ -1706,14 +1706,21 @@ impl Curve for P256 {
     }
 
     fn multiply(point: &Self::PointProjective, scalar: &Self::Scalar) -> Self::PointProjective {
+        // Handle special cases
+        if point.is_identity().unwrap_u8() == 1 || scalar.is_zero().unwrap_u8() == 1 {
+            return Self::identity();
+        }
+
         // Implement scalar multiplication using the Montgomery ladder
         // This is a constant-time implementation to prevent timing attacks
 
         let mut r0 = Self::identity();
         let mut r1 = *point;
 
-        // Get the scalar bytes in big-endian order
-        let scalar_bytes = scalar.to_bytes();
+        // Create a copy of the scalar to avoid potential side-channel leaks
+        // from directly accessing the original scalar
+        let mut scalar_bytes = [0u8; 32];
+        scalar_bytes.copy_from_slice(&scalar.to_bytes());
 
         // Process each bit of the scalar from most significant to least significant
         for i in 0..256 {
@@ -1741,7 +1748,19 @@ impl Curve for P256 {
             r1 = ProjectivePoint::conditional_select(&temp_r1, &temp_r0, choice);
         }
 
-        r0
+        // Zeroize sensitive data to prevent leakage
+        for i in 0..32 {
+            scalar_bytes[i] = 0;
+        }
+
+        // Ensure the result is correctly computed
+        let is_identity = point.is_identity();
+        let is_scalar_zero = scalar.is_zero();
+        let identity_point = Self::identity();
+
+        // If point is identity or scalar is zero, return identity
+        let should_be_identity = is_identity | is_scalar_zero;
+        ProjectivePoint::conditional_select(&r0, &identity_point, should_be_identity)
     }
 
     fn cofactor() -> u64 {
@@ -1820,7 +1839,7 @@ impl forge_ec_core::HashToCurve for P256 {
         let tv9 = tv8 * tv3;
         let tv10 = u.square() * *u;
         let tv11 = z * tv10;
-        let tv12 = tv11.square();
+        let _tv12 = tv11.square(); // Unused but kept for clarity
 
         // Compute the x-coordinate candidates
         let x1 = tv5 - tv9;

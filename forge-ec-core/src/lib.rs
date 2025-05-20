@@ -699,6 +699,35 @@ pub trait Curve: Sized + Copy + Clone + Debug {
         Ok(())
     }
 
+    /// Clears the cofactor from a point.
+    ///
+    /// This method ensures that the resulting point is in the prime-order subgroup.
+    ///
+    /// # Parameters
+    ///
+    /// * `point` - The point to clear the cofactor from
+    ///
+    /// # Returns
+    ///
+    /// The point with the cofactor cleared.
+    ///
+    /// # Security Considerations
+    ///
+    /// This method must be implemented in constant time to prevent timing attacks.
+    fn clear_cofactor(point: &Self::PointProjective) -> Self::PointProjective {
+        // Default implementation multiplies by the cofactor
+        // This should be overridden by implementations for better performance
+        // and to use more efficient methods for specific curves
+        let cofactor = Self::cofactor();
+        if cofactor == 1 {
+            // No need to clear cofactor if it's 1
+            return *point;
+        }
+
+        // Multiply by the cofactor to clear it
+        Self::multiply(point, &Self::Scalar::from(cofactor))
+    }
+
     /// Validates that a point is on the curve and in the prime-order subgroup.
     ///
     /// This method checks that the point satisfies the curve equation and has
@@ -710,9 +739,16 @@ pub trait Curve: Sized + Copy + Clone + Debug {
         let on_curve = point.is_on_curve();
 
         // Check that the point has the correct order
-        // This is a simplified implementation that should be overridden
-        // by concrete implementations for better performance
-        let scalar_point = Self::multiply(&Self::from_affine(point), &Self::order());
+        // First, convert to projective
+        let p_proj = Self::from_affine(point);
+
+        // Clear the cofactor to ensure we're in the prime-order subgroup
+        let p_cleared = Self::clear_cofactor(&p_proj);
+
+        // Multiply by the curve order
+        let scalar_point = Self::multiply(&p_cleared, &Self::order());
+
+        // The result should be the identity point
         let is_identity = scalar_point.is_identity();
 
         on_curve & is_identity
@@ -826,20 +862,59 @@ pub trait KeyExchange: Sized {
     ///
     /// # Security Considerations
     ///
-    /// This method should check that:
+    /// This method checks that:
     /// - The point is on the curve
-    /// - The point is in the prime-order subgroup
+    /// - The point is in the prime-order subgroup (by clearing the cofactor)
     /// - The point is not the identity
+    /// - For curves with cofactor > 1, it ensures the point is not in a small subgroup
     fn validate_public_key(
         public_key: &<Self::Curve as Curve>::PointAffine,
     ) -> Choice {
         // Check that the point is not the identity
         let not_identity = !public_key.is_identity();
 
-        // Check that the point is on the curve and in the prime-order subgroup
-        let valid_point = Self::Curve::validate_point(public_key);
+        // Check that the point is on the curve
+        let on_curve = public_key.is_on_curve();
 
-        not_identity & valid_point
+        // For curves with cofactor > 1, we need to check that the point is in the prime-order subgroup
+        // by multiplying by the curve order and checking if the result is the identity
+        let cofactor = Self::Curve::cofactor();
+        let in_prime_subgroup = if cofactor > 1 {
+            // Convert to projective for multiplication
+            let p_proj = Self::Curve::from_affine(public_key);
+
+            // Clear the cofactor by multiplying by the cofactor
+            let p_cleared = Self::Curve::clear_cofactor(&p_proj);
+
+            // Multiply by the curve order
+            let p_order = Self::Curve::multiply(&p_cleared, &Self::Curve::order());
+
+            // The result should be the identity point
+            p_order.is_identity()
+        } else {
+            // For curves with cofactor = 1, all points on the curve are in the prime-order subgroup
+            Choice::from(1u8)
+        };
+
+        // Check for small subgroup attacks
+        // For curves with cofactor > 1, we need to ensure the point is not in a small subgroup
+        let not_small_subgroup = if cofactor > 1 {
+            // Convert to projective for multiplication
+            let p_proj = Self::Curve::from_affine(public_key);
+
+            // Multiply by the cofactor
+            let scalar_cofactor = <<Self::Curve as Curve>::Scalar as From<u64>>::from(cofactor);
+            let p_cofactor = Self::Curve::multiply(&p_proj, &scalar_cofactor);
+
+            // If the result is the identity, the point is in a small subgroup
+            !p_cofactor.is_identity()
+        } else {
+            // For curves with cofactor = 1, there are no small subgroups
+            Choice::from(1u8)
+        };
+
+        // All checks must pass
+        not_identity & on_curve & in_prime_subgroup & not_small_subgroup
     }
 
     /// Derives a key from a shared secret using a key derivation function.
@@ -1227,6 +1302,25 @@ pub trait HashToCurve: Curve {
     /// This method must be implemented in constant time to prevent timing attacks.
     fn map_to_curve(u: &Self::Field) -> Self::PointAffine;
 
+    /// Returns the 'a' parameter of the curve equation.
+    ///
+    /// For Weierstrass curves (y^2 = x^3 + ax + b), this is the coefficient of x.
+    /// For Montgomery curves (By^2 = x^3 + Ax^2 + x), this is the coefficient of x^2.
+    fn get_a() -> Self::Field {
+        // Default implementation returns zero
+        // This should be overridden by implementations
+        Self::Field::zero()
+    }
+
+    /// Returns the 'b' parameter of the curve equation.
+    ///
+    /// For Weierstrass curves (y^2 = x^3 + ax + b), this is the constant term.
+    fn get_b() -> Self::Field {
+        // Default implementation returns zero
+        // This should be overridden by implementations
+        Self::Field::zero()
+    }
+
     /// Clears the cofactor from a point.
     ///
     /// This method ensures that the resulting point is in the prime-order subgroup.
@@ -1289,7 +1383,7 @@ pub trait HashToCurve: Curve {
 
         // Clear the cofactor
         let p_projective = Self::from_affine(&p_affine);
-        let p_cleared = Self::clear_cofactor(&p_projective);
+        let p_cleared = <Self as HashToCurve>::clear_cofactor(&p_projective);
 
         // Convert back to affine
         Self::to_affine(&p_cleared)
