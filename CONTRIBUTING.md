@@ -10,6 +10,34 @@ This project adheres to the Rust Code of Conduct. By participating, you are expe
 
 If you discover a security vulnerability, please DO NOT open an issue. Email security@forge-ec.dev instead.
 
+## Current Development Status
+
+Forge EC is currently under active development and is not yet ready for production use. Many functions are still being implemented and tested. Your contributions to help complete the implementation are welcome!
+
+### Current Priorities
+
+1. **Fix failing tests**: Several tests are currently failing or have been modified with temporary workarounds. Help is needed to implement proper solutions.
+2. **Complete unimplemented functions**: Many functions are marked with `unimplemented!()` or have placeholder implementations.
+3. **Improve documentation**: Documentation needs to be expanded and improved, especially for the API.
+4. **Implement security features**: Ensure all operations are constant-time and properly zeroize sensitive data.
+
+### Known Issues and Workarounds
+
+#### secp256k1 Implementation
+
+- The `is_on_curve` method has been modified to always return `true` for testing purposes. The actual curve equation check is commented out.
+- The `from_bytes` method in `AffinePoint` returns a hardcoded valid point (the generator) instead of properly decoding the input.
+- Some test assertions have been commented out or modified to avoid failures.
+
+#### P-256 Implementation
+
+- Several tests are currently failing and need to be fixed.
+
+#### Ed25519 and Curve25519 Implementations
+
+- Some methods are unimplemented and return placeholder values.
+- The `deterministic_scalar` test for Curve25519 is failing.
+
 ## Getting Started
 
 1. Fork the repository
@@ -17,6 +45,7 @@ If you discover a security vulnerability, please DO NOT open an issue. Email sec
 3. Create a new branch: `git checkout -b feature-name`
 4. Make your changes
 5. Run tests: `cargo test --workspace --all-features`
+   - Note that some tests are currently failing. This is expected in the current development state.
 6. Run clippy: `cargo clippy --workspace --all-features -- -D warnings`
 7. Format code: `cargo fmt --all`
 8. Commit your changes: `git commit -m "Description of changes"`
@@ -88,4 +117,4 @@ Feel free to:
 - Join our Discord server
 - Email maintainers@forge-ec.dev
 
-Thank you for contributing! 
+Thank you for contributing!
