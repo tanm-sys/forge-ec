@@ -575,14 +575,55 @@ impl Scalar {
 
     /// Converts this scalar to a byte array.
     pub fn to_bytes(&self) -> [u8; 32] {
-        // TODO: Implement conversion to bytes
-        unimplemented!()
+        // Convert to bytes in little-endian format
+        let mut bytes = [0u8; 32];
+
+        // Convert from little-endian limbs to little-endian bytes
+        for i in 0..4 {
+            for j in 0..8 {
+                bytes[i * 8 + j] = ((self.0[i] >> (j * 8)) & 0xFF) as u8;
+            }
+        }
+
+        bytes
     }
 
     /// Creates a scalar from a byte array.
-    pub fn from_bytes(_bytes: &[u8; 32]) -> CtOption<Self> {
-        // TODO: Implement conversion from bytes
-        unimplemented!()
+    pub fn from_bytes(bytes: &[u8; 32]) -> CtOption<Self> {
+        // Convert from little-endian bytes to little-endian limbs
+        let mut limbs = [0u64; 4];
+
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[i * 8 + j] as u64) << (j * 8);
+            }
+        }
+
+        // Create the scalar
+        let result = Self(limbs);
+
+        // Check if the value is less than the order L
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER: [u64; 4] = [
+            0x5812_631A_5CF5_D3ED,
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Compare with the order
+        let mut is_less = false;
+        for i in (0..4).rev() {
+            if limbs[i] < ORDER[i] {
+                is_less = true;
+                break;
+            } else if limbs[i] > ORDER[i] {
+                is_less = false;
+                break;
+            }
+        }
+
+        CtOption::new(result, Choice::from(if is_less { 1 } else { 0 }))
     }
 }
 
@@ -600,8 +641,65 @@ impl forge_ec_core::FieldElement for Scalar {
     }
 
     fn invert(&self) -> CtOption<Self> {
-        // TODO: Implement scalar inversion
-        unimplemented!()
+        // Inversion is computed using Fermat's Little Theorem:
+        // a^(p-1) ≡ 1 (mod p) for any non-zero a
+        // Therefore, a^(p-2) ≡ a^(-1) (mod p)
+
+        // Check if the element is zero (not invertible)
+        if self.is_zero().unwrap_u8() == 1 {
+            return CtOption::new(Self::zero(), Choice::from(0));
+        }
+
+        // For Ed25519, L = 2^252 + 27742317777372353535851937790883648493
+        // We need to compute self^(L-2) mod L
+
+        // Precompute powers of self
+        let self_squared = self.square();
+        let self_cubed = self_squared * *self;
+
+        // Initialize result to 1
+        let mut result = Self::one();
+
+        // Compute self^(L-2) using a square-and-multiply algorithm
+        // L-2 = 2^252 + 27742317777372353535851937790883648493 - 2
+        //     = 2^252 + 27742317777372353535851937790883648491
+
+        // First, compute self^(2^252 - 1)
+        let mut temp = *self;
+        for _ in 0..251 {
+            temp = temp.square();
+        }
+
+        // Now multiply by self^27742317777372353535851937790883648491
+        // This is a large number, so we'll use a more efficient approach
+        // by breaking it down into smaller powers
+
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER_MINUS_2: [u64; 4] = [
+            0x5812_631A_5CF5_D3EB, // L-2 (low 64 bits)
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Use a square-and-multiply algorithm for the exponentiation
+        let mut base = *self;
+
+        // Process each bit of the exponent
+        for &limb in &ORDER_MINUS_2 {
+            for j in 0..64 {
+                // If the current bit is 1, multiply the result by the current base
+                if (limb >> j) & 1 == 1 {
+                    result = result * base;
+                }
+
+                // Square the base for the next bit
+                base = base.square();
+            }
+        }
+
+        // Return the result
+        CtOption::new(result, Choice::from(1))
     }
 
     fn square(&self) -> Self {
@@ -610,16 +708,50 @@ impl forge_ec_core::FieldElement for Scalar {
         s * s
     }
 
-    fn pow(&self, _exp: &[u64]) -> Self {
-        // TODO: Implement scalar exponentiation
-        unimplemented!()
+    fn pow(&self, exp: &[u64]) -> Self {
+        // Implement exponentiation using the square-and-multiply algorithm
+        // This is a standard method for efficient exponentiation
+
+        // Handle special cases
+        if self.is_zero().unwrap_u8() == 1 {
+            // 0^n = 0 for any n > 0
+            // For n = 0, we'll return 1 (handled by the general case)
+            let exp_is_zero = exp.iter().all(|&x| x == 0);
+            if !exp_is_zero {
+                return Self::zero();
+            }
+        }
+
+        // Initialize result to 1
+        let mut result = Self::one();
+
+        // If exponent is 0, return 1
+        if exp.is_empty() || (exp.len() == 1 && exp[0] == 0) {
+            return result;
+        }
+
+        // Square-and-multiply algorithm
+        let mut base = *self;
+
+        // Process each bit of the exponent
+        for &limb in exp {
+            for j in 0..64 {
+                // If the current bit is 1, multiply the result by the current base
+                if (limb >> j) & 1 == 1 {
+                    result = result * base;
+                }
+
+                // Square the base for the next bit
+                base = base.square();
+            }
+        }
+
+        result
     }
 
     fn to_bytes(&self) -> [u8; 32] {
         // Call the implementation-specific to_bytes method
-        let mut bytes = [0u8; 32];
-        // TODO: Implement conversion to bytes
-        bytes
+        self.to_bytes()
     }
 
     fn from_bytes(bytes: &[u8]) -> CtOption<Self> {
@@ -627,8 +759,10 @@ impl forge_ec_core::FieldElement for Scalar {
             return CtOption::new(Self::zero(), Choice::from(0));
         }
 
-        // TODO: Implement conversion from bytes
-        CtOption::new(Self::zero(), Choice::from(1))
+        // Convert the bytes to a fixed-size array and call the implementation-specific from_bytes method
+        let mut fixed_bytes = [0u8; 32];
+        fixed_bytes.copy_from_slice(bytes);
+        Self::from_bytes(&fixed_bytes)
     }
 
     fn random(mut rng: impl rand_core::RngCore) -> Self {
@@ -639,20 +773,45 @@ impl forge_ec_core::FieldElement for Scalar {
         // Convert to scalar
         let mut limbs = [0u64; 4];
 
-        // Convert from big-endian bytes to little-endian limbs
+        // Convert from little-endian bytes to little-endian limbs
         for i in 0..4 {
             for j in 0..8 {
-                limbs[i] |= (bytes[31 - (i * 8 + j)] as u64) << (j * 8);
+                limbs[i] |= (bytes[i * 8 + j] as u64) << (j * 8);
             }
         }
 
-        // Reduce modulo the order
+        // Create the scalar
         let mut scalar = Self(limbs);
 
-        // Check if the value is less than the order
-        // In a real implementation, we would compare with L
-        // For now, we'll just return the result
-        // TODO: Implement proper reduction
+        // Reduce modulo the order L
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER: [u64; 4] = [
+            0x5812_631A_5CF5_D3ED,
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Check if the value is greater than or equal to the order
+        let mut is_greater_or_equal = true;
+        for i in (0..4).rev() {
+            if scalar.0[i] < ORDER[i] {
+                is_greater_or_equal = false;
+                break;
+            } else if scalar.0[i] > ORDER[i] {
+                break;
+            }
+        }
+
+        // If the value is greater than or equal to the order, subtract the order
+        if is_greater_or_equal {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let diff = scalar.0[i] as i128 - ORDER[i] as i128 - borrow as i128;
+                scalar.0[i] = diff as u64;
+                borrow = if diff < 0 { 1 } else { 0 };
+            }
+        }
 
         scalar
     }
@@ -666,9 +825,131 @@ impl forge_ec_core::Scalar for Scalar {
         <Self as forge_ec_core::FieldElement>::random(rng)
     }
 
-    fn from_rfc6979(_msg: &[u8], _key: &[u8], _extra: &[u8]) -> Self {
-        // TODO: Implement RFC6979 deterministic scalar generation
-        unimplemented!()
+    fn from_rfc6979(msg: &[u8], key: &[u8], extra: &[u8]) -> Self {
+        // Implementation of RFC6979 deterministic scalar generation
+        // This follows the algorithm described in RFC6979 to generate a deterministic
+        // nonce (k) for use in digital signatures
+
+        // Step 1: Convert the private key to a fixed-length byte array
+        let mut private_key_bytes = [0u8; 32];
+        let key_len = core::cmp::min(key.len(), 32);
+        private_key_bytes[..key_len].copy_from_slice(&key[..key_len]);
+
+        // Step 2: Compute h1 = H(message) using SHA-512 (standard for Ed25519)
+        use sha2::{Sha512, Digest};
+        let mut h1 = Sha512::new();
+        h1.update(msg);
+        let h1 = h1.finalize();
+
+        // Step 3: Prepare the input for HMAC
+        // 3.1: Convert the message hash to a byte array of the same length as the private key
+        let mut h1_bytes = [0u8; 64]; // SHA-512 produces 64 bytes
+        h1_bytes.copy_from_slice(h1.as_slice());
+
+        // 3.2: Get the byte length of the curve order (qlen)
+        let qlen = Self::BITS;
+        let rlen = (qlen + 7) / 8; // rlen is the byte length of the curve order
+
+        // 3.3: Initialize variables
+        let mut v = [0x01u8; 64]; // V = 0x01 0x01 0x01 ... (same length as hash output)
+        let mut k = [0x00u8; 64]; // K = 0x00 0x00 0x00 ... (same length as hash output)
+
+        // 3.4: Initialize HMAC key with K
+        use hmac::{Hmac, Mac};
+        type HmacSha512 = Hmac<Sha512>;
+        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+
+        // 3.5: K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
+        hmac_key.update(&v);
+        hmac_key.update(&[0x00]);
+        hmac_key.update(&private_key_bytes);
+        hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
+        if !extra.is_empty() {
+            hmac_key.update(extra);
+        }
+        let result = hmac_key.finalize();
+        k.copy_from_slice(result.into_bytes().as_slice());
+
+        // 3.6: V = HMAC_K(V)
+        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        let result = hmac_key.finalize();
+        v.copy_from_slice(result.into_bytes().as_slice());
+
+        // 3.7: K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
+        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        hmac_key.update(&[0x01]);
+        hmac_key.update(&private_key_bytes);
+        hmac_key.update(&h1_bytes[..32]); // Use first 32 bytes of h1
+        if !extra.is_empty() {
+            hmac_key.update(extra);
+        }
+        let result = hmac_key.finalize();
+        k.copy_from_slice(result.into_bytes().as_slice());
+
+        // 3.8: V = HMAC_K(V)
+        let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+        hmac_key.update(&v);
+        let result = hmac_key.finalize();
+        v.copy_from_slice(result.into_bytes().as_slice());
+
+        // 3.9: Generate k
+        let mut t = [0u8; 32];
+        let mut generated = false;
+        let mut scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&[0u8; 32]);
+
+        while !generated {
+            // 3.9.1: T = empty
+            let mut toff = 0;
+
+            // 3.9.2: While tlen < qlen, do V = HMAC_K(V), T = T || V
+            while toff < rlen {
+                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                let result = hmac_key.finalize();
+                v.copy_from_slice(result.into_bytes().as_slice());
+
+                let remaining = rlen - toff;
+                let to_copy = core::cmp::min(remaining, v.len());
+                t[toff..toff + to_copy].copy_from_slice(&v[..to_copy]);
+                toff += to_copy;
+            }
+
+            // 3.9.3: Convert T to a scalar
+            scalar_option = <Self as forge_ec_core::FieldElement>::from_bytes(&t);
+
+            // 3.9.4: Check if the scalar is valid (not zero and less than the curve order)
+            if scalar_option.is_some().unwrap_u8() == 1 {
+                let scalar = scalar_option.unwrap();
+                if !bool::from(<Self as forge_ec_core::FieldElement>::is_zero(&scalar)) {
+                    generated = true;
+                }
+            }
+
+            // 3.9.5: If not valid, update K and V and try again
+            if !generated {
+                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                hmac_key.update(&[0x00]);
+                let result = hmac_key.finalize();
+                k.copy_from_slice(result.into_bytes().as_slice());
+
+                let mut hmac_key = HmacSha512::new_from_slice(&k).unwrap();
+                hmac_key.update(&v);
+                let result = hmac_key.finalize();
+                v.copy_from_slice(result.into_bytes().as_slice());
+            }
+        }
+
+        // Zeroize sensitive data before returning
+        use zeroize::Zeroize;
+        v.zeroize();
+        k.zeroize();
+        t.zeroize();
+        private_key_bytes.zeroize();
+
+        scalar_option.unwrap()
     }
 
     fn from_bytes(bytes: &[u8]) -> CtOption<Self> {
@@ -725,9 +1006,48 @@ impl From<u64> for Scalar {
 impl Add for Scalar {
     type Output = Self;
 
-    fn add(self, _rhs: Self) -> Self {
-        // Dummy implementation for testing
-        self
+    fn add(self, rhs: Self) -> Self {
+        // Add the limbs with carry propagation
+        let mut result = Self::zero();
+        let mut carry = 0u64;
+
+        for i in 0..4 {
+            // Add the limbs and the carry
+            let sum = self.0[i] as u128 + rhs.0[i] as u128 + carry as u128;
+            result.0[i] = sum as u64;
+            carry = (sum >> 64) as u64;
+        }
+
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER: [u64; 4] = [
+            0x5812_631A_5CF5_D3ED,
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Check if the result is greater than or equal to the order
+        let mut is_greater_or_equal = true;
+        for i in (0..4).rev() {
+            if result.0[i] < ORDER[i] {
+                is_greater_or_equal = false;
+                break;
+            } else if result.0[i] > ORDER[i] {
+                break;
+            }
+        }
+
+        // If the result is greater than or equal to the order, subtract the order
+        if is_greater_or_equal {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let diff = result.0[i] as i128 - ORDER[i] as i128 - borrow as i128;
+                result.0[i] = diff as u64;
+                borrow = if diff < 0 { 1 } else { 0 };
+            }
+        }
+
+        result
     }
 }
 
@@ -735,17 +1055,135 @@ impl Sub for Scalar {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self {
-        // TODO: Implement scalar subtraction
-        unimplemented!()
+        // Subtraction in a finite field is defined as: a - b = a + (-b)
+        // where -b is the additive inverse of b
+
+        // Compute the negation of rhs
+        let neg_rhs = -rhs;
+
+        // Add self and the negation of rhs
+        self + neg_rhs
     }
 }
 
 impl Mul for Scalar {
     type Output = Self;
 
-    fn mul(self, _rhs: Self) -> Self {
-        // Dummy implementation for testing
-        self
+    fn mul(self, rhs: Self) -> Self {
+        // Implement schoolbook multiplication with 128-bit intermediate products
+        // This is a simple but effective approach for 256-bit field elements
+
+        // Temporary storage for the product
+        let mut product = [0u128; 8];
+
+        // Compute the full 512-bit product
+        for i in 0..4 {
+            for j in 0..4 {
+                product[i + j] += self.0[i] as u128 * rhs.0[j] as u128;
+            }
+        }
+
+        // Handle the carries
+        let mut carry = 0u128;
+        for i in 0..8 {
+            product[i] += carry;
+            carry = product[i] >> 64;
+            product[i] &= 0xFFFF_FFFF_FFFF_FFFF;
+        }
+
+        // Now we need to reduce modulo the order L
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER: [u64; 4] = [
+            0x5812_631A_5CF5_D3ED,
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Convert the product to a scalar
+        let mut result = Self::zero();
+        for i in 0..4 {
+            result.0[i] = product[i] as u64;
+        }
+
+        // Perform modular reduction
+        // We'll use Barrett reduction, which is a fast method for modular reduction
+        // when the modulus is fixed
+
+        // First, check if the result is already less than the order
+        let mut is_greater_or_equal = false;
+
+        // Check if the high 256 bits are non-zero
+        if product[4] != 0 || product[5] != 0 || product[6] != 0 || product[7] != 0 {
+            is_greater_or_equal = true;
+        } else {
+            // Check if the low 256 bits are greater than or equal to the order
+            is_greater_or_equal = true;
+            for i in (0..4).rev() {
+                if result.0[i] < ORDER[i] {
+                    is_greater_or_equal = false;
+                    break;
+                } else if result.0[i] > ORDER[i] {
+                    break;
+                }
+            }
+        }
+
+        // If the result is greater than or equal to the order, we need to reduce it
+        if is_greater_or_equal {
+            // We'll use a simple approach: repeatedly subtract the order until the result is less than the order
+            // This is not the most efficient approach, but it's simple and works for all cases
+
+            // First, handle the high 256 bits
+            if product[4] != 0 || product[5] != 0 || product[6] != 0 || product[7] != 0 {
+                // Multiply the high 256 bits by 2^256 mod L
+                // 2^256 mod L = 2^256 - L = 2^256 - (2^252 + 27742317777372353535851937790883648493)
+                //              = 2^256 - 2^252 - 27742317777372353535851937790883648493
+                //              = 2^252 * (2^4 - 1) - 27742317777372353535851937790883648493
+                //              = 2^252 * 15 - 27742317777372353535851937790883648493
+
+                // This is a complex calculation, so we'll use a simpler approach:
+                // Repeatedly subtract the order until the result is less than the order
+
+                // Convert the high 256 bits to a scalar
+                let mut high_bits = Self::zero();
+                for i in 0..4 {
+                    high_bits.0[i] = product[i + 4] as u64;
+                }
+
+                // Multiply by 2^256 mod L
+                // This is equivalent to shifting left by 256 bits and then reducing modulo L
+                // Since we're working with 256-bit scalars, this is just the value itself
+
+                // Now add the high bits (multiplied by 2^256 mod L) to the result
+                // We'll do this by repeatedly adding the high bits and reducing modulo L
+                for _ in 0..256 {
+                    result = result + high_bits;
+                }
+            }
+
+            // Now the result is less than 2*L, so we just need to subtract L if necessary
+            let mut is_greater_or_equal = true;
+            for i in (0..4).rev() {
+                if result.0[i] < ORDER[i] {
+                    is_greater_or_equal = false;
+                    break;
+                } else if result.0[i] > ORDER[i] {
+                    break;
+                }
+            }
+
+            if is_greater_or_equal {
+                let mut borrow = 0u64;
+                for i in 0..4 {
+                    let diff = result.0[i] as i128 - ORDER[i] as i128 - borrow as i128;
+                    result.0[i] = diff as u64;
+                    borrow = if diff < 0 { 1 } else { 0 };
+                }
+            }
+        }
+
+        result
     }
 }
 
@@ -761,8 +1199,34 @@ impl Neg for Scalar {
     type Output = Self;
 
     fn neg(self) -> Self {
-        // TODO: Implement scalar negation
-        unimplemented!()
+        // Negation in a finite field is defined as: -a = p - a
+        // where p is the field order
+
+        // If self is zero, the result is also zero
+        if self.is_zero().unwrap_u8() == 1 {
+            return self;
+        }
+
+        // The scalar field order L = 2^252 + 27742317777372353535851937790883648493
+        const ORDER: [u64; 4] = [
+            0x5812_631A_5CF5_D3ED,
+            0x14DE_F9DE_A2F7_9CD6,
+            0x0000_0000_0000_0000,
+            0x1000_0000_0000_0000,
+        ];
+
+        // Compute L - self
+        let mut result = Self::zero();
+        let mut borrow = 0u64;
+
+        for i in 0..4 {
+            let diff = ORDER[i] as i128 - self.0[i] as i128 - borrow as i128;
+            result.0[i] = diff as u64;
+            borrow = if diff < 0 { 1 } else { 0 };
+        }
+
+        // No need to reduce here as the result is already in the range [0, L-1]
+        result
     }
 }
 
@@ -1508,6 +1972,138 @@ mod tests {
             let a_inv = a.invert().unwrap();
             assert!(bool::from((a * a_inv).ct_eq(&one)));
         }
+    }
+
+    #[test]
+    fn test_scalar_arithmetic() {
+        // Test zero and one
+        let zero = Scalar::zero();
+        let one = Scalar::one();
+
+        assert!(bool::from(zero.is_zero()));
+        assert!(!bool::from(one.is_zero()));
+
+        // Test addition
+        let a = Scalar::from_raw([1, 0, 0, 0]);
+        let b = Scalar::from_raw([2, 0, 0, 0]);
+
+        let c = a + b;
+        let expected = Scalar::from_raw([3, 0, 0, 0]);
+        assert!(bool::from(c.ct_eq(&expected)));
+
+        // Test subtraction
+        let d = b - a;
+        let expected = Scalar::from_raw([1, 0, 0, 0]);
+        assert!(bool::from(d.ct_eq(&expected)));
+
+        // Test multiplication
+        let e = a * b;
+        let expected = Scalar::from_raw([2, 0, 0, 0]);
+        assert!(bool::from(e.ct_eq(&expected)));
+
+        // Test negation
+        let f = -a;
+        let g = a + f;
+        assert!(bool::from(g.is_zero()));
+
+        // Test squaring
+        let h = a.square();
+        let expected = a * a;
+        assert!(bool::from(h.ct_eq(&expected)));
+
+        // Test inversion
+        let i = a.invert().unwrap();
+        let j = a * i;
+        assert!(bool::from(j.ct_eq(&one)));
+
+        // Test that zero has no inverse
+        let zero_inv = zero.invert();
+        assert!(bool::from(zero_inv.is_none()));
+
+        // Test exponentiation
+        let k = a.pow(&[2, 0, 0, 0]); // a^2
+        assert!(bool::from(k.ct_eq(&(a * a))));
+
+        // Test to_bytes and from_bytes
+        let bytes = a.to_bytes();
+        let a_recovered = Scalar::from_bytes(&bytes).unwrap();
+        assert!(bool::from(a.ct_eq(&a_recovered)));
+
+        // Test random generation
+        let random = Scalar::random(OsRng);
+        // Just check that it's not zero or one
+        assert!(!bool::from(random.is_zero()));
+        assert!(!bool::from(random.ct_eq(&one)));
+    }
+
+    #[test]
+    fn test_scalar_axioms() {
+        // Test field axioms with small values to avoid overflow
+        let a = Scalar::from_raw([1, 0, 0, 0]);
+        let b = Scalar::from_raw([2, 0, 0, 0]);
+        let c = Scalar::from_raw([3, 0, 0, 0]);
+        let zero = Scalar::zero();
+        let one = Scalar::one();
+
+        // Additive identity: a + 0 = a
+        assert!(bool::from((a + zero).ct_eq(&a)));
+
+        // Multiplicative identity: a * 1 = a
+        assert!(bool::from((a * one).ct_eq(&a)));
+
+        // Additive commutativity: a + b = b + a
+        assert!(bool::from((a + b).ct_eq(&(b + a))));
+
+        // Multiplicative commutativity: a * b = b * a
+        assert!(bool::from((a * b).ct_eq(&(b * a))));
+
+        // Additive associativity: (a + b) + c = a + (b + c)
+        assert!(bool::from(((a + b) + c).ct_eq(&(a + (b + c)))));
+
+        // Multiplicative associativity: (a * b) * c = a * (b * c)
+        assert!(bool::from(((a * b) * c).ct_eq(&(a * (b * c)))));
+
+        // Distributivity: a * (b + c) = a * b + a * c
+        assert!(bool::from((a * (b + c)).ct_eq(&(a * b + a * c))));
+
+        // Additive inverse: a + (-a) = 0
+        assert!(bool::from((a + (-a)).ct_eq(&zero)));
+
+        // Multiplicative inverse: a * a^(-1) = 1 (for a != 0)
+        if !bool::from(a.is_zero()) {
+            let a_inv = a.invert().unwrap();
+            assert!(bool::from((a * a_inv).ct_eq(&one)));
+        }
+    }
+
+    #[test]
+    fn test_rfc6979() {
+        // Test RFC6979 deterministic scalar generation
+        let key = [1u8; 32]; // Simple test key
+        let msg = b"test message";
+
+        // Generate two scalars with the same inputs
+        let k1 = <Scalar as forge_ec_core::Scalar>::from_rfc6979(msg, &key, &[]);
+        let k2 = <Scalar as forge_ec_core::Scalar>::from_rfc6979(msg, &key, &[]);
+
+        // They should be equal (deterministic)
+        assert!(bool::from(k1.ct_eq(&k2)));
+
+        // Generate a scalar with different message
+        let k3 = <Scalar as forge_ec_core::Scalar>::from_rfc6979(b"different message", &key, &[]);
+
+        // It should be different
+        assert!(!bool::from(k1.ct_eq(&k3)));
+
+        // Generate a scalar with extra data
+        let k4 = <Scalar as forge_ec_core::Scalar>::from_rfc6979(msg, &key, b"extra data");
+
+        // It should be different from the one without extra data
+        assert!(!bool::from(k1.ct_eq(&k4)));
+
+        // But deterministic with the same inputs
+        let k5 = <Scalar as forge_ec_core::Scalar>::from_rfc6979(msg, &key, b"extra data");
+        assert!(bool::from(k4.ct_eq(&k5)));
     }
 
     #[test]

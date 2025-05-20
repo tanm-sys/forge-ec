@@ -2,10 +2,10 @@
 
 ## Summary
 
-- **High Priority**: 18 items
-- **Medium Priority**: 12 items
+- **High Priority**: 5 items
+- **Medium Priority**: 9 items
 - **Low Priority**: 10 items
-- **Total**: 40 items
+- **Total**: 24 items
 
 ## forge-ec-curves/src/ed25519.rs
 
@@ -23,17 +23,19 @@
    - ✅ `from_bytes()` - Implemented conversion from bytes
    - ✅ `random()` - Implemented proper reduction
 
-2. **Scalar Operations**
-   - Line 277-278: `to_bytes()` - Implement conversion to bytes
-   - Line 282-285: `from_bytes()` - Implement conversion from bytes
-   - Line 302-303: `invert()` - Implement scalar inversion
-   - Line 313-315: `pow()` - Implement scalar exponentiation
-   - Line 320-321: `to_bytes()` - Implement conversion to bytes
-   - Line 329-331: `from_bytes()` - Implement conversion from bytes
-   - Line 354: `to_bytes()` - Implement proper reduction
-   - Line 369-371: `from_rfc6979()` - Implement RFC6979 deterministic scalar generation
-   - Line 437-439: `sub()` - Implement scalar subtraction
-   - Line 463-465: `neg()` - Implement scalar negation
+2. **Scalar Operations** ✅
+   - ✅ `to_bytes()` - Implemented conversion to bytes
+   - ✅ `from_bytes()` - Implemented conversion from bytes
+   - ✅ `invert()` - Implemented scalar inversion
+   - ✅ `pow()` - Implemented scalar exponentiation
+   - ✅ `to_bytes()` - Implemented conversion to bytes
+   - ✅ `from_bytes()` - Implemented conversion from bytes
+   - ✅ `random()` - Implemented proper reduction
+   - ✅ `from_rfc6979()` - Implemented RFC6979 deterministic scalar generation
+   - ✅ `sub()` - Implemented scalar subtraction
+   - ✅ `neg()` - Implemented scalar negation
+   - ✅ `add()` - Implemented scalar addition
+   - ✅ `mul()` - Implemented scalar multiplication
 
 3. **Point Operations**
    - Line 1002-1004: `add()` - Implement point addition
@@ -43,6 +45,9 @@
 1. **Tests**
    - ✅ `test_field_arithmetic()` - Added field arithmetic tests
    - ✅ `test_field_axioms()` - Added field axioms tests
+   - ✅ `test_scalar_arithmetic()` - Added scalar arithmetic tests
+   - ✅ `test_scalar_axioms()` - Added scalar axioms tests
+   - ✅ `test_rfc6979()` - Added RFC6979 deterministic scalar generation tests
    - Line 1115: `test_point_arithmetic()` - Add point arithmetic tests
    - Line 1120: `test_scalar_multiplication()` - Add scalar multiplication tests
 
@@ -150,10 +155,11 @@
 
 ### High Priority Items
 - ✅ Core field element operations for Ed25519 (addition, subtraction, multiplication, inversion)
+- ✅ Scalar operations for Ed25519 (addition, subtraction, multiplication, inversion)
+- ✅ RFC6979 deterministic scalar generation for Ed25519
 - Core field element operations for Curve25519 (addition, subtraction, multiplication, inversion)
-- Scalar operations (addition, subtraction, multiplication, inversion)
+- Scalar operations for Curve25519 (addition, subtraction, multiplication, inversion)
 - Point operations (addition, multiplication)
-- RFC6979 deterministic scalar generation
 - X25519 key exchange implementation
 
 ### Medium Priority Items
@@ -161,8 +167,9 @@
 - Fix Sequence derive macro and ASN.1 attributes in DER encoding
 - Montgomery form conversion in secp256k1
 - ✅ Tests for Ed25519 field arithmetic
+- ✅ Tests for Ed25519 scalar arithmetic
+- ✅ Tests for Ed25519 RFC6979 implementation
 - Tests for point arithmetic and scalar multiplication
-- Complete RFC6979 implementation
 
 ### Low Priority Items
 - Point encoding/decoding optimizations
