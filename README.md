@@ -152,18 +152,22 @@ The library is split into multiple crates for modularity:
 
 ## Recent Progress
 
-### Recent Fixes
+### Recent Enhancements
 
-#### secp256k1 Implementation
+#### HashToCurve Implementation
 
-We've recently made several fixes to the secp256k1 implementation:
+We've recently made significant improvements to the HashToCurve implementation:
 
-- Fixed test cases for point validation and key validation
-- Implemented temporary workarounds for the `is_on_curve` method and `from_bytes` method
-- Added documentation about the current implementation status and known issues
-- Updated the test suite to handle the current implementation limitations
+- Enhanced the HashToCurve trait with methods to access curve parameters (get_a, get_b)
+- Improved constant-time operations in hash_to_curve.rs
+- Fixed os2ip_mod_p function to be constant-time using conditional selection
+- Added proper trait bounds for ConditionallySelectable
+- Fixed type conversion issues with field elements
+- Addressed compiler warnings across the codebase
+- Added better documentation for cryptographic operations
+- Fixed build issues in the hash-to-curve implementation
 
-These fixes are temporary and will be replaced with proper implementations in future updates.
+These improvements ensure that the hash-to-curve operations are secure against timing attacks and follow the RFC9380 specification more closely.
 
 ### Ed25519 Implementation
 
@@ -192,6 +196,17 @@ We've recently implemented several key components for the Ed25519 curve:
 - Comprehensive test suite for scalar arithmetic and scalar axioms
 
 These implementations form the foundation for the Ed25519 curve operations and enable secure and efficient EdDSA signatures.
+
+### secp256k1 Implementation
+
+We've also made several fixes to the secp256k1 implementation:
+
+- Fixed test cases for point validation and key validation
+- Implemented temporary workarounds for the `is_on_curve` method and `from_bytes` method
+- Added documentation about the current implementation status and known issues
+- Updated the test suite to handle the current implementation limitations
+
+These fixes are temporary and will be replaced with proper implementations in future updates.
 
 ## Performance
 

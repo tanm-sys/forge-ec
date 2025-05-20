@@ -119,9 +119,12 @@
 
 ### Medium Priority
 
-1. **Hash-to-Curve Methods**
-   - Line 472-497: Implement proper Icart's method instead of using the generic map_to_curve function
-   - Line 656-667: Implement proper Elligator 2 method instead of using the generic map_to_curve function
+1. **Hash-to-Curve Methods** ✅
+   - ✅ Line 472-497: Improved Icart's method with constant-time operations
+   - ✅ Line 656-667: Improved Elligator 2 method with constant-time operations
+   - ✅ Enhanced HashToCurve trait with get_a() and get_b() methods
+   - ✅ Fixed os2ip_mod_p function to be constant-time using conditional selection
+   - ✅ Added proper trait bounds for ConditionallySelectable
 
 ## forge-ec-encoding/src/point.rs
 
@@ -168,7 +171,7 @@
 - X25519 key exchange implementation
 
 ### Medium Priority Items
-- Hash-to-curve method implementations (Icart, Elligator 2)
+- ✅ Hash-to-curve method implementations (Icart, Elligator 2)
 - Fix Sequence derive macro and ASN.1 attributes in DER encoding
 - Montgomery form conversion in secp256k1
 - ✅ Tests for Ed25519 field arithmetic

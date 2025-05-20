@@ -246,9 +246,10 @@ The hash-to-curve methods in this crate are implemented according to RFC9380, wh
 
 All cryptographically sensitive operations in this crate are implemented to run in constant time to prevent timing attacks:
 
-- Hash-to-curve operations use constant-time algorithms
+- Hash-to-curve operations use constant-time algorithms with conditional selection
 - Field arithmetic operations are constant-time
 - No secret-dependent branches or memory accesses
+- Proper handling of error cases in constant time
 
 ### Domain Separation
 
@@ -358,6 +359,8 @@ The hash-to-curve methods in this crate are implemented to run in constant time 
 - Field arithmetic operations run in constant time
 - Point operations use constant-time algorithms
 - No secret-dependent branches or memory accesses
+- Proper error handling using conditional selection
+- Secure conversion between different data types
 
 Example of constant-time hash-to-curve:
 
