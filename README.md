@@ -146,6 +146,21 @@ The library is split into multiple crates for modularity:
 - `forge-ec-hash`: Cryptographic hash functions
 - `forge-ec-rng`: Random number generation
 
+## Recent Progress
+
+### Ed25519 Field Element Operations
+
+We've recently implemented all the core field element operations for Ed25519:
+
+- Field reduction with proper modulo p = 2^255 - 19
+- Constant-time arithmetic operations (addition, subtraction, multiplication, negation)
+- Field inversion using Fermat's Little Theorem
+- Exponentiation using square-and-multiply algorithm
+- Serialization methods (to_bytes, from_bytes)
+- Comprehensive test suite for field arithmetic and field axioms
+
+These implementations form the foundation for the Ed25519 curve operations and will enable secure and efficient EdDSA signatures.
+
 ## Performance
 
 The library provides high-performance implementations:
