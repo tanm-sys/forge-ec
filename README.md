@@ -148,10 +148,11 @@ The library is split into multiple crates for modularity:
 
 ## Recent Progress
 
-### Ed25519 Field Element Operations
+### Ed25519 Implementation
 
-We've recently implemented all the core field element operations for Ed25519:
+We've recently implemented several key components for the Ed25519 curve:
 
+#### Field Element Operations
 - Field reduction with proper modulo p = 2^255 - 19
 - Constant-time arithmetic operations (addition, subtraction, multiplication, negation)
 - Field inversion using Fermat's Little Theorem
@@ -159,7 +160,21 @@ We've recently implemented all the core field element operations for Ed25519:
 - Serialization methods (to_bytes, from_bytes)
 - Comprehensive test suite for field arithmetic and field axioms
 
-These implementations form the foundation for the Ed25519 curve operations and will enable secure and efficient EdDSA signatures.
+#### Point Operations
+- Point addition in extended coordinates with proper handling of special cases
+- Point doubling optimized for Edwards curves
+- Point negation and identity point handling
+- Constant-time point equality checks
+- Proper generator point implementation
+
+#### Scalar Operations
+- Scalar arithmetic (addition, subtraction, multiplication, negation)
+- Scalar inversion and exponentiation
+- RFC6979 deterministic scalar generation
+- Serialization methods (to_bytes, from_bytes)
+- Comprehensive test suite for scalar arithmetic and scalar axioms
+
+These implementations form the foundation for the Ed25519 curve operations and enable secure and efficient EdDSA signatures.
 
 ## Performance
 

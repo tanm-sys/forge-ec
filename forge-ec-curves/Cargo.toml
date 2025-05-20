@@ -20,8 +20,8 @@ rand_core = { workspace = true }
 hex-literal = { version = "0.4", optional = true }
 digest = { workspace = true }
 rayon = { workspace = true, optional = true }
-sha2 = { version = "0.10", default-features = false }
-hmac = { version = "0.12", default-features = false }
+sha2 = { workspace = true }
+hmac = { workspace = true }
 
 # Optional SIMD support
 cfg-if = "1.0"

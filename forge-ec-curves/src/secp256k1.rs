@@ -8,7 +8,7 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, PointFormat, DomainSeparationTag};
+use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, DomainSeparationTag};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 use std::vec::Vec;
@@ -143,7 +143,7 @@ impl FieldElement {
            (limbs[3] == P[3] && limbs[2] == P[2] && limbs[1] == P[1] && limbs[0] >= P[0]));
 
         // Convert to Montgomery form
-        let mut result = Self(limbs);
+        let result = Self(limbs);
         // TODO: Convert to Montgomery form
 
         CtOption::new(result, Choice::from(if is_valid { 1 } else { 0 }))
@@ -158,14 +158,12 @@ impl FieldElement {
         const N0: u64 = 0xD838091DD2253531;
 
         let mut t = [0u64; 8];
-        let mut carry = 0u64;
-        let mut carry2 = 0u64;
 
         // First iteration
         let mut k = self.0[0].wrapping_mul(N0);
         let (res, c) = t[0].overflowing_add(self.0[0].wrapping_mul(k));
         t[0] = res;
-        carry = if c { 1 } else { 0 };
+        let mut carry = if c { 1 } else { 0 };
 
         for i in 1..4 {
             let (res, c) = self.0[i].overflowing_mul(k);

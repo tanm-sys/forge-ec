@@ -2,10 +2,10 @@
 
 ## Summary
 
-- **High Priority**: 5 items
-- **Medium Priority**: 9 items
+- **High Priority**: 4 items
+- **Medium Priority**: 8 items
 - **Low Priority**: 10 items
-- **Total**: 24 items
+- **Total**: 22 items
 
 ## forge-ec-curves/src/ed25519.rs
 
@@ -37,8 +37,12 @@
    - ✅ `add()` - Implemented scalar addition
    - ✅ `mul()` - Implemented scalar multiplication
 
-3. **Point Operations**
-   - Line 1002-1004: `add()` - Implement point addition
+3. **Point Operations** ✅
+   - ✅ `add()` - Implemented point addition
+   - ✅ `double()` - Implemented point doubling
+   - ✅ `negate()` - Implemented point negation
+   - ✅ `is_identity()` - Improved identity point handling
+   - ✅ `ct_eq()` - Implemented constant-time point equality
 
 ### Medium Priority
 
@@ -48,7 +52,7 @@
    - ✅ `test_scalar_arithmetic()` - Added scalar arithmetic tests
    - ✅ `test_scalar_axioms()` - Added scalar axioms tests
    - ✅ `test_rfc6979()` - Added RFC6979 deterministic scalar generation tests
-   - Line 1115: `test_point_arithmetic()` - Add point arithmetic tests
+   - ✅ `test_point_arithmetic()` - Added point arithmetic tests
    - Line 1120: `test_scalar_multiplication()` - Add scalar multiplication tests
 
 ## forge-ec-curves/src/curve25519.rs
@@ -157,9 +161,10 @@
 - ✅ Core field element operations for Ed25519 (addition, subtraction, multiplication, inversion)
 - ✅ Scalar operations for Ed25519 (addition, subtraction, multiplication, inversion)
 - ✅ RFC6979 deterministic scalar generation for Ed25519
+- ✅ Point operations for Ed25519 (addition, doubling, negation, identity handling)
 - Core field element operations for Curve25519 (addition, subtraction, multiplication, inversion)
 - Scalar operations for Curve25519 (addition, subtraction, multiplication, inversion)
-- Point operations (addition, multiplication)
+- Point operations for Curve25519 (addition, multiplication)
 - X25519 key exchange implementation
 
 ### Medium Priority Items
@@ -169,7 +174,8 @@
 - ✅ Tests for Ed25519 field arithmetic
 - ✅ Tests for Ed25519 scalar arithmetic
 - ✅ Tests for Ed25519 RFC6979 implementation
-- Tests for point arithmetic and scalar multiplication
+- ✅ Tests for Ed25519 point arithmetic
+- Tests for scalar multiplication
 
 ### Low Priority Items
 - Point encoding/decoding optimizations

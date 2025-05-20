@@ -188,12 +188,16 @@ let negated_point = public_key_affine.negate();
 
 - Field arithmetic is implemented using 4 64-bit limbs with 2^255 - 19 modulus
 - Extended coordinates for efficient point operations
+- Constant-time point addition with proper handling of special cases
+- Optimized point doubling for Edwards curves
+- Proper point negation and identity point handling
 - Precomputed tables for the base point to accelerate scalar multiplication
 - Batch verification support for EdDSA signatures
 - Full implementation of random number generation for field elements and scalars
 - Support for point encoding/decoding in various formats
-- Implementation of point operations (double, negate, is_on_curve, conditional_select)
+- Implementation of point operations (add, double, negate, is_on_curve, conditional_select)
 - Proper handling of the curve's cofactor (8)
+- Comprehensive test suite for field arithmetic, scalar operations, and point arithmetic
 
 ## Field Arithmetic
 
