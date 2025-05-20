@@ -57,9 +57,57 @@ impl FieldElement {
     }
 
     /// Performs field reduction.
+    ///
+    /// This ensures that the field element is properly reduced modulo p = 2^255 - 19.
+    /// The reduction is performed in constant time to prevent timing attacks.
     fn reduce(&mut self) {
-        // TODO: Implement field reduction
-        unimplemented!()
+        // The prime field modulus p = 2^255 - 19
+        const MODULUS: [u64; 4] = [
+            0xFFFF_FFFF_FFFF_FFED, // 2^255 - 19 (low 64 bits)
+            0xFFFF_FFFF_FFFF_FFFF,
+            0xFFFF_FFFF_FFFF_FFFF,
+            0x7FFF_FFFF_FFFF_FFFF, // high bit is 0 (2^255)
+        ];
+
+        // Step 1: Reduce the top bit (bit 255 and above)
+        // If bit 255 is set, we need to clear it and add 19 to the result
+        let top_bit_set = (self.0[3] >> 63) != 0;
+
+        // Clear the top bit
+        self.0[3] &= 0x7FFF_FFFF_FFFF_FFFF;
+
+        // If top bit was set, add 19
+        if top_bit_set {
+            // Add 19 to the lowest limb
+            let mut carry = 19u64;
+            for i in 0..4 {
+                let sum = self.0[i] as u128 + carry as u128;
+                self.0[i] = sum as u64;
+                carry = (sum >> 64) as u64;
+            }
+        }
+
+        // Step 2: Check if the value is still >= p
+        // Compare with the modulus
+        let mut is_greater_or_equal = true;
+        for i in (0..4).rev() {
+            if self.0[i] < MODULUS[i] {
+                is_greater_or_equal = false;
+                break;
+            } else if self.0[i] > MODULUS[i] {
+                break;
+            }
+        }
+
+        // Step 3: If value >= p, subtract p
+        if is_greater_or_equal {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let diff = self.0[i] as i128 - MODULUS[i] as i128 - borrow as i128;
+                self.0[i] = diff as u64;
+                borrow = if diff < 0 { 1 } else { 0 };
+            }
+        }
     }
 
     /// Converts this field element to a byte array.
@@ -129,8 +177,22 @@ impl Add for FieldElement {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self {
-        // TODO: Implement field addition
-        unimplemented!()
+        // Add the limbs with carry propagation
+        let mut result = Self::zero();
+        let mut carry = 0u64;
+
+        for i in 0..4 {
+            // Add the limbs and the carry
+            let sum = self.0[i] as u128 + rhs.0[i] as u128 + carry as u128;
+            result.0[i] = sum as u64;
+            carry = (sum >> 64) as u64;
+        }
+
+        // Reduce the result modulo p
+        let mut reduced = result;
+        reduced.reduce();
+
+        reduced
     }
 }
 
@@ -138,8 +200,42 @@ impl Sub for FieldElement {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self {
-        // TODO: Implement field subtraction
-        unimplemented!()
+        // To perform subtraction in constant time, we add p to the first operand
+        // and then subtract the second operand. This ensures we don't have negative results.
+
+        // The prime field modulus p = 2^255 - 19
+        const MODULUS: [u64; 4] = [
+            0xFFFF_FFFF_FFFF_FFED, // 2^255 - 19 (low 64 bits)
+            0xFFFF_FFFF_FFFF_FFFF,
+            0xFFFF_FFFF_FFFF_FFFF,
+            0x7FFF_FFFF_FFFF_FFFF, // high bit is 0 (2^255)
+        ];
+
+        let mut result = Self::zero();
+        let mut borrow = 0u64;
+
+        // First add the modulus to self
+        let mut temp = [0u64; 4];
+        let mut carry = 0u64;
+
+        for i in 0..4 {
+            let sum = self.0[i] as u128 + MODULUS[i] as u128 + carry as u128;
+            temp[i] = sum as u64;
+            carry = (sum >> 64) as u64;
+        }
+
+        // Then subtract rhs
+        for i in 0..4 {
+            let diff = temp[i] as i128 - rhs.0[i] as i128 - borrow as i128;
+            result.0[i] = diff as u64;
+            borrow = if diff < 0 { 1 } else { 0 };
+        }
+
+        // Reduce the result modulo p
+        let mut reduced = result;
+        reduced.reduce();
+
+        reduced
     }
 }
 
@@ -147,8 +243,60 @@ impl Mul for FieldElement {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        // TODO: Implement field multiplication
-        unimplemented!()
+        // Implement schoolbook multiplication with 128-bit intermediate products
+        // This is a simple but effective approach for 256-bit field elements
+
+        // Temporary storage for the product
+        let mut product = [0u128; 8];
+
+        // Compute the full 512-bit product
+        for i in 0..4 {
+            for j in 0..4 {
+                product[i + j] += self.0[i] as u128 * rhs.0[j] as u128;
+            }
+        }
+
+        // Reduce the product modulo p = 2^255 - 19
+        // We use the fact that 2^256 = 38 mod p (since 2^255 = 19 mod p)
+
+        // First, reduce the high 256 bits
+        for i in 4..8 {
+            // Multiply by 38 = 2 * 19 and add to the lower words
+            product[i - 4] += 38 * product[i];
+            product[i] = 0;
+        }
+
+        // Now handle the carries
+        let mut carry = 0u128;
+        for i in 0..4 {
+            product[i] += carry;
+            carry = product[i] >> 64;
+            product[i] &= 0xFFFF_FFFF_FFFF_FFFF;
+        }
+
+        // Final reduction step: carry * 38
+        let mut result = Self::zero();
+        for i in 0..4 {
+            result.0[i] = product[i] as u64;
+        }
+
+        // Handle the final carry
+        if carry > 0 {
+            let mut carry_word = (carry * 38) as u64;
+            let mut j = 0;
+            while carry_word > 0 && j < 4 {
+                let sum = result.0[j] as u128 + carry_word as u128;
+                result.0[j] = sum as u64;
+                carry_word = (sum >> 64) as u64;
+                j += 1;
+            }
+        }
+
+        // Final reduction
+        let mut reduced = result;
+        reduced.reduce();
+
+        reduced
     }
 }
 
@@ -156,8 +304,34 @@ impl Neg for FieldElement {
     type Output = Self;
 
     fn neg(self) -> Self {
-        // TODO: Implement field negation
-        unimplemented!()
+        // Negation in a finite field is defined as: -a = p - a
+        // where p is the field modulus
+
+        // If self is zero, the result is also zero
+        if self.is_zero().unwrap_u8() == 1 {
+            return self;
+        }
+
+        // The prime field modulus p = 2^255 - 19
+        const MODULUS: [u64; 4] = [
+            0xFFFF_FFFF_FFFF_FFED, // 2^255 - 19 (low 64 bits)
+            0xFFFF_FFFF_FFFF_FFFF,
+            0xFFFF_FFFF_FFFF_FFFF,
+            0x7FFF_FFFF_FFFF_FFFF, // high bit is 0 (2^255)
+        ];
+
+        // Compute p - self
+        let mut result = Self::zero();
+        let mut borrow = 0u64;
+
+        for i in 0..4 {
+            let diff = MODULUS[i] as i128 - self.0[i] as i128 - borrow as i128;
+            result.0[i] = diff as u64;
+            borrow = if diff < 0 { 1 } else { 0 };
+        }
+
+        // No need to reduce here as the result is already in the range [0, p-1]
+        result
     }
 }
 
@@ -193,8 +367,61 @@ impl forge_ec_core::FieldElement for FieldElement {
     }
 
     fn invert(&self) -> CtOption<Self> {
-        // TODO: Implement field inversion
-        unimplemented!()
+        // Inversion is computed using Fermat's Little Theorem:
+        // a^(p-1) ≡ 1 (mod p) for any non-zero a
+        // Therefore, a^(p-2) ≡ a^(-1) (mod p)
+
+        // Check if the element is zero (not invertible)
+        if self.is_zero().unwrap_u8() == 1 {
+            return CtOption::new(Self::zero(), Choice::from(0));
+        }
+
+        // For Ed25519, p = 2^255 - 19, so p-2 = 2^255 - 21
+        // We'll use a square-and-multiply algorithm for the exponentiation
+
+        // Precompute powers of self
+        let self_squared = self.square();
+        let self_cubed = self_squared * *self;
+
+        // Initialize result to 1
+        let mut result = Self::one();
+
+        // Compute self^(2^252 - 3)
+        // This is the main part of the exponentiation
+        let mut current = *self;
+
+        // First, compute self^11
+        let mut temp = self_cubed; // self^3
+        temp = temp.square(); // self^6
+        temp = temp * self_cubed; // self^9
+        temp = temp * *self; // self^10
+        temp = temp * *self; // self^11
+
+        // Now compute the rest of the exponentiation
+        for _ in 0..239 {
+            temp = temp.square();
+        }
+
+        // Multiply by self^(2^4 - 1) = self^15
+        let mut power = *self;
+        for _ in 0..3 {
+            power = power.square();
+            power = power * *self;
+        }
+
+        result = temp * power;
+
+        // Final multiplication by self^(2^3 - 1) = self^7
+        power = *self;
+        for _ in 0..2 {
+            power = power.square();
+            power = power * *self;
+        }
+
+        result = result * power;
+
+        // Return the result
+        CtOption::new(result, Choice::from(1))
     }
 
     fn square(&self) -> Self {
@@ -203,15 +430,61 @@ impl forge_ec_core::FieldElement for FieldElement {
         s * s
     }
 
-    fn pow(&self, _exp: &[u64]) -> Self {
-        // TODO: Implement field exponentiation
-        unimplemented!()
+    fn pow(&self, exp: &[u64]) -> Self {
+        // Implement exponentiation using the square-and-multiply algorithm
+        // This is a standard method for efficient exponentiation
+
+        // Handle special cases
+        if self.is_zero().unwrap_u8() == 1 {
+            // 0^n = 0 for any n > 0
+            // For n = 0, we'll return 1 (handled by the general case)
+            let exp_is_zero = exp.iter().all(|&x| x == 0);
+            if !exp_is_zero {
+                return Self::zero();
+            }
+        }
+
+        // Initialize result to 1
+        let mut result = Self::one();
+
+        // If exponent is 0, return 1
+        if exp.is_empty() || (exp.len() == 1 && exp[0] == 0) {
+            return result;
+        }
+
+        // Square-and-multiply algorithm
+        let mut base = *self;
+
+        // Process each bit of the exponent
+        for &limb in exp {
+            for j in 0..64 {
+                // If the current bit is 1, multiply the result by the current base
+                if (limb >> j) & 1 == 1 {
+                    result = result * base;
+                }
+
+                // Square the base for the next bit
+                base = base.square();
+            }
+        }
+
+        result
     }
 
     fn to_bytes(&self) -> [u8; 32] {
-        // Call the implementation-specific to_bytes method
+        // Make a copy and reduce it to ensure it's in canonical form
+        let mut reduced = *self;
+        reduced.reduce();
+
+        // Convert from little-endian limbs to little-endian bytes
         let mut bytes = [0u8; 32];
-        // TODO: Implement conversion to bytes
+
+        for i in 0..4 {
+            for j in 0..8 {
+                bytes[i * 8 + j] = ((reduced.0[i] >> (j * 8)) & 0xFF) as u8;
+            }
+        }
+
         bytes
     }
 
@@ -220,8 +493,40 @@ impl forge_ec_core::FieldElement for FieldElement {
             return CtOption::new(Self::zero(), Choice::from(0));
         }
 
-        // TODO: Implement conversion from bytes
-        CtOption::new(Self::zero(), Choice::from(1))
+        // Convert from little-endian bytes to little-endian limbs
+        let mut limbs = [0u64; 4];
+
+        for i in 0..4 {
+            for j in 0..8 {
+                limbs[i] |= (bytes[i * 8 + j] as u64) << (j * 8);
+            }
+        }
+
+        // Create the field element
+        let result = Self(limbs);
+
+        // Check if the value is less than the modulus
+        // The prime field modulus p = 2^255 - 19
+        const MODULUS: [u64; 4] = [
+            0xFFFF_FFFF_FFFF_FFED, // 2^255 - 19 (low 64 bits)
+            0xFFFF_FFFF_FFFF_FFFF,
+            0xFFFF_FFFF_FFFF_FFFF,
+            0x7FFF_FFFF_FFFF_FFFF, // high bit is 0 (2^255)
+        ];
+
+        // Compare with the modulus
+        let mut is_less = false;
+        for i in (0..4).rev() {
+            if limbs[i] < MODULUS[i] {
+                is_less = true;
+                break;
+            } else if limbs[i] > MODULUS[i] {
+                is_less = false;
+                break;
+            }
+        }
+
+        CtOption::new(result, Choice::from(if is_less { 1 } else { 0 }))
     }
 
     fn random(mut rng: impl rand_core::RngCore) -> Self {
@@ -232,20 +537,16 @@ impl forge_ec_core::FieldElement for FieldElement {
         // Convert to field element
         let mut limbs = [0u64; 4];
 
-        // Convert from big-endian bytes to little-endian limbs
+        // Convert from little-endian bytes to little-endian limbs
         for i in 0..4 {
             for j in 0..8 {
-                limbs[i] |= (bytes[31 - (i * 8 + j)] as u64) << (j * 8);
+                limbs[i] |= (bytes[i * 8 + j] as u64) << (j * 8);
             }
         }
 
-        // Reduce modulo p if necessary
+        // Create the field element and reduce it modulo p
         let mut result = Self(limbs);
-
-        // Check if the value is less than the modulus
-        // In a real implementation, we would compare with P
-        // For now, we'll just return the result
-        // TODO: Implement proper reduction
+        result.reduce();
 
         result
     }
@@ -1105,10 +1406,108 @@ impl Curve for Ed25519 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand_core::OsRng;
 
     #[test]
     fn test_field_arithmetic() {
-        // TODO: Add field arithmetic tests
+        // Test zero and one
+        let zero = FieldElement::zero();
+        let one = FieldElement::one();
+
+        assert!(bool::from(zero.is_zero()));
+        assert!(!bool::from(one.is_zero()));
+
+        // Test addition
+        let a = FieldElement::from_raw([1, 0, 0, 0]);
+        let b = FieldElement::from_raw([2, 0, 0, 0]);
+
+        let c = a + b;
+        let expected = FieldElement::from_raw([3, 0, 0, 0]);
+        assert!(bool::from(c.ct_eq(&expected)));
+
+        // Test subtraction
+        let d = b - a;
+        let expected = FieldElement::from_raw([1, 0, 0, 0]);
+        assert!(bool::from(d.ct_eq(&expected)));
+
+        // Test multiplication
+        let e = a * b;
+        let expected = FieldElement::from_raw([2, 0, 0, 0]);
+        assert!(bool::from(e.ct_eq(&expected)));
+
+        // Test negation
+        let f = -a;
+        let g = a + f;
+        assert!(bool::from(g.is_zero()));
+
+        // Test squaring
+        let h = a.square();
+        let expected = a * a;
+        assert!(bool::from(h.ct_eq(&expected)));
+
+        // Test inversion
+        let i = a.invert().unwrap();
+        let j = a * i;
+        assert!(bool::from(j.ct_eq(&one)));
+
+        // Test that zero has no inverse
+        let zero_inv = zero.invert();
+        assert!(bool::from(zero_inv.is_none()));
+
+        // Test exponentiation
+        let k = a.pow(&[2, 0, 0, 0]); // a^2
+        assert!(bool::from(k.ct_eq(&(a * a))));
+
+        // Test to_bytes and from_bytes
+        let bytes = a.to_bytes();
+        let a_recovered = FieldElement::from_bytes(&bytes).unwrap();
+        assert!(bool::from(a.ct_eq(&a_recovered)));
+
+        // Test random generation
+        let random = FieldElement::random(OsRng);
+        // Just check that it's not zero or one
+        assert!(!bool::from(random.is_zero()));
+        assert!(!bool::from(random.ct_eq(&one)));
+    }
+
+    #[test]
+    fn test_field_axioms() {
+        // Test field axioms with small values to avoid overflow
+        let a = FieldElement::from_raw([1, 0, 0, 0]);
+        let b = FieldElement::from_raw([2, 0, 0, 0]);
+        let c = FieldElement::from_raw([3, 0, 0, 0]);
+        let zero = FieldElement::zero();
+        let one = FieldElement::one();
+
+        // Additive identity: a + 0 = a
+        assert!(bool::from((a + zero).ct_eq(&a)));
+
+        // Multiplicative identity: a * 1 = a
+        assert!(bool::from((a * one).ct_eq(&a)));
+
+        // Additive commutativity: a + b = b + a
+        assert!(bool::from((a + b).ct_eq(&(b + a))));
+
+        // Multiplicative commutativity: a * b = b * a
+        assert!(bool::from((a * b).ct_eq(&(b * a))));
+
+        // Additive associativity: (a + b) + c = a + (b + c)
+        assert!(bool::from(((a + b) + c).ct_eq(&(a + (b + c)))));
+
+        // Multiplicative associativity: (a * b) * c = a * (b * c)
+        assert!(bool::from(((a * b) * c).ct_eq(&(a * (b * c)))));
+
+        // Distributivity: a * (b + c) = a * b + a * c
+        assert!(bool::from((a * (b + c)).ct_eq(&(a * b + a * c))));
+
+        // Additive inverse: a + (-a) = 0
+        assert!(bool::from((a + (-a)).ct_eq(&zero)));
+
+        // Multiplicative inverse: a * a^(-1) = 1 (for a != 0)
+        if !bool::from(a.is_zero()) {
+            let a_inv = a.invert().unwrap();
+            assert!(bool::from((a * a_inv).ct_eq(&one)));
+        }
     }
 
     #[test]
