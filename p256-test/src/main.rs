@@ -1,4 +1,4 @@
-use subtle::{Choice, ConstantTimeEq, CtOption};
+use subtle::{Choice, ConstantTimeEq};
 use std::ops::{Add, Mul, Neg, Sub};
 
 /// P-256 prime field modulus (p).
@@ -12,6 +12,7 @@ const P: [u64; 4] = [
 
 /// P-256 curve order (n).
 /// n = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF BCE6FAAD A7179E84 F3B9CAC2 FC632551
+#[allow(dead_code)]
 const N: [u64; 4] = [
     0xF3B9_CAC2_FC63_2551,
     0xBCE6_FAAD_A717_9E84,

@@ -312,7 +312,7 @@ where
         let r = q0 + q1;
 
         // Step 5: P = clear_cofactor(R)
-        C::clear_cofactor(&r)
+        <C as HashToCurve>::clear_cofactor(&r)
     }
 
     /// Hashes a message to a field element.
@@ -461,7 +461,7 @@ where
         let r = q0 + q1;
 
         // Step 5: P = clear_cofactor(R)
-        C::clear_cofactor(&r)
+        <C as HashToCurve>::clear_cofactor(&r)
     }
 
     /// Maps a field element to a curve point using Icart's method.
@@ -644,7 +644,7 @@ where
         let r = q0 + q1;
 
         // Step 5: P = clear_cofactor(R)
-        C::clear_cofactor(&r)
+        <C as HashToCurve>::clear_cofactor(&r)
     }
 
     /// Maps a field element to a curve point using Elligator 2 method.
