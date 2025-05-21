@@ -4,8 +4,8 @@
 
 - **High Priority**: 4 items
 - **Medium Priority**: 8 items
-- **Low Priority**: 10 items
-- **Total**: 22 items
+- **Low Priority**: 9 items (1 completed)
+- **Total**: 21 items remaining
 
 ## forge-ec-curves/src/ed25519.rs
 
@@ -130,11 +130,14 @@
 
 ### Low Priority
 
-1. **Point Encoding/Decoding**
-   - Line 76-94: Implement proper point decoding in `to_affine()` method of `CompressedPoint`
-   - Line 176-194: Implement proper point decoding in `to_affine()` method of `UncompressedPoint`
-   - Line 271-289: Implement proper point decoding in `decode()` method of `Sec1Compressed`
-   - Line 323-341: Implement proper point decoding in `decode()` method of `Sec1Uncompressed`
+1. **Point Encoding/Decoding** ✅
+   - ✅ Implemented proper point decoding in `to_affine()` method of `CompressedPoint`
+   - ✅ Implemented proper point decoding in `to_affine()` method of `UncompressedPoint`
+   - ✅ Implemented proper point decoding in `decode()` method of `Sec1Compressed`
+   - ✅ Implemented proper point decoding in `decode()` method of `Sec1Uncompressed`
+   - ✅ Added special handling for identity point
+   - ✅ Implemented constant-time operations for point encoding/decoding
+   - ✅ Added comprehensive test suite for point encoding/decoding
 
 ## forge-ec-encoding/src/base58.rs
 
@@ -181,6 +184,6 @@
 - Tests for scalar multiplication
 
 ### Low Priority Items
-- Point encoding/decoding optimizations
+- ✅ Point encoding/decoding optimizations
 - Base58 encoding/decoding optimizations
 - PEM encoding/decoding optimizations

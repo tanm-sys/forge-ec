@@ -9,12 +9,13 @@ use std::vec::Vec;
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use core::fmt::Debug;
 
 use digest::Digest;
-use forge_ec_core::{Curve, FieldElement, PointAffine, Scalar, SignatureScheme};
+use digest::core_api::BlockSizeUser;
+use forge_ec_core::{Curve, FieldElement, PointAffine, Scalar, SignatureScheme, Error, Result};
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
-use digest::core_api::BlockSizeUser;
 
 /// A Schnorr signature.
 #[derive(Copy, Clone, Debug, Zeroize)]
@@ -153,6 +154,49 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
         // Check if R' == R
         r_prime_affine.ct_eq(&sig.r).unwrap_u8() == 1
     }
+
+    fn signature_to_bytes(sig: &Self::Signature) -> Vec<u8> {
+        let mut result = Vec::with_capacity(64);
+
+        // Convert r to bytes
+        let r_bytes = <C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r);
+        result.extend_from_slice(&r_bytes);
+
+        // Convert s to bytes
+        let s_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&sig.s);
+        result.extend_from_slice(&s_bytes);
+
+        result
+    }
+
+    fn signature_from_bytes(bytes: &[u8]) -> Result<Self::Signature> {
+        // Check that the input has the correct length
+        if bytes.len() < 64 {
+            return Err(Error::InvalidSignature);
+        }
+
+        // Extract r and s components
+        let r_bytes = &bytes[0..32];
+        let s_bytes = &bytes[32..64];
+
+        // Convert to point and scalar
+        let mut r_bytes_33 = [0u8; 33];
+        r_bytes_33[0] = 0x02; // Compressed point format
+        r_bytes_33[1..33].copy_from_slice(r_bytes);
+
+        let r_opt = <C::PointAffine as forge_ec_core::PointAffine>::from_bytes(&r_bytes_33);
+        let s_opt = <C::Scalar as forge_ec_core::Scalar>::from_bytes(s_bytes);
+
+        // Check that the conversion was successful
+        if bool::from(r_opt.is_none()) || bool::from(s_opt.is_none()) {
+            return Err(Error::InvalidSignature);
+        }
+
+        let r = r_opt.unwrap();
+        let s = s_opt.unwrap();
+
+        Ok(Signature { r, s })
+    }
 }
 
 /// Batch verification for Schnorr signatures.
@@ -184,7 +228,7 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     let mut rng = forge_ec_rng::os_rng::OsRng::new();
     let mut a = Vec::with_capacity(n);
     for _ in 0..n {
-        a.push(C::Scalar::random(&mut rng));
+        a.push(<<C as Curve>::Scalar as forge_ec_core::Scalar>::random(&mut rng));
     }
 
     // Calculate the challenges
@@ -533,7 +577,7 @@ impl BipSchnorr {
         let mut rng = OsRng::new();
         let mut a = Vec::with_capacity(n);
         for _ in 0..n {
-            a.push(Scalar::random(&mut rng));
+            a.push(<forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng));
         }
 
         // Process each signature
@@ -663,13 +707,13 @@ mod tests {
     use forge_ec_curves::secp256k1::Secp256k1;
     use forge_ec_rng::os_rng::OsRng;
     use sha2::Sha256;
-    use std::{vec, format};
+    use std::vec;
 
     #[test]
     fn test_sign_verify() {
         // Generate a key pair
         let mut rng = OsRng::new();
-        let sk = <Secp256k1 as forge_ec_core::Curve>::Scalar::random(&mut rng);
+        let sk = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
         let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
         let pk_affine = Secp256k1::to_affine(&pk);
 
@@ -694,7 +738,7 @@ mod tests {
 
         // Create a dummy key pair
         let mut rng = OsRng::new();
-        let sk = <Secp256k1 as forge_ec_core::Curve>::Scalar::random(&mut rng);
+        let sk = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
         let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
         let pk_affine = Secp256k1::to_affine(&pk);
 

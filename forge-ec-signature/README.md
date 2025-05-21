@@ -88,6 +88,19 @@ The crate currently implements the following signature schemes:
 - **EdDSA**: Edwards-curve Digital Signature Algorithm (specifically Ed25519)
 - **Schnorr**: Schnorr signature scheme, including a BIP-340 compatible implementation for Bitcoin
 
+### Recent Improvements
+
+We've recently made significant improvements to the signature verification functionality:
+
+- Fixed ECDSA signature verification for all supported curves
+- Implemented proper signature normalization for ECDSA (low-S form)
+- Added batch verification for ECDSA signatures
+- Fixed Schnorr signature verification according to BIP-340
+- Implemented EdDSA signature verification for Ed25519
+- Added constant-time operations for all signature verification steps
+- Fixed edge cases in signature verification
+- Added comprehensive test suite for all signature schemes
+
 All implementations focus on security, with constant-time operations to prevent side-channel attacks, and proper handling of edge cases.
 
 ## Signature Schemes

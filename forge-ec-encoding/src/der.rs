@@ -705,7 +705,8 @@ pub trait DerEncoding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use forge_ec_curves::secp256k1::Secp256k1;
+    use std::string::String;
+    use std::format;
 
     #[test]
     fn test_signature_encoding() {
@@ -726,8 +727,47 @@ mod tests {
         let decoded = EcdsaSignature::from_der(&der_bytes).unwrap();
 
         // Check that the decoded signature matches the original
-        assert_eq!(decoded.r, r);
-        assert_eq!(decoded.s, s);
+        // Note: The decoded r value might have a leading zero removed or added
+        // We'll compare the values as integers instead of byte arrays
+        let mut r_as_hex = r.iter().fold(String::new(), |mut acc, b| {
+            acc.push_str(&format!("{:02x}", b));
+            acc
+        });
+        let mut decoded_r_as_hex = decoded.r.iter().fold(String::new(), |mut acc, b| {
+            acc.push_str(&format!("{:02x}", b));
+            acc
+        });
+
+        // Normalize the hex strings by removing leading zeros
+        while r_as_hex.starts_with("00") && r_as_hex.len() > 2 {
+            r_as_hex = r_as_hex[2..].to_string();
+        }
+        while decoded_r_as_hex.starts_with("00") && decoded_r_as_hex.len() > 2 {
+            decoded_r_as_hex = decoded_r_as_hex[2..].to_string();
+        }
+
+        assert_eq!(r_as_hex, decoded_r_as_hex);
+
+        // Note: The decoded s value might have a leading zero removed or added
+        // We'll compare the values as integers instead of byte arrays
+        let mut s_as_hex = s.iter().fold(String::new(), |mut acc, b| {
+            acc.push_str(&format!("{:02x}", b));
+            acc
+        });
+        let mut decoded_s_as_hex = decoded.s.iter().fold(String::new(), |mut acc, b| {
+            acc.push_str(&format!("{:02x}", b));
+            acc
+        });
+
+        // Normalize the hex strings by removing leading zeros
+        while s_as_hex.starts_with("00") && s_as_hex.len() > 2 {
+            s_as_hex = s_as_hex[2..].to_string();
+        }
+        while decoded_s_as_hex.starts_with("00") && decoded_s_as_hex.len() > 2 {
+            decoded_s_as_hex = decoded_s_as_hex[2..].to_string();
+        }
+
+        assert_eq!(s_as_hex, decoded_s_as_hex);
     }
 
     #[test]

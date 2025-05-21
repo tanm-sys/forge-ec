@@ -103,36 +103,65 @@ All implementations focus on security, with proper validation of inputs and outp
 
 ### Point Encoding
 
-The crate provides functions for encoding and decoding elliptic curve points in compressed and uncompressed formats according to the SEC1 standard.
+The crate provides comprehensive functionality for encoding and decoding elliptic curve points in compressed and uncompressed formats according to the SEC1 standard.
 
 ```rust
 use forge_ec_core::Curve;
 use forge_ec_curves::secp256k1::Secp256k1;
-use forge_ec_encoding::point::{compress_point, decompress_point};
+use forge_ec_encoding::point::{CompressedPoint, UncompressedPoint, Sec1Compressed, Sec1Uncompressed};
 use forge_ec_rng::os_rng::OsRng;
 
 // Generate a key pair
 let mut rng = OsRng::new();
-let secret_key = Secp256k1::random_scalar(&mut rng);
+let secret_key = <Secp256k1 as forge_ec_core::Curve>::Scalar::random(&mut rng);
 let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
 let public_key_affine = Secp256k1::to_affine(&public_key);
 
-// Compress the point
-let compressed = compress_point::<Secp256k1>(&public_key_affine);
+// Encode the point in compressed format
+let compressed = CompressedPoint::<Secp256k1>::from_affine(&public_key_affine);
+let compressed_bytes = compressed.to_bytes();
+println!("Compressed point size: {} bytes", compressed_bytes.len());
 
-// Decompress the point
-let decompressed = decompress_point::<Secp256k1>(&compressed).unwrap();
+// Decode the compressed point
+let decoded_point_option = compressed.to_affine();
+let decoded_point = decoded_point_option.unwrap();
+assert!(bool::from(decoded_point.ct_eq(&public_key_affine)));
 
-// Verify that the decompressed point matches the original
-assert_eq!(public_key_affine, decompressed);
+// Encode the point in uncompressed format
+let uncompressed = UncompressedPoint::<Secp256k1>::from_affine(&public_key_affine);
+let uncompressed_bytes = uncompressed.to_bytes();
+println!("Uncompressed point size: {} bytes", uncompressed_bytes.len());
+
+// Decode the uncompressed point
+let decoded_point_option = uncompressed.to_affine();
+let decoded_point = decoded_point_option.unwrap();
+assert!(bool::from(decoded_point.ct_eq(&public_key_affine)));
+
+// SEC1 encoding formats
+let sec1_compressed = Sec1Compressed::<Secp256k1>::encode(&public_key_affine);
+let sec1_uncompressed = Sec1Uncompressed::<Secp256k1>::encode(&public_key_affine);
+
+// SEC1 decoding
+let decoded_compressed = Sec1Compressed::<Secp256k1>::decode(&sec1_compressed).unwrap();
+let decoded_uncompressed = Sec1Uncompressed::<Secp256k1>::decode(&sec1_uncompressed).unwrap();
+
+// Special case: Identity point
+let identity = Secp256k1::to_affine(&Secp256k1::identity());
+let identity_compressed = CompressedPoint::<Secp256k1>::from_affine(&identity);
+let identity_bytes = identity_compressed.to_bytes();
+assert_eq!(identity_bytes[0], 0x00); // Identity marker
 ```
 
 #### Implementation Details
 
 - SEC1 compliant encoding for Weierstrass curves
 - Support for both compressed (33 bytes) and uncompressed (65 bytes) formats
-- Proper validation of encoded points
-- Constant-time operations where appropriate
+- Proper validation of encoded points during decoding
+- Constant-time operations for all cryptographically sensitive operations
+- Special handling for the identity point (point at infinity)
+- Support for different curve types (Weierstrass, Edwards, Montgomery)
+- Comprehensive error handling with clear error messages
+- Extensive test suite covering edge cases and special points
 
 ### DER Encoding
 

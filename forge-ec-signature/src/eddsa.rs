@@ -4,12 +4,18 @@
 //! specifically the Ed25519 variant.
 
 use core::marker::PhantomData;
+use core::fmt::Debug;
 
 use digest::Digest;
-use forge_ec_core::{Curve, PointAffine, PointProjective, SignatureScheme};
+use forge_ec_core::{Curve, PointAffine, PointProjective, SignatureScheme, Error, Result};
 use forge_ec_curves::ed25519::Ed25519;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
+
+#[cfg(feature = "std")]
+use std::vec::Vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 /// An EdDSA signature.
 #[derive(Copy, Clone, Debug, Zeroize)]
@@ -219,6 +225,49 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         // by checking if their difference is the identity point
         let diff = C::from_affine(&s_g_affine) - C::from_affine(&r_plus_k_a_affine);
         bool::from(diff.is_identity())
+    }
+
+    fn signature_to_bytes(sig: &Self::Signature) -> Vec<u8> {
+        let mut result = Vec::with_capacity(64);
+
+        // Convert r to bytes
+        let r_bytes = <C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r);
+        result.extend_from_slice(&r_bytes);
+
+        // Convert s to bytes
+        let s_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&sig.s);
+        result.extend_from_slice(&s_bytes);
+
+        result
+    }
+
+    fn signature_from_bytes(bytes: &[u8]) -> Result<Self::Signature> {
+        // Check that the input has the correct length
+        if bytes.len() < 64 {
+            return Err(Error::InvalidSignature);
+        }
+
+        // Extract r and s components
+        let r_bytes = &bytes[0..32];
+        let s_bytes = &bytes[32..64];
+
+        // Convert to point and scalar
+        let mut r_bytes_33 = [0u8; 33];
+        r_bytes_33[0] = 0x02; // Compressed point format
+        r_bytes_33[1..33].copy_from_slice(r_bytes);
+
+        let r_opt = <C::PointAffine as forge_ec_core::PointAffine>::from_bytes(&r_bytes_33);
+        let s_opt = <C::Scalar as forge_ec_core::Scalar>::from_bytes(s_bytes);
+
+        // Check that the conversion was successful
+        if bool::from(r_opt.is_none()) || bool::from(s_opt.is_none()) {
+            return Err(Error::InvalidSignature);
+        }
+
+        let r = r_opt.unwrap();
+        let s = s_opt.unwrap();
+
+        Ok(Signature { r, s })
     }
 }
 
@@ -474,8 +523,9 @@ mod tests {
         let msg2 = b"different message";
 
         // Create a dummy key pair
-        let mut rng = OsRng::new();
-        let sk = <Ed25519 as forge_ec_core::Curve>::Scalar::random(&mut rng);
+        // We don't need a random number generator for this test
+        // Create a dummy scalar for testing
+        let sk = <Ed25519 as forge_ec_core::Curve>::Scalar::from_raw([1, 0, 0, 0]);
 
         // Use the generator point as the public key for simplicity
         let pk_affine = Ed25519::to_affine(&Ed25519::generator());

@@ -1,4 +1,3 @@
-use forge_ec_core::Scalar;
 use forge_ec_curves::secp256k1::{Secp256k1, Scalar as Secp256k1Scalar};
 use forge_ec_rng::rfc6979::Rfc6979;
 use sha2::Sha256;

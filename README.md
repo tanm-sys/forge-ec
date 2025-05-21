@@ -154,9 +154,24 @@ The library is split into multiple crates for modularity:
 
 ### Recent Enhancements
 
+#### Point Encoding/Decoding Implementation
+
+We've recently implemented comprehensive point encoding and decoding functionality:
+
+- Added support for compressed and uncompressed point formats according to SEC1 standard
+- Implemented proper point validation during decoding to ensure security
+- Added constant-time operations for point encoding/decoding to prevent timing attacks
+- Implemented identity point handling for both compressed and uncompressed formats
+- Added support for different point formats (SEC1, compressed, uncompressed)
+- Fixed edge cases in point decompression for various curves
+- Added comprehensive test suite for point encoding/decoding
+- Ensured compatibility with other cryptographic libraries
+
+These improvements provide a robust foundation for serializing and deserializing elliptic curve points in various formats, which is essential for interoperability with other cryptographic systems.
+
 #### HashToCurve Implementation
 
-We've recently made significant improvements to the HashToCurve implementation:
+We've also made significant improvements to the HashToCurve implementation:
 
 - Enhanced the HashToCurve trait with methods to access curve parameters (get_a, get_b)
 - Improved constant-time operations in hash_to_curve.rs
@@ -197,6 +212,21 @@ We've recently implemented several key components for the Ed25519 curve:
 
 These implementations form the foundation for the Ed25519 curve operations and enable secure and efficient EdDSA signatures.
 
+### Signature Verification Improvements
+
+We've made significant improvements to the signature verification functionality:
+
+- Fixed ECDSA signature verification for all supported curves
+- Implemented proper signature normalization for ECDSA (low-S form)
+- Added batch verification for ECDSA signatures
+- Fixed Schnorr signature verification according to BIP-340
+- Implemented EdDSA signature verification for Ed25519
+- Added constant-time operations for all signature verification steps
+- Fixed edge cases in signature verification
+- Added comprehensive test suite for all signature schemes
+
+These improvements ensure that the signature verification operations are secure, reliable, and compatible with other cryptographic libraries.
+
 ### secp256k1 Implementation
 
 We've also made several fixes to the secp256k1 implementation:
@@ -205,6 +235,7 @@ We've also made several fixes to the secp256k1 implementation:
 - Implemented temporary workarounds for the `is_on_curve` method and `from_bytes` method
 - Added documentation about the current implementation status and known issues
 - Updated the test suite to handle the current implementation limitations
+- Fixed point encoding/decoding for secp256k1 curves
 
 These fixes are temporary and will be replaced with proper implementations in future updates.
 

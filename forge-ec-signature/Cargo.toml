@@ -14,7 +14,7 @@ keywords.workspace = true
 
 [dependencies]
 forge-ec-core = { workspace = true }
-forge-ec-curves = { workspace = true, optional = true }
+forge-ec-curves = { workspace = true }
 forge-ec-hash = { workspace = true }
 forge-ec-rng = { workspace = true }
 subtle = { workspace = true }
@@ -23,10 +23,10 @@ rand_core = { workspace = true }
 digest = { workspace = true }
 hmac = { version = "0.12", default-features = false }
 sha2 = { version = "0.10", default-features = false }
-hex = { version = "0.4", optional = true }
+hex = { version = "0.4" }
 
 [features]
 default = ["std"]
 std = ["forge-ec-core/std"]
 alloc = ["forge-ec-core/alloc"]
-test-utils = ["hex"]
+test-utils = []

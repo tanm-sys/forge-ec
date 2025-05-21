@@ -88,7 +88,7 @@
 use core::marker::PhantomData;
 use core::ops::Div;
 use digest::Digest;
-use forge_ec_core::{Error, FieldElement, HashToCurve, PointAffine, Result};
+use forge_ec_core::{Curve, Error, FieldElement, HashToCurve, PointAffine, Result};
 use subtle::{ConditionallySelectable, ConstantTimeEq};
 
 extern crate alloc;
@@ -497,8 +497,8 @@ where
         C::Field: Div<Output = C::Field>,
     {
         // Get curve parameters
-        let a = C::get_a();
-        let _b = C::get_b(); // Not used in this implementation but kept for completeness
+        let a = <C as Curve>::get_a();
+        let _b = <C as Curve>::get_b(); // Not used in this implementation but kept for completeness
 
         // Create a default point to return in case of zero
         let default_point = C::PointAffine::default();
@@ -726,7 +726,7 @@ where
         C::Field: Div<Output = C::Field>,
     {
         // Get curve parameters (A coefficient for Montgomery curve)
-        let a = C::get_a();
+        let a = <C as Curve>::get_a();
 
         // Create a default point to return in case of zero
         let default_point = C::PointAffine::default();

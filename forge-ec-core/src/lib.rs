@@ -208,6 +208,11 @@ pub trait FieldElement:
     /// Raises this element to the power of the given exponent.
     fn pow(&self, exp: &[u64]) -> Self;
 
+    /// Computes the square root of this field element, if it exists.
+    ///
+    /// Returns `None` if this element is not a quadratic residue.
+    fn sqrt(&self) -> CtOption<Self>;
+
     /// Validates that this field element is properly encoded.
     ///
     /// This can be used to check that the element is in the correct range
@@ -471,7 +476,10 @@ pub trait PointAffine:
     ///
     /// This is equivalent to `to_bytes_with_format(PointFormat::Compressed)`.
     fn to_bytes(&self) -> [u8; 33] {
-        self.to_bytes_with_format(PointFormat::Compressed)
+        let bytes = self.to_bytes_with_format(PointFormat::Compressed);
+        let mut result = [0u8; 33];
+        result[..bytes.len()].copy_from_slice(&bytes);
+        result
     }
 
     /// Creates a point from a byte array.
@@ -489,11 +497,11 @@ pub trait PointAffine:
     ///
     /// # Returns
     ///
-    /// A byte array containing the encoded point. The size depends on the format:
+    /// A byte vector containing the encoded point. The size depends on the format:
     /// - Compressed: 33 bytes for a 256-bit curve
     /// - Uncompressed: 65 bytes for a 256-bit curve
     /// - Hybrid: 65 bytes for a 256-bit curve
-    fn to_bytes_with_format(&self, format: PointFormat) -> [u8; 33];
+    fn to_bytes_with_format(&self, format: PointFormat) -> Vec<u8>;
 
     /// Creates a point from a byte array with the specified format.
     ///
@@ -687,6 +695,20 @@ pub trait Curve: Sized + Copy + Clone + Debug {
     ///
     /// This is the number of points on the curve.
     fn order() -> Self::Scalar;
+
+    /// Returns the 'a' parameter of the curve equation.
+    ///
+    /// For a Weierstrass curve y^2 = x^3 + ax + b, this returns 'a'.
+    /// For a Montgomery curve y^2 = x^3 + ax^2 + x, this returns 'a'.
+    /// For an Edwards curve x^2 + y^2 = 1 + dx^2y^2, this returns '0'.
+    fn get_a() -> Self::Field;
+
+    /// Returns the 'b' parameter of the curve equation.
+    ///
+    /// For a Weierstrass curve y^2 = x^3 + ax + b, this returns 'b'.
+    /// For a Montgomery curve y^2 = x^3 + ax^2 + x, this returns '1'.
+    /// For an Edwards curve x^2 + y^2 = 1 + dx^2y^2, this returns '1'.
+    fn get_b() -> Self::Field;
 
     /// Validates the curve parameters.
     ///
