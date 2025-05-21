@@ -1,386 +1,288 @@
-# Forge EC Project Roadmap
+# Forge-EC Project Roadmap
 
-This document outlines the planned development roadmap for the Forge EC cryptography library. It serves as a guide for contributors and users to understand the direction of the project and the features that are planned for future releases.
+This document provides a comprehensive analysis of the Forge-EC cryptography library, including its current implementation status, unimplemented functions, security considerations, and a prioritized roadmap for future development.
 
 ## Table of Contents
 
-- [Core Implementations](#core-implementations)
-- [New Features](#new-features)
-- [Performance Optimizations](#performance-optimizations)
-- [Additional Curves and Algorithms](#additional-curves-and-algorithms)
-- [Interoperability Improvements](#interoperability-improvements)
-- [Security Enhancements](#security-enhancements)
-- [Documentation and Examples](#documentation-and-examples)
+- [Project Structure Overview](#project-structure-overview)
+- [Implementation Status](#implementation-status)
+- [Unimplemented Functions and TODOs](#unimplemented-functions-and-todos)
+- [Security Considerations](#security-considerations)
+- [Code Quality Assessment](#code-quality-assessment)
+- [Prioritized Roadmap](#prioritized-roadmap)
+- [Recommendations for Improvements](#recommendations-for-improvements)
+
+## Project Structure Overview
+
+Forge-EC is a production-grade Rust library for Elliptic Curve Cryptography with a focus on security, performance, and usability. The project is structured as a Rust workspace with multiple crates, each responsible for a specific aspect of elliptic curve cryptography.
+
+### Crate Structure
+
+- **forge-ec**: Main crate that re-exports functionality from all other crates
+- **forge-ec-core**: Core traits and abstractions for elliptic curve operations
+- **forge-ec-curves**: Implementations of various elliptic curves (secp256k1, P-256, Curve25519, Ed25519)
+- **forge-ec-signature**: Signature schemes (ECDSA, EdDSA, Schnorr)
+- **forge-ec-encoding**: Encoding formats (DER, PEM, Base58, point encoding)
+- **forge-ec-hash**: Hash functions and hash-to-curve methods
+- **forge-ec-rng**: Random number generation, including RFC6979 deterministic k-value generation
+
+## Implementation Status
+
+### forge-ec-core
+
+- **Status**: Mostly implemented with some TODOs
+- **Implemented**:
+  - Core traits for field elements, scalars, points, and curves
+  - Error handling framework
+  - Key exchange trait
+  - Signature scheme trait
+  - Hash-to-curve trait
+- **Missing**:
+  - Complete implementation of scalar reduction in `from_bytes_reduced`
+  - Comprehensive test utilities
+
+### forge-ec-curves
+
+- **Status**: Partially implemented with significant TODOs
+- **Implemented**:
+  - Basic structure for secp256k1, P-256, Curve25519, and Ed25519
+  - Field arithmetic for secp256k1
+  - Point operations for secp256k1
+- **Missing**:
+  - Complete implementation of `random` method for field elements in all curves
+  - Complete implementation of `get_order` for scalars
+  - Complete point operations for AffinePoint and ProjectivePoint in P-256, Curve25519, and Ed25519
+  - Proper constant-time implementations for all operations
+  - Comprehensive test vectors
+
+### forge-ec-signature
+
+- **Status**: Partially implemented with significant TODOs
+- **Implemented**:
+  - Basic ECDSA structure with signing and verification
+  - Signature normalization for ECDSA
+  - Batch verification framework
+- **Missing**:
+  - Complete implementation of EdDSA
+  - Complete implementation of Schnorr signatures
+  - Proper constant-time implementations
+  - Comprehensive test vectors
+
+### forge-ec-encoding
+
+- **Status**: Partially implemented with significant TODOs
+- **Implemented**:
+  - Point encoding (compressed and uncompressed)
+  - Basic structure for DER, PEM, and Base58
+- **Missing**:
+  - Complete implementation of DER encoding/decoding
+  - Complete implementation of PEM encoding/decoding
+  - Complete implementation of Base58 encoding/decoding
+  - Comprehensive test vectors
+
+### forge-ec-hash
+
+- **Status**: Partially implemented with significant TODOs
+- **Implemented**:
+  - Basic structure for SHA-2, SHA-3, and BLAKE2
+  - Hash-to-curve methods (Simplified SWU, Icart, Elligator 2)
+- **Missing**:
+  - Complete implementation of hash-to-curve methods per RFC9380
+  - Proper constant-time implementations
+  - Comprehensive test vectors
+
+### forge-ec-rng
+
+- **Status**: Partially implemented with significant TODOs
+- **Implemented**:
+  - Basic structure for OS RNG and RFC6979
+- **Missing**:
+  - Complete implementation of RFC6979 deterministic k-value generation
+  - Proper constant-time implementations
+  - Comprehensive test vectors
+
+## Unimplemented Functions and TODOs
+
+### Critical TODOs
+
+1. **RFC6979 Implementation**:
+   - Complete the implementation in `forge-ec-rng/src/rfc6979.rs`
+   - Add proper test vectors
 
-## Core Implementations
+2. **Hash-to-Curve Methods**:
+   - Complete the implementation of Simplified SWU, Icart, and Elligator 2 methods in `forge-ec-hash/src/hash_to_curve.rs`
+   - Ensure compliance with RFC9380
 
-These are the fundamental implementations needed to complete the core functionality of the library.
+3. **Point Encoding/Decoding**:
+   - Complete the implementation in `forge-ec-encoding/src/point.rs`
+   - Add proper test vectors
 
-### High Priority
+4. **Field Element Conversion**:
+   - Complete the implementation of `from_bytes_reduced` in `forge-ec-core/src/lib.rs`
 
-#### 1. Complete Curve25519 Field Element Operations
+5. **Constant-Time Operations**:
+   - Ensure all operations are constant-time to prevent timing attacks
+   - Implement proper zeroization for sensitive data
 
-- **Description**: Implement all core field element operations for Curve25519, including addition, subtraction, multiplication, inversion, and serialization.
-- **Rationale**: These operations form the foundation for all Curve25519 functionality, including the X25519 key exchange.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: Minimal, implementing existing traits
+### Other TODOs
 
-#### 2. Implement X25519 Key Exchange
+1. **DER Encoding/Decoding**:
+   - Complete the implementation in `forge-ec-encoding/src/der.rs`
 
-- **Description**: Implement the X25519 key exchange protocol according to RFC 7748.
-- **Rationale**: X25519 is a widely used key exchange protocol that provides high security and performance.
-- **Complexity**: Medium
-- **Dependencies**: Curve25519 field element operations
-- **API Impact**: New methods in the `KeyExchange` trait
+2. **PEM Encoding/Decoding**:
+   - Complete the implementation in `forge-ec-encoding/src/pem.rs`
 
-#### 3. Complete Point Operations for All Curves
+3. **Base58 Encoding/Decoding**:
+   - Complete the implementation in `forge-ec-encoding/src/base58.rs`
 
-- **Description**: Implement remaining point operations (addition, doubling, scalar multiplication) for all curves.
-- **Rationale**: These operations are essential for all elliptic curve cryptography applications.
-- **Complexity**: Hard
-- **Dependencies**: Field element operations for each curve
-- **API Impact**: Minimal, implementing existing traits
+4. **EdDSA Implementation**:
+   - Complete the implementation in `forge-ec-signature/src/eddsa.rs`
 
-#### 4. Implement RFC9380 Hash-to-Curve Methods
+5. **Schnorr Signature Implementation**:
+   - Complete the implementation in `forge-ec-signature/src/schnorr.rs`
 
-- **Description**: Implement proper hash-to-curve methods according to RFC9380, including Icart's method for Weierstrass curves and Elligator 2 for Montgomery curves.
-- **Rationale**: Hash-to-curve methods are essential for many protocols, including PAKE and VRF.
-- **Complexity**: Hard
-- **Dependencies**: Complete curve implementations
-- **API Impact**: New methods in the `HashToCurve` trait
+6. **Curve Implementations**:
+   - Complete the implementation of P-256, Curve25519, and Ed25519 in `forge-ec-curves/`
 
-### Medium Priority
+7. **Batch Verification**:
+   - Complete the implementation for all signature schemes
 
-#### 1. Fix DER Encoding Issues
+8. **Documentation**:
+   - Add comprehensive documentation for all public APIs
+   - Add examples for common use cases
 
-- **Description**: Fix Sequence derive macro and ASN.1 attributes in DER encoding.
-- **Rationale**: Proper DER encoding is essential for interoperability with other cryptographic libraries and standards.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: Minimal, fixing existing functionality
+## Security Considerations
 
-#### 2. Implement Montgomery Form Conversion
+### Current Status
 
-- **Description**: Implement conversion to and from Montgomery form for efficient field arithmetic.
-- **Rationale**: Montgomery form provides significant performance improvements for modular multiplication.
-- **Complexity**: Medium
-- **Dependencies**: Field element operations
-- **API Impact**: New internal methods, no public API changes
+- **Constant-Time Operations**: Partially implemented but needs review
+- **Zeroization**: Basic framework in place but needs comprehensive implementation
+- **Input Validation**: Partially implemented but needs review
+- **Side-Channel Protection**: Needs comprehensive implementation
+- **Test Coverage**: Limited, needs significant expansion
 
-#### 3. Complete Test Suite
+### Vulnerabilities to Address
 
-- **Description**: Implement comprehensive test suites for all functionality, including edge cases and test vectors from standards.
-- **Rationale**: Thorough testing is essential for cryptographic libraries to ensure correctness and security.
-- **Complexity**: Medium
-- **Dependencies**: Implementations being tested
-- **API Impact**: None
+1. **Timing Attacks**:
+   - Ensure all cryptographic operations are constant-time
+   - Use the `subtle` crate consistently for constant-time operations
 
-### Low Priority
+2. **Memory Safety**:
+   - Ensure proper zeroization of sensitive data
+   - Use the `zeroize` crate consistently
 
-#### 1. Optimize Point Encoding/Decoding
+3. **Invalid Curve Attacks**:
+   - Implement thorough point validation
+   - Ensure cofactor clearing where necessary
 
-- **Description**: Optimize point encoding and decoding operations for all curve types.
-- **Rationale**: Efficient serialization is important for performance in protocols that frequently transmit points.
-- **Complexity**: Medium
-- **Dependencies**: Point operations
-- **API Impact**: Minimal, optimizing existing methods
+4. **Signature Malleability**:
+   - Ensure proper signature normalization
+   - Implement low-S normalization for ECDSA
 
-#### 2. Implement Base58 and PEM Encoding/Decoding
+5. **Random Number Generation**:
+   - Complete the RFC6979 implementation for deterministic signatures
+   - Ensure proper entropy sources for random generation
 
-- **Description**: Replace hardcoded test vectors with proper implementations for Base58 and PEM encoding/decoding.
-- **Rationale**: These formats are commonly used for key and certificate storage.
-- **Complexity**: Easy
-- **Dependencies**: None
-- **API Impact**: Minimal, implementing existing traits
+## Code Quality Assessment
 
-## New Features
+### Error Handling
 
-These are new features that would enhance the library's functionality beyond the core implementations.
+- **Status**: Good foundation but inconsistent application
+- **Improvements Needed**:
+  - Consistent use of the `Result` type
+  - More specific error types
+  - Better error messages
 
-### High Priority
+### Documentation
 
-#### 1. Batch Verification for Signatures
+- **Status**: Basic structure in place but incomplete
+- **Improvements Needed**:
+  - Comprehensive API documentation
+  - Examples for all public APIs
+  - Security considerations for each module
 
-- **Description**: Implement batch verification for ECDSA, EdDSA, and Schnorr signatures.
-- **Rationale**: Batch verification can significantly improve performance when verifying multiple signatures.
-- **Complexity**: Hard
-- **Dependencies**: Complete signature implementations
-- **API Impact**: New methods in signature traits
+### Tests
 
-#### 2. Multi-Signature Schemes
+- **Status**: Limited test coverage
+- **Improvements Needed**:
+  - Comprehensive unit tests
+  - Integration tests
+  - Test vectors from standards
+  - Fuzz testing
 
-- **Description**: Implement multi-signature schemes like MuSig and MuSig2.
-- **Rationale**: Multi-signatures are important for blockchain and distributed systems applications.
-- **Complexity**: Hard
-- **Dependencies**: Complete signature implementations
-- **API Impact**: New traits and methods
+## Prioritized Roadmap
 
-### Medium Priority
+### Phase 1: Critical Security and Functionality
 
-#### 1. Threshold Signatures
+1. **RFC6979 Implementation**:
+   - Complete the implementation in `forge-ec-rng/src/rfc6979.rs`
+   - Add proper test vectors
 
-- **Description**: Implement threshold signature schemes.
-- **Rationale**: Threshold signatures enable distributed signing where a subset of participants can create a valid signature.
-- **Complexity**: Hard
-- **Dependencies**: Multi-signature schemes
-- **API Impact**: New traits and methods
+2. **Constant-Time Operations**:
+   - Review and ensure all operations are constant-time
+   - Implement proper zeroization for sensitive data
 
-#### 2. Zero-Knowledge Proofs
+3. **Hash-to-Curve Methods**:
+   - Complete the implementation per RFC9380
+   - Add proper test vectors
 
-- **Description**: Implement basic zero-knowledge proof primitives.
-- **Rationale**: Zero-knowledge proofs are increasingly important for privacy-preserving protocols.
-- **Complexity**: Hard
-- **Dependencies**: Complete curve implementations
-- **API Impact**: New module with new traits and methods
+4. **Point Encoding/Decoding**:
+   - Complete the implementation
+   - Add proper test vectors
 
-### Low Priority
+### Phase 2: Core Functionality Completion
 
-#### 1. Verifiable Random Functions (VRFs)
+1. **Curve Implementations**:
+   - Complete P-256, Curve25519, and Ed25519
+   - Add proper test vectors
 
-- **Description**: Implement VRF schemes like ECVRF.
-- **Rationale**: VRFs are useful for deterministic randomness that can be publicly verified.
-- **Complexity**: Medium
-- **Dependencies**: Hash-to-curve methods
-- **API Impact**: New traits and methods
+2. **Signature Schemes**:
+   - Complete EdDSA and Schnorr implementations
+   - Add proper test vectors
 
-#### 2. Post-Quantum Hybrid Schemes
+3. **Encoding Formats**:
+   - Complete DER, PEM, and Base58 implementations
+   - Add proper test vectors
 
-- **Description**: Implement hybrid schemes that combine elliptic curve and post-quantum cryptography.
-- **Rationale**: Preparing for the post-quantum era while maintaining compatibility with existing systems.
-- **Complexity**: Hard
-- **Dependencies**: None (would be a separate module)
-- **API Impact**: New module with new traits and methods
+### Phase 3: Quality and Optimization
 
-## Performance Optimizations
+1. **Documentation**:
+   - Comprehensive API documentation
+   - Examples for all public APIs
+   - Security considerations for each module
 
-These optimizations would improve the performance of the library without changing its functionality.
+2. **Tests**:
+   - Comprehensive unit tests
+   - Integration tests
+   - Fuzz testing
 
-### High Priority
+3. **Performance Optimization**:
+   - Optimize critical operations
+   - Benchmark against other libraries
 
-#### 1. SIMD Acceleration
+## Recommendations for Improvements
 
-- **Description**: Implement SIMD-accelerated versions of field arithmetic operations.
-- **Rationale**: SIMD instructions can significantly improve performance for cryptographic operations.
-- **Complexity**: Hard
-- **Dependencies**: Complete field arithmetic implementations
-- **API Impact**: None (internal optimizations)
+1. **Security First**:
+   - Prioritize constant-time operations and proper zeroization
+   - Implement thorough input validation
+   - Add security-focused tests
 
-```rust
-// Example of SIMD-accelerated field multiplication
-#[cfg(feature = "simd")]
-fn mul_simd(&self, rhs: &Self) -> Self {
-    // SIMD implementation
-}
+2. **Comprehensive Testing**:
+   - Add test vectors from standards
+   - Implement property-based testing
+   - Add fuzz testing
 
-#[cfg(not(feature = "simd"))]
-fn mul(&self, rhs: &Self) -> Self {
-    // Fallback implementation
-}
-```
+3. **Documentation**:
+   - Add comprehensive API documentation
+   - Add examples for common use cases
+   - Document security considerations
 
-#### 2. Precomputation Tables
+4. **Performance**:
+   - Optimize critical operations
+   - Add benchmarks
+   - Compare with other libraries
 
-- **Description**: Implement precomputation tables for scalar multiplication.
-- **Rationale**: Precomputation can significantly improve the performance of scalar multiplication.
-- **Complexity**: Medium
-- **Dependencies**: Complete point operations
-- **API Impact**: New optional methods for precomputed operations
-
-### Medium Priority
-
-#### 1. Constant-Time Optimizations
-
-- **Description**: Optimize constant-time operations to reduce performance overhead.
-- **Rationale**: Constant-time operations are essential for security but can impact performance.
-- **Complexity**: Hard
-- **Dependencies**: Complete implementations
-- **API Impact**: None (internal optimizations)
-
-#### 2. Memory Usage Optimizations
-
-- **Description**: Optimize memory usage to reduce allocations and improve cache locality.
-- **Rationale**: Efficient memory usage is important for performance, especially on constrained devices.
-- **Complexity**: Medium
-- **Dependencies**: Complete implementations
-- **API Impact**: None (internal optimizations)
-
-### Low Priority
-
-#### 1. Multi-Threading Support
-
-- **Description**: Add multi-threading support for batch operations.
-- **Rationale**: Multi-threading can improve performance for batch operations on multi-core systems.
-- **Complexity**: Medium
-- **Dependencies**: Batch verification implementations
-- **API Impact**: New optional methods for parallel operations
-
-## Additional Curves and Algorithms
-
-These are additional curves and algorithms that could be supported by the library.
-
-### High Priority
-
-#### 1. Ed448 and Curve448
-
-- **Description**: Implement the Ed448 and Curve448 elliptic curves.
-- **Rationale**: These curves provide higher security levels than Ed25519 and Curve25519.
-- **Complexity**: Hard
-- **Dependencies**: None
-- **API Impact**: New curve implementations
-
-#### 2. BLS12-381
-
-- **Description**: Implement the BLS12-381 pairing-friendly elliptic curve.
-- **Rationale**: BLS12-381 is widely used for pairing-based cryptography in blockchain applications.
-- **Complexity**: Hard
-- **Dependencies**: None
-- **API Impact**: New curve implementation and pairing traits
-
-### Medium Priority
-
-#### 1. BLS Signatures
-
-- **Description**: Implement BLS signatures using the BLS12-381 curve.
-- **Rationale**: BLS signatures enable efficient aggregation and are used in many blockchain systems.
-- **Complexity**: Hard
-- **Dependencies**: BLS12-381 curve implementation
-- **API Impact**: New signature trait implementation
-
-#### 2. Additional NIST Curves
-
-- **Description**: Implement additional NIST curves like P-384 and P-521.
-- **Rationale**: These curves are widely used in standards and provide higher security levels.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: New curve implementations
-
-### Low Priority
-
-#### 1. Brainpool Curves
-
-- **Description**: Implement Brainpool standard curves.
-- **Rationale**: Brainpool curves are used in some European standards and provide an alternative to NIST curves.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: New curve implementations
-
-## Interoperability Improvements
-
-These improvements would enhance the library's interoperability with other systems and libraries.
-
-### High Priority
-
-#### 1. OpenSSL Compatibility Layer
-
-- **Description**: Implement a compatibility layer for OpenSSL.
-- **Rationale**: OpenSSL is widely used, and compatibility would ease adoption of Forge EC.
-- **Complexity**: Medium
-- **Dependencies**: Complete core implementations
-- **API Impact**: New module with OpenSSL-compatible API
-
-#### 2. PKCS#8 Support
-
-- **Description**: Implement PKCS#8 key format support.
-- **Rationale**: PKCS#8 is a standard format for private keys used by many systems.
-- **Complexity**: Medium
-- **Dependencies**: DER encoding fixes
-- **API Impact**: New methods for key import/export
-
-### Medium Priority
-
-#### 1. WebCrypto API Compatibility
-
-- **Description**: Implement compatibility with the WebCrypto API.
-- **Rationale**: WebCrypto is the standard for cryptography in web browsers.
-- **Complexity**: Medium
-- **Dependencies**: Complete core implementations
-- **API Impact**: New module with WebCrypto-compatible API
-
-#### 2. JWK Support
-
-- **Description**: Implement JSON Web Key (JWK) format support.
-- **Rationale**: JWK is widely used for key exchange in web applications.
-- **Complexity**: Easy
-- **Dependencies**: None
-- **API Impact**: New methods for key import/export
-
-## Security Enhancements
-
-These enhancements would improve the security of the library.
-
-### High Priority
-
-#### 1. Formal Verification
-
-- **Description**: Conduct formal verification of critical components.
-- **Rationale**: Formal verification can provide strong guarantees about the correctness of cryptographic implementations.
-- **Complexity**: Hard
-- **Dependencies**: Complete implementations
-- **API Impact**: None (verification of existing code)
-
-#### 2. Side-Channel Resistance Improvements
-
-- **Description**: Enhance resistance to side-channel attacks.
-- **Rationale**: Side-channel attacks are a significant threat to cryptographic implementations.
-- **Complexity**: Hard
-- **Dependencies**: Complete implementations
-- **API Impact**: Minimal (internal improvements)
-
-### Medium Priority
-
-#### 1. Fault Attack Countermeasures
-
-- **Description**: Implement countermeasures against fault attacks.
-- **Rationale**: Fault attacks can be used to extract secret keys from cryptographic devices.
-- **Complexity**: Hard
-- **Dependencies**: Complete implementations
-- **API Impact**: Minimal (internal improvements)
-
-#### 2. Security Audits
-
-- **Description**: Conduct regular security audits by external experts.
-- **Rationale**: External audits can identify vulnerabilities that internal testing might miss.
-- **Complexity**: N/A
-- **Dependencies**: Complete implementations
-- **API Impact**: None
-
-## Documentation and Examples
-
-These improvements would enhance the library's documentation and examples.
-
-### High Priority
-
-#### 1. API Documentation Improvements
-
-- **Description**: Enhance API documentation with more examples and explanations.
-- **Rationale**: Clear documentation is essential for usability and adoption.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: None
-
-#### 2. Security Guidelines
-
-- **Description**: Provide comprehensive security guidelines for using the library.
-- **Rationale**: Proper usage is essential for security, and guidelines help users avoid common pitfalls.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: None
-
-### Medium Priority
-
-#### 1. Tutorial Series
-
-- **Description**: Create a series of tutorials covering common use cases.
-- **Rationale**: Tutorials help users understand how to use the library effectively.
-- **Complexity**: Medium
-- **Dependencies**: None
-- **API Impact**: None
-
-#### 2. Benchmarking Suite
-
-- **Description**: Develop a comprehensive benchmarking suite.
-- **Rationale**: Benchmarks help users understand performance characteristics and track improvements.
-- **Complexity**: Medium
-- **Dependencies**: Complete implementations
-- **API Impact**: None
+5. **Maintainability**:
+   - Consistent code style
+   - Comprehensive error handling
+   - Clear separation of concerns
