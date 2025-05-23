@@ -7,6 +7,13 @@
 - **Low Priority**: 9 items (1 completed)
 - **Total**: 21 items remaining
 
+## Recently Completed
+
+- ✅ Fixed test hanging issues in hash-to-curve and batch verification tests
+- ✅ Implemented missing `ConditionallySelectable` trait for `AffinePoint` in secp256k1 module
+- ✅ Added `Div` and `DivAssign` trait implementations for `FieldElement` in secp256k1 module
+- ✅ Fixed trait imports in batch verification test
+
 ## forge-ec-curves/src/ed25519.rs
 
 ### High Priority
