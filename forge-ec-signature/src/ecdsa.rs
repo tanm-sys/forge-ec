@@ -95,6 +95,18 @@ where
     type Signature = Signature<C>;
 
     fn sign(sk: &C::Scalar, msg: &[u8]) -> Self::Signature {
+        // Validate that the private key is in the range [1, n-1]
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
+
+        // Check if private key is zero or not less than curve order
+        if bool::from(sk.is_zero()) || !bool::from(sk.ct_lt(&curve_order)) {
+            // Return a dummy signature for invalid private key
+            return Signature {
+                r: <C::Scalar as forge_ec_core::FieldElement>::one(),
+                s: <C::Scalar as forge_ec_core::FieldElement>::one(),
+            };
+        }
+
         // Generate deterministic k using RFC6979
         let k = Rfc6979::<C, D>::generate_k(sk, msg);
 
