@@ -45,7 +45,7 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use digest::Digest;
 use rand_core::RngCore;
-use subtle::{Choice, ConstantTimeEq, CtOption, ConditionallySelectable};
+use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 
 /// Helper function to check if a < b for 256-bit integers represented as 4 u64 limbs
@@ -282,9 +282,7 @@ pub trait FieldElement:
 ///     // ... other methods ...
 /// }
 /// ```
-pub trait Scalar:
-    FieldElement + From<u64> + for<'a> Mul<&'a Self, Output = Self>
-{
+pub trait Scalar: FieldElement + From<u64> + for<'a> Mul<&'a Self, Output = Self> {
     /// The size of the scalar field in bits.
     const BITS: usize;
 
@@ -379,7 +377,8 @@ pub trait Scalar:
         // We'll use a simplified approach here that works for our use case
 
         // First, check if value_hi is zero (common case)
-        let mut hi_is_zero = value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
+        let mut hi_is_zero =
+            value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
 
         if hi_is_zero {
             // If value_hi is zero, we just need to check if value_lo < order
@@ -388,14 +387,20 @@ pub trait Scalar:
             // Compare value_lo with order
             for i in (0..4).rev() {
                 let order_limb = u64::from_be_bytes([
-                    order_bytes[i*8], order_bytes[i*8+1], order_bytes[i*8+2], order_bytes[i*8+3],
-                    order_bytes[i*8+4], order_bytes[i*8+5], order_bytes[i*8+6], order_bytes[i*8+7]
+                    order_bytes[i * 8],
+                    order_bytes[i * 8 + 1],
+                    order_bytes[i * 8 + 2],
+                    order_bytes[i * 8 + 3],
+                    order_bytes[i * 8 + 4],
+                    order_bytes[i * 8 + 5],
+                    order_bytes[i * 8 + 6],
+                    order_bytes[i * 8 + 7],
                 ]);
 
-                if value_lo[3-i] < order_limb {
+                if value_lo[3 - i] < order_limb {
                     is_less = true;
                     break;
-                } else if value_lo[3-i] > order_limb {
+                } else if value_lo[3 - i] > order_limb {
                     break;
                 }
             }
@@ -405,7 +410,7 @@ pub trait Scalar:
                 let mut result_bytes = [0u8; 32];
                 for i in 0..4 {
                     for j in 0..8 {
-                        result_bytes[i*8 + j] = ((value_lo[3-i] >> (j * 8)) & 0xFF) as u8;
+                        result_bytes[i * 8 + j] = ((value_lo[3 - i] >> (j * 8)) & 0xFF) as u8;
                     }
                 }
 
@@ -420,8 +425,14 @@ pub trait Scalar:
         let mut order_limbs = [0u64; 4];
         for i in 0..4 {
             order_limbs[i] = u64::from_be_bytes([
-                order_bytes[24-i*8], order_bytes[25-i*8], order_bytes[26-i*8], order_bytes[27-i*8],
-                order_bytes[28-i*8], order_bytes[29-i*8], order_bytes[30-i*8], order_bytes[31-i*8]
+                order_bytes[24 - i * 8],
+                order_bytes[25 - i * 8],
+                order_bytes[26 - i * 8],
+                order_bytes[27 - i * 8],
+                order_bytes[28 - i * 8],
+                order_bytes[29 - i * 8],
+                order_bytes[30 - i * 8],
+                order_bytes[31 - i * 8],
             ]);
         }
 
@@ -449,14 +460,15 @@ pub trait Scalar:
             }
 
             // Check if value_hi is now zero
-            hi_is_zero = value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
+            hi_is_zero =
+                value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
         }
 
         // Convert the result back to bytes
         let mut result_bytes = [0u8; 32];
         for i in 0..4 {
             for j in 0..8 {
-                result_bytes[i*8 + j] = ((value_lo[3-i] >> (j * 8)) & 0xFF) as u8;
+                result_bytes[i * 8 + j] = ((value_lo[3 - i] >> (j * 8)) & 0xFF) as u8;
             }
         }
 
@@ -522,10 +534,10 @@ pub trait Scalar:
             let is_gt = Choice::from(borrow_bit as u8);
 
             // Update result: if we've seen equality so far and self_byte < other_byte, set result to 1
-            result = result | (eq_so_far & is_lt);
+            result |= eq_so_far & is_lt;
 
             // Update eq_so_far: if we've seen equality so far and self_byte > other_byte, clear eq_so_far
-            eq_so_far = eq_so_far & !is_gt;
+            eq_so_far &= !is_gt;
         }
 
         result
@@ -590,9 +602,7 @@ pub enum PointFormat {
 ///     // ... other methods ...
 /// }
 /// ```
-pub trait PointAffine:
-    Sized + Copy + Clone + Debug + Default + ConstantTimeEq + Zeroize
-{
+pub trait PointAffine: Sized + Copy + Clone + Debug + Default + ConstantTimeEq + Zeroize {
     /// The field element type for coordinates.
     type Field: FieldElement;
 
@@ -952,7 +962,7 @@ pub trait Curve: Sized + Copy + Clone + Debug {
         let mut result = Self::identity();
         for i in 0..points.len() {
             let product = Self::multiply(&points[i], &scalars[i]);
-            result = result + product;
+            result += product;
         }
 
         result
@@ -1043,9 +1053,7 @@ pub trait KeyExchange: Sized {
     /// - The point is in the prime-order subgroup (by clearing the cofactor)
     /// - The point is not the identity
     /// - For curves with cofactor > 1, it ensures the point is not in a small subgroup
-    fn validate_public_key(
-        public_key: &<Self::Curve as Curve>::PointAffine,
-    ) -> Choice {
+    fn validate_public_key(public_key: &<Self::Curve as Curve>::PointAffine) -> Choice {
         // Check that the point is not the identity
         let not_identity = !public_key.is_identity();
 
@@ -1062,7 +1070,7 @@ pub trait KeyExchange: Sized {
                 // All points on the curve are in the prime-order subgroup
                 // There are no small subgroups
                 (Choice::from(1u8), Choice::from(1u8))
-            },
+            }
             4 => {
                 // Optimized check for curves with cofactor = 4 (like Ed25519)
                 // Convert to projective for multiplication
@@ -1082,7 +1090,7 @@ pub trait KeyExchange: Sized {
                 let in_subgroup = p_order.is_identity();
 
                 (in_subgroup, !is_small_subgroup)
-            },
+            }
             8 => {
                 // Optimized check for curves with cofactor = 8 (like E-521)
                 // Convert to projective for multiplication
@@ -1103,7 +1111,7 @@ pub trait KeyExchange: Sized {
                 let in_subgroup = p_order.is_identity();
 
                 (in_subgroup, !is_small_subgroup)
-            },
+            }
             _ => {
                 // Generic implementation for other cofactors
                 // Convert to projective for multiplication
@@ -1141,11 +1149,7 @@ pub trait KeyExchange: Sized {
     ///
     /// The derived key, or an error if the derivation fails.
     #[cfg(feature = "alloc")]
-    fn derive_key(
-        shared_secret: &[u8],
-        info: &[u8],
-        output_len: usize,
-    ) -> Result<Vec<u8>>;
+    fn derive_key(shared_secret: &[u8], info: &[u8], output_len: usize) -> Result<Vec<u8>>;
 
     /// Performs a complete key exchange.
     ///
@@ -1172,12 +1176,10 @@ pub trait KeyExchange: Sized {
     ) -> Result<(<Self::Curve as Curve>::PointAffine, Vec<u8>)> {
         // Generate a key pair
         let private_key = <<Self::Curve as Curve>::Scalar as Scalar>::random(rng);
-        let public_key = <Self::Curve as Curve>::to_affine(
-            &<Self::Curve as Curve>::multiply(
-                &<Self::Curve as Curve>::generator(),
-                &private_key,
-            ),
-        );
+        let public_key = <Self::Curve as Curve>::to_affine(&<Self::Curve as Curve>::multiply(
+            &<Self::Curve as Curve>::generator(),
+            &private_key,
+        ));
 
         // Derive the shared secret
         let shared_secret = Self::derive_shared_secret(&private_key, peer_public_key)?;
@@ -1255,10 +1257,7 @@ pub trait SignatureScheme: Sized {
     /// This method must use a secure source of randomness or a deterministic
     /// process like RFC6979 to generate the signature. It must also be
     /// implemented in constant time to prevent timing attacks.
-    fn sign(
-        sk: &<Self::Curve as Curve>::Scalar,
-        msg: &[u8],
-    ) -> Self::Signature;
+    fn sign(sk: &<Self::Curve as Curve>::Scalar, msg: &[u8]) -> Self::Signature;
 
     /// Signs a message using the given private key and additional data.
     ///
@@ -1308,11 +1307,7 @@ pub trait SignatureScheme: Sized {
     /// This method must validate the public key and signature before verifying
     /// to prevent attacks. It must also be implemented in constant time to
     /// prevent timing attacks.
-    fn verify(
-        pk: &<Self::Curve as Curve>::PointAffine,
-        msg: &[u8],
-        sig: &Self::Signature,
-    ) -> bool;
+    fn verify(pk: &<Self::Curve as Curve>::PointAffine, msg: &[u8], sig: &Self::Signature) -> bool;
 
     /// Verifies a signature on a message using the given public key and additional data.
     ///
@@ -1372,7 +1367,7 @@ pub trait SignatureScheme: Sized {
         sigs: &[Self::Signature],
     ) -> bool {
         // Check that the number of public keys, messages, and signatures match
-        if pks.len() != msgs.len() || pks.len() != sigs.len() || pks.len() == 0 {
+        if pks.len() != msgs.len() || pks.len() != sigs.len() || pks.is_empty() {
             return false;
         }
 
@@ -1454,10 +1449,7 @@ impl DomainSeparationTag {
     ///
     /// The domain separation tag.
     pub fn new(suite_id: &str, dst: &str) -> Self {
-        Self {
-            suite_id: suite_id.to_string(),
-            dst: dst.to_string(),
-        }
+        Self { suite_id: suite_id.to_string(), dst: dst.to_string() }
     }
 
     /// Returns the domain separation tag as a byte array.
@@ -1568,10 +1560,10 @@ pub trait HashToCurve: Curve {
     /// This method must be implemented in constant time to prevent timing attacks.
     /// It must also use proper domain separation to prevent attacks.
     #[cfg(feature = "alloc")]
-    fn hash_to_curve<D: Digest>(
-        msg: &[u8],
-        dst: &DomainSeparationTag,
-    ) -> Self::PointAffine where Self::Field: ConditionallySelectable {
+    fn hash_to_curve<D: Digest>(msg: &[u8], dst: &DomainSeparationTag) -> Self::PointAffine
+    where
+        Self::Field: ConditionallySelectable,
+    {
         // This is a simplified implementation that should be overridden
         // by concrete implementations for better performance and security
 
@@ -1588,7 +1580,7 @@ pub trait HashToCurve: Curve {
         bytes[..len].copy_from_slice(&hash_slice[..len]);
 
         let u_opt = Self::Field::from_bytes(&bytes);
-        let u = u_opt.unwrap_or_else(|| Self::Field::zero());
+        let u = u_opt.unwrap_or_else(Self::Field::zero);
 
         // Map the field element to a curve point
         let p_affine = Self::map_to_curve(&u);
@@ -1637,15 +1629,12 @@ pub mod test_utils {
     /// # Returns
     ///
     /// `true` if all tests pass, `false` otherwise.
-    pub fn test_field_axioms<F: FieldElement>(
-        rng: &mut impl RngCore,
-        iterations: usize,
-    ) -> bool {
+    pub fn test_field_axioms<F: FieldElement>(rng: &mut impl RngCore, iterations: usize) -> bool {
         for _ in 0..iterations {
             // Generate random field elements
-            let a = F::random(rng);
-            let b = F::random(rng);
-            let c = F::random(rng);
+            let a = F::random(&mut *rng);
+            let b = F::random(&mut *rng);
+            let c = F::random(&mut *rng);
 
             // Test associativity: (a + b) + c = a + (b + c)
             let left = (a + b) + c;
@@ -1715,13 +1704,10 @@ pub mod test_utils {
     /// # Returns
     ///
     /// `true` if all tests pass, `false` otherwise.
-    pub fn test_curve_equation<C: Curve>(
-        rng: &mut impl RngCore,
-        iterations: usize,
-    ) -> bool {
+    pub fn test_curve_equation<C: Curve>(rng: &mut impl RngCore, iterations: usize) -> bool {
         for _ in 0..iterations {
             // Generate a random scalar
-            let scalar = C::Scalar::random(rng);
+            let scalar = <<C as Curve>::Scalar as FieldElement>::random(&mut *rng);
 
             // Multiply the generator by the scalar
             let point = C::multiply(&C::generator(), &scalar);
@@ -1756,13 +1742,13 @@ pub mod test_utils {
     ) -> bool {
         for _ in 0..iterations {
             // Generate a key pair
-            let sk = <S::Curve as Curve>::Scalar::random(rng);
-            let pk = <S::Curve as Curve>::to_affine(
-                &<S::Curve as Curve>::multiply(
-                    &<S::Curve as Curve>::generator(),
-                    &sk,
-                ),
+            let sk = <<<S as SignatureScheme>::Curve as Curve>::Scalar as FieldElement>::random(
+                &mut *rng,
             );
+            let pk = <S::Curve as Curve>::to_affine(&<S::Curve as Curve>::multiply(
+                &<S::Curve as Curve>::generator(),
+                &sk,
+            ));
 
             // Generate a random message
             let mut msg = [0u8; 32];
@@ -1799,27 +1785,22 @@ pub mod test_utils {
     /// # Returns
     ///
     /// `true` if all tests pass, `false` otherwise.
-    pub fn test_key_exchange<K: KeyExchange>(
-        rng: &mut impl RngCore,
-        iterations: usize,
-    ) -> bool {
+    pub fn test_key_exchange<K: KeyExchange>(rng: &mut impl RngCore, iterations: usize) -> bool {
         for _ in 0..iterations {
             // Generate key pairs for Alice and Bob
-            let alice_sk = <K::Curve as Curve>::Scalar::random(rng);
-            let alice_pk = <K::Curve as Curve>::to_affine(
-                &<K::Curve as Curve>::multiply(
-                    &<K::Curve as Curve>::generator(),
-                    &alice_sk,
-                ),
-            );
+            let alice_sk =
+                <<<K as KeyExchange>::Curve as Curve>::Scalar as FieldElement>::random(&mut *rng);
+            let alice_pk = <K::Curve as Curve>::to_affine(&<K::Curve as Curve>::multiply(
+                &<K::Curve as Curve>::generator(),
+                &alice_sk,
+            ));
 
-            let bob_sk = <K::Curve as Curve>::Scalar::random(rng);
-            let bob_pk = <K::Curve as Curve>::to_affine(
-                &<K::Curve as Curve>::multiply(
-                    &<K::Curve as Curve>::generator(),
-                    &bob_sk,
-                ),
-            );
+            let bob_sk =
+                <<<K as KeyExchange>::Curve as Curve>::Scalar as FieldElement>::random(&mut *rng);
+            let bob_pk = <K::Curve as Curve>::to_affine(&<K::Curve as Curve>::multiply(
+                &<K::Curve as Curve>::generator(),
+                &bob_sk,
+            ));
 
             // Derive shared secrets
             let alice_secret = K::derive_shared_secret(&alice_sk, &bob_pk).unwrap();
@@ -1846,13 +1827,10 @@ pub mod test_utils {
     /// # Returns
     ///
     /// `true` if all tests pass, `false` otherwise.
-    pub fn test_hash_to_curve<C: HashToCurve>(
-        rng: &mut impl RngCore,
-        iterations: usize,
-    ) -> bool {
+    pub fn test_hash_to_curve<C: HashToCurve>(rng: &mut impl RngCore, iterations: usize) -> bool {
         for _ in 0..iterations {
             // Generate a random field element
-            let u = C::Field::random(rng);
+            let u = C::Field::random(&mut *rng);
 
             // Map it to a curve point
             let p = C::map_to_curve(&u);
@@ -1864,7 +1842,7 @@ pub mod test_utils {
 
             // Clear the cofactor
             let p_proj = C::from_affine(&p);
-            let p_cleared = C::clear_cofactor(&p_proj);
+            let p_cleared = <C as Curve>::clear_cofactor(&p_proj);
             let p_cleared_affine = C::to_affine(&p_cleared);
 
             // Check that the cleared point is on the curve
@@ -1900,14 +1878,11 @@ pub mod test_utils {
     ///
     /// This is a simplified test that cannot guarantee constant-time behavior.
     /// More sophisticated testing using tools like ctgrind or dudect is recommended.
-    pub fn test_constant_time<C: Curve>(
-        rng: &mut impl RngCore,
-        iterations: usize,
-    ) -> bool {
+    pub fn test_constant_time<C: Curve>(rng: &mut impl RngCore, iterations: usize) -> bool {
         for _ in 0..iterations {
             // Generate random scalars
-            let a = C::Scalar::random(rng);
-            let b = C::Scalar::random(rng);
+            let a = <<C as Curve>::Scalar as FieldElement>::random(&mut *rng);
+            let b = <<C as Curve>::Scalar as FieldElement>::random(&mut *rng);
 
             // Test conditional selection
             let choice = Choice::from((rng.next_u32() % 2) as u8);
