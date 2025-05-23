@@ -100,6 +100,10 @@ We've recently made significant improvements to the signature verification funct
 - Added constant-time operations for all signature verification steps
 - Fixed edge cases in signature verification
 - Added comprehensive test suite for all signature schemes
+- Fixed format macro usage in test code
+- Fixed test cases to ensure constant-time operations for secret data
+- Fixed ambiguity with multiple `conditional_select` implementations
+- Improved overall code quality and fixed compiler warnings
 
 All implementations focus on security, with constant-time operations to prevent side-channel attacks, and proper handling of edge cases.
 

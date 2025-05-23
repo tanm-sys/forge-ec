@@ -47,6 +47,19 @@ let y = point_affine.y();
 
 `forge-ec-core` provides the foundational traits and interfaces that define the behavior of elliptic curves and the cryptographic operations that can be performed on them. This crate serves as the backbone of the Forge EC ecosystem, establishing a consistent API that all other crates in the workspace build upon.
 
+## Recent Improvements
+
+We've recently made several important improvements to the core API:
+
+- Added missing `double` method to the `Curve` trait with a default implementation that delegates to the `PointProjective::double` method
+- Fixed the `KeyExchange` trait implementation to properly use the new `double` method
+- Fixed the `validate_point` method to return `Choice` instead of `CtOption<()>` as required by the Curve trait
+- Fixed ambiguity with multiple `conditional_select` implementations
+- Improved error handling for invalid inputs
+- Enhanced documentation with more examples and security considerations
+- Added comprehensive test suite for all traits
+- Fixed test cases to ensure constant-time operations for secret data
+
 The design philosophy of `forge-ec-core` emphasizes:
 
 - **Type safety**: Using Rust's type system to prevent misuse

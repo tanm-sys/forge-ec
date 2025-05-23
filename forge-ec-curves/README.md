@@ -98,6 +98,12 @@ let shared_secret = Secp256k1::multiply(&peer_public_key, &secret_key);
 
 #### Recent Fixes
 
+- Fixed the `validate_point` method in secp256k1.rs to return `Choice` instead of `CtOption<()>` as required by the Curve trait
+- Fixed the `square` method in secp256k1.rs to properly return the result
+- Fixed borrowing issues in the `mont_reduce` method
+- Fixed multiplication operator ambiguity for FieldElement
+- Fixed ambiguity with multiple `conditional_select` implementations
+- Fixed overflow issues in field arithmetic operations
 - Fixed syntax error in secp256k1.rs by removing an extra closing brace
 - Corrected the Montgomery form conversion constant (R_SQUARED) for proper Montgomery arithmetic
 - Improved constant-time operations for field arithmetic and point operations

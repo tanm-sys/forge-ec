@@ -154,17 +154,25 @@ The library is split into multiple crates for modularity:
 
 ### Recent Enhancements
 
-#### Core API and Compilation Fixes
+#### Critical Security and Functionality Fixes
 
-We've recently made several important improvements to the core API and fixed critical compilation issues:
+We've recently made several critical improvements to the library's security and functionality:
 
+- Fixed the `validate_point` method in secp256k1.rs to return `Choice` instead of `CtOption<()>` as required by the Curve trait
+- Fixed the `square` method in secp256k1.rs to properly return the result
+- Fixed borrowing issues in the `mont_reduce` method
+- Fixed multiplication operator ambiguity for FieldElement
+- Fixed ambiguity with multiple `conditional_select` implementations
+- Fixed overflow issues in field arithmetic operations
+- Fixed the `hash_to_curve` implementation to comply with RFC9380
+- Fixed test cases to ensure constant-time operations for secret data
 - Added missing `double` method to the `Curve` trait with a default implementation that delegates to the `PointProjective::double` method
 - Fixed the `KeyExchange` trait implementation to properly use the new `double` method
 - Replaced non-constant-time `pow_vartime` method with the constant-time `pow` method in hash-to-curve implementation
 - Fixed syntax error in secp256k1.rs by removing an extra closing brace
 - Improved overall code quality and fixed compiler warnings
 
-These changes ensure that the library compiles correctly and maintains the constant-time behavior required for cryptographic security.
+These changes ensure that the library maintains constant-time implementations for operations involving secret data, proper Montgomery form conversions, comprehensive input validation, and compliance with RFC9380 for HashToCurve implementations.
 
 #### Point Encoding/Decoding Implementation
 
