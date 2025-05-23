@@ -379,7 +379,7 @@ pub trait Scalar:
         // We'll use a simplified approach here that works for our use case
 
         // First, check if value_hi is zero (common case)
-        let hi_is_zero = value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
+        let mut hi_is_zero = value_hi[0] == 0 && value_hi[1] == 0 && value_hi[2] == 0 && value_hi[3] == 0;
 
         if hi_is_zero {
             // If value_hi is zero, we just need to check if value_lo < order
