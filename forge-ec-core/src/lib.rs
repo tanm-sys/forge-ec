@@ -1036,41 +1036,77 @@ pub trait KeyExchange: Sized {
         // Check that the point is on the curve
         let on_curve = public_key.is_on_curve();
 
-        // For curves with cofactor > 1, we need to check that the point is in the prime-order subgroup
-        // by multiplying by the curve order and checking if the result is the identity
+        // Optimized cofactor validation based on the curve type
         let cofactor = Self::Curve::cofactor();
-        let in_prime_subgroup = if cofactor > 1 {
-            // Convert to projective for multiplication
-            let p_proj = Self::Curve::from_affine(public_key);
 
-            // Clear the cofactor by multiplying by the cofactor
-            let p_cleared = Self::Curve::clear_cofactor(&p_proj);
+        // Optimize validation based on common cofactor values
+        let (in_prime_subgroup, not_small_subgroup) = match cofactor {
+            1 => {
+                // For curves with cofactor = 1 (like secp256k1, P-256)
+                // All points on the curve are in the prime-order subgroup
+                // There are no small subgroups
+                (Choice::from(1u8), Choice::from(1u8))
+            },
+            4 => {
+                // Optimized check for curves with cofactor = 4 (like Ed25519)
+                // Convert to projective for multiplication
+                let p_proj = Self::Curve::from_affine(public_key);
 
-            // Multiply by the curve order
-            let p_order = Self::Curve::multiply(&p_cleared, &Self::Curve::order());
+                // Multiply by 4 directly (more efficient than generic approach)
+                let p_doubled = Self::Curve::double(&p_proj);
+                let p_quadrupled = Self::Curve::double(&p_doubled);
 
-            // The result should be the identity point
-            p_order.is_identity()
-        } else {
-            // For curves with cofactor = 1, all points on the curve are in the prime-order subgroup
-            Choice::from(1u8)
-        };
+                // Check if the result is the identity (small subgroup check)
+                let is_small_subgroup = p_quadrupled.is_identity();
 
-        // Check for small subgroup attacks
-        // For curves with cofactor > 1, we need to ensure the point is not in a small subgroup
-        let not_small_subgroup = if cofactor > 1 {
-            // Convert to projective for multiplication
-            let p_proj = Self::Curve::from_affine(public_key);
+                // For cofactor 4, we need to ensure the point * order = identity
+                // to verify it's in the prime-order subgroup
+                let p_cleared = Self::Curve::clear_cofactor(&p_proj);
+                let p_order = Self::Curve::multiply(&p_cleared, &Self::Curve::order());
+                let in_subgroup = p_order.is_identity();
 
-            // Multiply by the cofactor
-            let scalar_cofactor = <<Self::Curve as Curve>::Scalar as From<u64>>::from(cofactor);
-            let p_cofactor = Self::Curve::multiply(&p_proj, &scalar_cofactor);
+                (in_subgroup, !is_small_subgroup)
+            },
+            8 => {
+                // Optimized check for curves with cofactor = 8 (like E-521)
+                // Convert to projective for multiplication
+                let p_proj = Self::Curve::from_affine(public_key);
 
-            // If the result is the identity, the point is in a small subgroup
-            !p_cofactor.is_identity()
-        } else {
-            // For curves with cofactor = 1, there are no small subgroups
-            Choice::from(1u8)
+                // Multiply by 8 directly (more efficient than generic approach)
+                let p_doubled = Self::Curve::double(&p_proj);
+                let p_quadrupled = Self::Curve::double(&p_doubled);
+                let p_octupled = Self::Curve::double(&p_quadrupled);
+
+                // Check if the result is the identity (small subgroup check)
+                let is_small_subgroup = p_octupled.is_identity();
+
+                // For cofactor 8, we need to ensure the point * order = identity
+                // to verify it's in the prime-order subgroup
+                let p_cleared = Self::Curve::clear_cofactor(&p_proj);
+                let p_order = Self::Curve::multiply(&p_cleared, &Self::Curve::order());
+                let in_subgroup = p_order.is_identity();
+
+                (in_subgroup, !is_small_subgroup)
+            },
+            _ => {
+                // Generic implementation for other cofactors
+                // Convert to projective for multiplication
+                let p_proj = Self::Curve::from_affine(public_key);
+
+                // Clear the cofactor
+                let p_cleared = Self::Curve::clear_cofactor(&p_proj);
+
+                // Multiply by the curve order
+                let p_order = Self::Curve::multiply(&p_cleared, &Self::Curve::order());
+                let in_subgroup = p_order.is_identity();
+
+                // Check for small subgroup attacks
+                let scalar_cofactor = <<Self::Curve as Curve>::Scalar as From<u64>>::from(cofactor);
+                let p_cofactor = Self::Curve::multiply(&p_proj, &scalar_cofactor);
+                let not_in_small_subgroup = !p_cofactor.is_identity();
+
+                (in_subgroup, not_in_small_subgroup)
+            }
         };
 
         // All checks must pass

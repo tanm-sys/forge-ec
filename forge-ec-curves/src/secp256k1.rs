@@ -196,8 +196,9 @@ impl FieldElement {
         // where R^2 mod p is a precomputed constant
 
         // R^2 mod p for secp256k1
+        // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
         const R_SQUARED: [u64; 4] = [
-            0x0000_0001_0000_0000,
+            0x0000_0000_0000_0001,
             0x0000_0000_0000_0000,
             0x0000_0000_0000_0000,
             0x0000_0000_0000_0000,

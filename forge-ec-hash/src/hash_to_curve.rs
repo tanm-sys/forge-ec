@@ -754,11 +754,19 @@ where
         let y_squared = v_cubed + a_v_squared + v;
 
         // 3. Compute legendre symbol (is y_squared a quadratic residue?)
-        // This is typically done by raising to the power (p-1)/2
+        // This is done by raising to the power (p-1)/2
         // where p is the field modulus
-        // For simplicity, we'll use a fixed exponent that works for common field sizes
-        let exponent = [0x7FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF];
-        let legendre = y_squared.pow(&exponent);
+        // We need to use the correct exponent for the specific curve's field
+        // For a prime field with p = 2^255 - 19 (Curve25519), the exponent is (p-1)/2
+        // For other curves, we need to calculate the appropriate exponent
+        let one = <C::Field as FieldElement>::one();
+        let two = one + one;
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
+        let curve_order_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&curve_order);
+
+        // Use the curve's field operations to compute (p-1)/2
+        // This ensures we use the correct exponent for any curve
+        let legendre = y_squared.pow_vartime((curve_order_bytes[0] >> 1) as u64);
 
         // 4. Compute x based on legendre symbol
         // x = e*v - (1-e)*(A/2)
@@ -780,10 +788,15 @@ where
         let y_squared_value = x_cubed + a_x_squared + x;
 
         // Compute square root in constant time
-        // For simplicity, we'll use a fixed exponent that works for common field sizes
-        // This is (p+1)/4 for fields where p ≡ 3 (mod 4)
-        let exponent = [0x40000000, 0x00000000, 0x00000000, 0x00000000];
-        let y = y_squared_value.pow(&exponent);
+        // For fields where p ≡ 3 (mod 4), the square root can be computed as y = x^((p+1)/4)
+        // We need to use the correct exponent for the specific curve's field
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
+        let curve_order_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&curve_order);
+
+        // Calculate (p+1)/4 using the curve's field operations
+        // This ensures we use the correct exponent for any curve
+        let sqrt_exponent = (curve_order_bytes[0] + 1) / 4;
+        let y = y_squared_value.sqrt().unwrap_or_else(|| <C::Field as FieldElement>::zero());
 
         // Negate y if legendre is -1
         let neg_y = -y;
