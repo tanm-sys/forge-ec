@@ -766,7 +766,8 @@ where
 
         // Use the curve's field operations to compute (p-1)/2
         // This ensures we use the correct exponent for any curve
-        let legendre = y_squared.pow_vartime((curve_order_bytes[0] >> 1) as u64);
+        let exponent = [(curve_order_bytes[0] >> 1) as u64];
+        let legendre = y_squared.pow(&exponent);
 
         // 4. Compute x based on legendre symbol
         // x = e*v - (1-e)*(A/2)

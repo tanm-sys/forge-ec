@@ -185,7 +185,6 @@ impl FieldElement {
 
         CtOption::new(final_result, is_valid)
     }
-    }
 
     /// Converts a field element to Montgomery form.
     ///
