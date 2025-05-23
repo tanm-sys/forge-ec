@@ -2165,53 +2165,49 @@ impl Curve for Secp256k1 {
 
         // Create a copy of the scalar to avoid potential side-channel leaks
         // from directly accessing the original scalar
-        let mut scalar_copy = [0u64; 4];
-        scalar_copy.copy_from_slice(&scalar.to_raw());
+        let mut scalar_bytes = [0u8; 32];
+        scalar_bytes.copy_from_slice(&scalar.to_bytes());
 
-        // Double-and-add-always algorithm with constant-time implementation
-        let mut result = Self::identity();
-        let mut temp = *point;
+        // Montgomery ladder implementation for scalar multiplication
+        // This is a constant-time implementation to prevent timing attacks
+
+        // Initialize R0 = 0 (identity) and R1 = P
+        let mut r0 = Self::identity();
+        let mut r1 = *point;
 
         // Process each bit of the scalar from most significant to least significant
         // This is a constant-time implementation that processes bits in a fixed order
-        // to prevent timing attacks
-        for i in (0..4).rev() {
-            for j in (0..64).rev() {
-                // Get the current bit using constant-time operations
-                // We use a mask and conditional selection to avoid branches
-                let bit_mask = 1u64 << j;
-                let bit = Choice::from(((scalar_copy[i] & bit_mask) != 0) as u8);
+        for i in 0..256 {
+            // Get the current bit using constant-time operations
+            let byte_idx = i / 8;
+            let bit_idx = 7 - (i % 8); // MSB first
+            let bit = Choice::from(((scalar_bytes[byte_idx] >> bit_idx) & 1) as u8);
 
-                // Compute both possible next values for result
-                let result_plus_temp = result + temp;
+            // Montgomery ladder step:
+            // If bit = 0: R0 = 2*R0, R1 = R0 + R1
+            // If bit = 1: R0 = R0 + R1, R1 = 2*R1
 
-                // Conditionally select the correct next value based on the bit
-                // This is done in constant time using the subtle crate
-                result = <ProjectivePoint as subtle::ConditionallySelectable>::conditional_select(
-                    &result,
-                    &result_plus_temp,
-                    bit
-                );
+            // Compute R0 + R1
+            let r0_plus_r1 = r0 + r1;
 
-                // Always double the temporary point
-                // This ensures the sequence of operations is the same regardless of the scalar
-                temp = temp.double();
-            }
+            // Compute 2*R0 and 2*R1
+            let r0_doubled = r0.double();
+            let r1_doubled = r1.double();
+
+            // Conditionally swap based on the bit value
+            // If bit = 0: new_r0 = r0_doubled, new_r1 = r0_plus_r1
+            // If bit = 1: new_r0 = r0_plus_r1, new_r1 = r1_doubled
+            r0 = ProjectivePoint::conditional_select(&r0_doubled, &r0_plus_r1, bit);
+            r1 = ProjectivePoint::conditional_select(&r0_plus_r1, &r1_doubled, bit);
         }
 
         // Zeroize sensitive data to prevent leakage
-        for i in 0..4 {
-            scalar_copy[i] = 0;
+        for i in 0..32 {
+            scalar_bytes[i] = 0;
         }
 
-        // Ensure the result is correctly computed
-        let is_identity = point.is_identity();
-        let is_scalar_zero = scalar.is_zero();
-        let identity_point = Self::identity();
-
-        // If point is identity or scalar is zero, return identity
-        let should_be_identity = is_identity | is_scalar_zero;
-        <ProjectivePoint as subtle::ConditionallySelectable>::conditional_select(&result, &identity_point, should_be_identity)
+        // Return R0, which contains the result
+        r0
     }
 
     /// Clears the cofactor from a point.

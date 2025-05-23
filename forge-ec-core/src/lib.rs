@@ -373,7 +373,7 @@ pub trait Scalar:
     ///
     /// Returns `true` if `self` is less than `other`.
     fn ct_lt(&self, other: &Self) -> Choice {
-        // Default implementation compares byte representations
+        // Default implementation compares byte representations in constant time
         // This should be overridden by implementations for better performance
         let self_bytes = <Self as Scalar>::to_bytes(self);
         let other_bytes = <Self as Scalar>::to_bytes(other);
@@ -381,13 +381,33 @@ pub trait Scalar:
         let mut result = Choice::from(0u8);
         let mut eq_so_far = Choice::from(1u8);
 
-        // Compare bytes from most significant to least significant
+        // Compare bytes from most significant to least significant in constant time
         for i in 0..32 {
-            let byte_lt = Choice::from((self_bytes[i] < other_bytes[i]) as u8);
-            let byte_gt = Choice::from((self_bytes[i] > other_bytes[i]) as u8);
+            // Use constant-time operations for comparison
+            // For each byte, we compute:
+            // - is_lt: 1 if self_byte < other_byte, 0 otherwise
+            // - is_gt: 1 if self_byte > other_byte, 0 otherwise
+            // - is_eq: 1 if self_byte == other_byte, 0 otherwise
+            let self_byte = self_bytes[i];
+            let other_byte = other_bytes[i];
 
-            result = result | (eq_so_far & byte_lt);
-            eq_so_far = eq_so_far & !byte_gt;
+            // Compute self_byte < other_byte in constant time
+            // This works by checking if other_byte - self_byte produces a borrow
+            // If other_byte >= self_byte, then other_byte - self_byte doesn't borrow
+            // If other_byte < self_byte, then other_byte - self_byte borrows
+            let borrow_bit = ((other_byte as u16).wrapping_sub(self_byte as u16) & 0x100) >> 8;
+            let is_lt = Choice::from(borrow_bit as u8);
+
+            // Compute self_byte > other_byte in constant time
+            // Similar to above, but checking if self_byte - other_byte produces a borrow
+            let borrow_bit = ((self_byte as u16).wrapping_sub(other_byte as u16) & 0x100) >> 8;
+            let is_gt = Choice::from(borrow_bit as u8);
+
+            // Update result: if we've seen equality so far and self_byte < other_byte, set result to 1
+            result = result | (eq_so_far & is_lt);
+
+            // Update eq_so_far: if we've seen equality so far and self_byte > other_byte, clear eq_so_far
+            eq_so_far = eq_so_far & !is_gt;
         }
 
         result
