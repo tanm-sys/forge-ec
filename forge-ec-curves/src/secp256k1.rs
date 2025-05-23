@@ -564,6 +564,23 @@ impl MulAssign for FieldElement {
     }
 }
 
+impl core::ops::Div for FieldElement {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        // Division in a field is multiplication by the multiplicative inverse
+        // a / b = a * (b^-1)
+        let rhs_inv = rhs.invert().unwrap_or(Self::zero());
+        self * rhs_inv
+    }
+}
+
+impl core::ops::DivAssign for FieldElement {
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs;
+    }
+}
+
 impl forge_ec_core::FieldElement for FieldElement {
     fn zero() -> Self {
         Self([0, 0, 0, 0])
@@ -1318,6 +1335,16 @@ impl AffinePoint {
 impl ConstantTimeEq for AffinePoint {
     fn ct_eq(&self, other: &Self) -> Choice {
         (self.x.ct_eq(&other.x) & self.y.ct_eq(&other.y)) | (self.infinity & other.infinity)
+    }
+}
+
+impl ConditionallySelectable for AffinePoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        Self {
+            x: FieldElement::conditional_select(&a.x, &b.x, choice),
+            y: FieldElement::conditional_select(&a.y, &b.y, choice),
+            infinity: Choice::conditional_select(&a.infinity, &b.infinity, choice),
+        }
     }
 }
 
