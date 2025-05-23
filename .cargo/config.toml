@@ -1,0 +1,3 @@
+[build]
+# Disable no_std target for now
+# target = "thumbv7m-none-eabi"
