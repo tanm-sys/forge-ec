@@ -154,6 +154,18 @@ The library is split into multiple crates for modularity:
 
 ### Recent Enhancements
 
+#### Core API and Compilation Fixes
+
+We've recently made several important improvements to the core API and fixed critical compilation issues:
+
+- Added missing `double` method to the `Curve` trait with a default implementation that delegates to the `PointProjective::double` method
+- Fixed the `KeyExchange` trait implementation to properly use the new `double` method
+- Replaced non-constant-time `pow_vartime` method with the constant-time `pow` method in hash-to-curve implementation
+- Fixed syntax error in secp256k1.rs by removing an extra closing brace
+- Improved overall code quality and fixed compiler warnings
+
+These changes ensure that the library compiles correctly and maintains the constant-time behavior required for cryptographic security.
+
 #### Point Encoding/Decoding Implementation
 
 We've recently implemented comprehensive point encoding and decoding functionality:
@@ -178,6 +190,9 @@ We've also made significant improvements to the HashToCurve implementation:
 - Fixed os2ip_mod_p function to be constant-time using conditional selection
 - Added proper trait bounds for ConditionallySelectable
 - Fixed type conversion issues with field elements
+- Fixed the legendre symbol calculation to use curve-specific exponents
+- Replaced non-constant-time `pow_vartime` with standard `pow` method
+- Enhanced square root computation to be constant-time and curve-specific
 - Addressed compiler warnings across the codebase
 - Added better documentation for cryptographic operations
 - Fixed build issues in the hash-to-curve implementation

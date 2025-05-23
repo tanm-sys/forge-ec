@@ -183,6 +183,22 @@ pub trait Curve: Sized + Copy + Clone + Debug + PartialEq + Eq {
     /// Returns the generator (base point) of the curve.
     fn generator() -> Self::PointProjective;
 
+    /// Doubles a point.
+    ///
+    /// This is a convenience method that delegates to the `double` method of the
+    /// projective point type.
+    ///
+    /// # Parameters
+    ///
+    /// * `point` - The point to double
+    ///
+    /// # Returns
+    ///
+    /// The doubled point (2*P)
+    fn double(point: &Self::PointProjective) -> Self::PointProjective {
+        point.double()
+    }
+
     /// Converts a point from affine to projective coordinates.
     fn from_affine(p: &Self::PointAffine) -> Self::PointProjective;
 

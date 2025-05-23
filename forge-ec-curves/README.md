@@ -96,6 +96,12 @@ let shared_secret = Secp256k1::multiply(&peer_public_key, &secret_key);
 - Support for point encoding/decoding in various formats
 - Implementation of the KeyExchange trait for secure key derivation
 
+#### Recent Fixes
+
+- Fixed syntax error in secp256k1.rs by removing an extra closing brace
+- Corrected the Montgomery form conversion constant (R_SQUARED) for proper Montgomery arithmetic
+- Improved constant-time operations for field arithmetic and point operations
+
 ### P-256 (NIST P-256)
 
 The P-256 curve (also known as secp256r1 or prime256v1) is defined by the equation y² = x³ - 3x + b over a prime field. It is standardized by NIST and widely used in TLS and other protocols.

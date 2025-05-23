@@ -662,7 +662,7 @@ where
 
             let mut xor_result = Vec::with_capacity(b_in_bytes);
             for j in 0..b_in_bytes {
-                xor_result.push(b_0[j] ^ prev_b[j]);
+                xor_result.push(b_0.as_slice()[j] ^ prev_b[j]);
             }
 
             hasher.update(&xor_result);
@@ -934,7 +934,7 @@ where
         for i in 2..=ell {
             // Compute strxor(b_0, b_(i-1))
             for j in 0..b_in_bytes {
-                xor_buffer[j] = b_0[j] ^ prev_b[j];
+                xor_buffer[j] = b_0.as_slice()[j] ^ prev_b[j];
             }
 
             // Compute b_i = H(strxor(b_0, b_(i-1)) || I2OSP(i, 1) || DST_prime)
