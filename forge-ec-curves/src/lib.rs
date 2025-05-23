@@ -15,15 +15,16 @@
 extern crate std;
 
 #[cfg(feature = "alloc")]
+#[allow(unused_extern_crates)]
 extern crate alloc;
 
-pub mod secp256k1;
-pub mod p256;
-pub mod ed25519;
 pub mod curve25519;
+pub mod ed25519;
+pub mod p256;
+pub mod secp256k1;
 
 // Re-export curve types for convenience
-pub use secp256k1::Secp256k1;
-pub use p256::P256;
-pub use ed25519::Ed25519;
 pub use curve25519::Curve25519;
+pub use ed25519::Ed25519;
+pub use p256::P256;
+pub use secp256k1::Secp256k1;

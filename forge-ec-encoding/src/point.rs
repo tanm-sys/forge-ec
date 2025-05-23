@@ -3,10 +3,10 @@
 //! This module provides compressed and uncompressed point formats for elliptic curves.
 //! These formats are commonly used in cryptographic protocols.
 
-#[cfg(feature = "std")]
-use std::vec::Vec;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 use core::marker::PhantomData;
 
@@ -43,10 +43,7 @@ impl<C: Curve> CompressedPoint<C> {
             let mut data = Vec::with_capacity(33);
             data.push(0x00); // Identity point marker
             data.resize(33, 0);
-            return Self {
-                data,
-                _curve: PhantomData,
-            };
+            return Self { data, _curve: PhantomData };
         }
 
         // Get the x and y coordinates
@@ -66,10 +63,7 @@ impl<C: Curve> CompressedPoint<C> {
         data.push(prefix);
         data.extend_from_slice(&x_bytes[0..32]);
 
-        Self {
-            data,
-            _curve: PhantomData,
-        }
+        Self { data, _curve: PhantomData }
     }
 
     /// Converts this compressed point to an affine point.
@@ -88,8 +82,8 @@ impl<C: Curve> CompressedPoint<C> {
         }
 
         // Check if the prefix is valid
-        let is_valid = Choice::from((self.data[0] == 0x02) as u8) |
-                       Choice::from((self.data[0] == 0x03) as u8);
+        let is_valid =
+            Choice::from((self.data[0] == 0x02) as u8) | Choice::from((self.data[0] == 0x03) as u8);
 
         if !bool::from(is_valid) {
             return CtOption::new(C::PointAffine::default(), Choice::from(0));
@@ -156,9 +150,9 @@ impl<C: Curve> CompressedPoint<C> {
         }
 
         // Check if the prefix is valid
-        let is_valid = Choice::from((bytes[0] == 0x00) as u8) |
-                       Choice::from((bytes[0] == 0x02) as u8) |
-                       Choice::from((bytes[0] == 0x03) as u8);
+        let is_valid = Choice::from((bytes[0] == 0x00) as u8)
+            | Choice::from((bytes[0] == 0x02) as u8)
+            | Choice::from((bytes[0] == 0x03) as u8);
 
         if !bool::from(is_valid) {
             return CtOption::new(Self { data: Vec::new(), _curve: PhantomData }, Choice::from(0));
@@ -167,13 +161,7 @@ impl<C: Curve> CompressedPoint<C> {
         let mut data = Vec::with_capacity(33);
         data.extend_from_slice(bytes);
 
-        CtOption::new(
-            Self {
-                data,
-                _curve: PhantomData,
-            },
-            Choice::from(1)
-        )
+        CtOption::new(Self { data, _curve: PhantomData }, Choice::from(1))
     }
 
     /// Converts this compressed point to bytes.
@@ -202,10 +190,7 @@ impl<C: Curve> UncompressedPoint<C> {
             let mut data = Vec::with_capacity(65);
             data.push(0x00); // Identity point marker
             data.resize(65, 0);
-            return Self {
-                data,
-                _curve: PhantomData,
-            };
+            return Self { data, _curve: PhantomData };
         }
 
         // Get the x and y coordinates
@@ -222,10 +207,7 @@ impl<C: Curve> UncompressedPoint<C> {
         data.extend_from_slice(&x_bytes[0..32]);
         data.extend_from_slice(&y_bytes[0..32]);
 
-        Self {
-            data,
-            _curve: PhantomData,
-        }
+        Self { data, _curve: PhantomData }
     }
 
     /// Converts this uncompressed point to an affine point.
@@ -303,8 +285,8 @@ impl<C: Curve> UncompressedPoint<C> {
         }
 
         // Check if the prefix is valid
-        let is_valid = Choice::from((bytes[0] == 0x00) as u8) |
-                       Choice::from((bytes[0] == 0x04) as u8);
+        let is_valid =
+            Choice::from((bytes[0] == 0x00) as u8) | Choice::from((bytes[0] == 0x04) as u8);
 
         if !bool::from(is_valid) {
             return CtOption::new(Self { data: Vec::new(), _curve: PhantomData }, Choice::from(0));
@@ -313,13 +295,7 @@ impl<C: Curve> UncompressedPoint<C> {
         let mut data = Vec::with_capacity(65);
         data.extend_from_slice(bytes);
 
-        CtOption::new(
-            Self {
-                data,
-                _curve: PhantomData,
-            },
-            Choice::from(1)
-        )
+        CtOption::new(Self { data, _curve: PhantomData }, Choice::from(1))
     }
 
     /// Converts this uncompressed point to bytes.
@@ -386,8 +362,8 @@ impl<C: Curve> PointEncoding<C> for Sec1Compressed<C> {
         }
 
         // Check if the prefix is valid
-        let is_valid = Choice::from((bytes[0] == 0x02) as u8) |
-                       Choice::from((bytes[0] == 0x03) as u8);
+        let is_valid =
+            Choice::from((bytes[0] == 0x02) as u8) | Choice::from((bytes[0] == 0x03) as u8);
 
         if !bool::from(is_valid) {
             return CtOption::new(C::PointAffine::default(), Choice::from(0));

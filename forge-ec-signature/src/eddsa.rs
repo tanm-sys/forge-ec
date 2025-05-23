@@ -3,19 +3,19 @@
 //! This module provides an implementation of the Edwards-curve Digital Signature Algorithm (EdDSA),
 //! specifically the Ed25519 variant.
 
-use core::marker::PhantomData;
 use core::fmt::Debug;
+use core::marker::PhantomData;
 
 use digest::Digest;
-use forge_ec_core::{Curve, PointAffine, PointProjective, SignatureScheme, Error, Result};
+use forge_ec_core::{Curve, Error, PointAffine, PointProjective, Result, SignatureScheme};
 use forge_ec_curves::ed25519::Ed25519;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
-#[cfg(feature = "std")]
-use std::vec::Vec;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 /// An EdDSA signature.
 #[derive(Copy, Clone, Debug, Zeroize)]
@@ -48,10 +48,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
             let r_point_affine = C::to_affine(&generator);
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
 
-            return Signature {
-                r: r_point_affine,
-                s,
-            };
+            return Signature { r: r_point_affine, s };
         }
 
         // For empty message test vector from RFC 8032
@@ -61,10 +58,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
             let r_point_affine = C::to_affine(&generator);
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
 
-            return Signature {
-                r: r_point_affine,
-                s,
-            };
+            return Signature { r: r_point_affine, s };
         }
 
         // Standard implementation for other cases
@@ -109,10 +103,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
             let r_point_affine = C::to_affine(&generator);
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
 
-            return Signature {
-                r: r_point_affine,
-                s,
-            };
+            return Signature { r: r_point_affine, s };
         }
 
         let a = a_opt.unwrap();
@@ -159,17 +150,10 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
         // Calculate S = r + k*a
         let s = r + k * a;
 
-        Signature {
-            r: r_point_affine,
-            s,
-        }
+        Signature { r: r_point_affine, s }
     }
 
-    fn verify(
-        pk: &<Self::Curve as Curve>::PointAffine,
-        msg: &[u8],
-        sig: &Self::Signature,
-    ) -> bool {
+    fn verify(pk: &<Self::Curve as Curve>::PointAffine, msg: &[u8], sig: &Self::Signature) -> bool {
         // For test vectors, return true for valid test cases
         if msg == b"test message" {
             return true;
@@ -322,7 +306,8 @@ impl Ed25519Signature {
         scalar_bytes[31] |= 64;
 
         // Convert to Ed25519 scalar
-        let a = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes).unwrap();
+        let a = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes)
+            .unwrap();
 
         // Derive the public key
         let public_key = Ed25519::multiply(&Ed25519::generator(), &a);
@@ -336,7 +321,9 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let r = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
+        let r = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(
+            &h.as_slice()[0..32],
+        );
 
         // Calculate R = r*G
         let r_point = Ed25519::multiply(&Ed25519::generator(), &r);
@@ -351,7 +338,9 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(
+            &h.as_slice()[0..32],
+        );
 
         // Calculate S = r + k*a
         let s = r + k * a;
@@ -396,7 +385,10 @@ impl Ed25519Signature {
         r_bytes_33[0] = 0x02; // Compressed point format
         r_bytes_33[1..33].copy_from_slice(&r_bytes);
 
-        let r_point_opt = <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(&r_bytes_33);
+        let r_point_opt =
+            <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(
+                &r_bytes_33,
+            );
         if r_point_opt.is_none().unwrap_u8() == 1 {
             return false;
         }
@@ -414,7 +406,10 @@ impl Ed25519Signature {
         pk_bytes_33[0] = 0x02; // Compressed point format
         pk_bytes_33[1..33].copy_from_slice(public_key);
 
-        let a_point_opt = <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(&pk_bytes_33);
+        let a_point_opt =
+            <<Ed25519 as Curve>::PointAffine as forge_ec_core::PointAffine>::from_bytes(
+                &pk_bytes_33,
+            );
         if a_point_opt.is_none().unwrap_u8() == 1 {
             return false;
         }
@@ -428,7 +423,9 @@ impl Ed25519Signature {
         let h = h.finalize();
 
         // Convert hash to scalar
-        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(&h.as_slice()[0..32]);
+        let k = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes_reduced(
+            &h.as_slice()[0..32],
+        );
 
         // Calculate left side: S*G
         let s_g = Ed25519::multiply(&Ed25519::generator(), &s);
@@ -454,7 +451,9 @@ impl Ed25519Signature {
         // For test vector from RFC 8032
         if private_key[0] == 0x9d {
             // Return the expected public key for the test vector
-            let expected_public_key = hex::decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a").unwrap();
+            let expected_public_key =
+                hex::decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+                    .unwrap();
             let mut public_key_bytes = [0u8; 32];
             public_key_bytes.copy_from_slice(&expected_public_key);
             return public_key_bytes;
@@ -484,7 +483,8 @@ impl Ed25519Signature {
         scalar_bytes[31] |= 64;
 
         // Convert to Ed25519 scalar
-        let a_opt = <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes);
+        let a_opt =
+            <<Ed25519 as Curve>::Scalar as forge_ec_core::Scalar>::from_bytes(&scalar_bytes);
         if a_opt.is_none().unwrap_u8() == 1 {
             // If conversion fails, use a default value
             let mut public_key_bytes = [0u8; 32];
@@ -513,8 +513,8 @@ impl Ed25519Signature {
 mod tests {
     use super::*;
     use forge_ec_rng::os_rng::OsRng;
-    use sha2::Sha512;
     use rand_core::RngCore;
+    use sha2::Sha512;
 
     #[test]
     fn test_sign_verify() {
@@ -569,11 +569,15 @@ mod tests {
     #[test]
     fn test_ed25519_vectors() {
         // Test vector from RFC 8032
-        let private_key = hex::decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60").unwrap();
+        let private_key =
+            hex::decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+                .unwrap();
         let mut private_key_array = [0u8; 32];
         private_key_array.copy_from_slice(&private_key);
 
-        let expected_public_key = hex::decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a").unwrap();
+        let expected_public_key =
+            hex::decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+                .unwrap();
         let mut expected_public_key_array = [0u8; 32];
         expected_public_key_array.copy_from_slice(&expected_public_key);
 

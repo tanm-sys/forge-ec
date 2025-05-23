@@ -1,16 +1,3 @@
-# Allow some clippy lints that are too strict for this project
-allow-clippy-lint = [
-    "identity-op",
-    "unusual-byte-groupings",
-    "suspicious-arithmetic-impl",
-    "derivable-impls",
-    "needless-range-loop",
-    "manual-memcpy",
-    "let-and-return",
-    "useless-conversion",
-    "needless-borrows-for-generic-args",
-    "unnecessary-cast",
-    "same-item-push",
-    "neg-multiply",
-    "assign-op-pattern"
-]
+# Clippy configuration
+# We're using a simpler approach by just commenting out the configuration
+# since we've already added the necessary flags to the CI workflow

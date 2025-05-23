@@ -20,10 +20,10 @@ extern crate alloc;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
+pub mod base58;
 pub mod der;
 pub mod pem;
 pub mod point;
-pub mod base58;
 
 // Re-export encoding types for convenience
 pub use der::{EcPrivateKey, EcPublicKey};

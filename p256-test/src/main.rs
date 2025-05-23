@@ -1,24 +1,16 @@
-use subtle::{Choice, ConstantTimeEq};
 use std::ops::{Add, Mul, Neg, Sub};
+use subtle::{Choice, ConstantTimeEq};
 
 /// P-256 prime field modulus (p).
 /// p = 2^256 - 2^224 + 2^192 + 2^96 - 1
-const P: [u64; 4] = [
-    0xFFFFFFFF_FFFFFFFF,
-    0x00000000_FFFFFFFF,
-    0x00000000_00000000,
-    0xFFFFFFFF_00000001,
-];
+const P: [u64; 4] =
+    [0xFFFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000000_00000000, 0xFFFFFFFF_00000001];
 
 /// P-256 curve order (n).
 /// n = FFFFFFFF 00000000 FFFFFFFF FFFFFFFF BCE6FAAD A7179E84 F3B9CAC2 FC632551
 #[allow(dead_code)]
-const N: [u64; 4] = [
-    0xF3B9_CAC2_FC63_2551,
-    0xBCE6_FAAD_A717_9E84,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0xFFFF_FFFF_0000_0000,
-];
+const N: [u64; 4] =
+    [0xF3B9_CAC2_FC63_2551, 0xBCE6_FAAD_A717_9E84, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_0000_0000];
 
 /// The P-256 curve parameter b
 /// b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
@@ -47,11 +39,7 @@ pub struct AffinePoint {
 
 impl Default for AffinePoint {
     fn default() -> Self {
-        Self {
-            x: FieldElement::default(),
-            y: FieldElement::default(),
-            infinity: false,
-        }
+        Self { x: FieldElement::default(), y: FieldElement::default(), infinity: false }
     }
 }
 
@@ -239,9 +227,15 @@ impl Add for FieldElement {
 
         // Reduce modulo p if necessary
         let mut reduced = Self(result);
-        if carry > 0 || reduced.0[3] > P[3] || (reduced.0[3] == P[3] && reduced.0[2] > P[2]) ||
-           (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] > P[1]) ||
-           (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] == P[1] && reduced.0[0] >= P[0]) {
+        if carry > 0
+            || reduced.0[3] > P[3]
+            || (reduced.0[3] == P[3] && reduced.0[2] > P[2])
+            || (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] > P[1])
+            || (reduced.0[3] == P[3]
+                && reduced.0[2] == P[2]
+                && reduced.0[1] == P[1]
+                && reduced.0[0] >= P[0])
+        {
             let mut borrow = 0u64;
             for i in 0..4 {
                 let (diff1, borrow1) = reduced.0[i].overflowing_sub(P[i]);
@@ -264,9 +258,14 @@ impl Sub for FieldElement {
         let mut result = self;
 
         // If self < rhs, add p to ensure the result is positive
-        if self.0[3] < rhs.0[3] || (self.0[3] == rhs.0[3] && self.0[2] < rhs.0[2]) ||
-           (self.0[3] == rhs.0[3] && self.0[2] == rhs.0[2] && self.0[1] < rhs.0[1]) ||
-           (self.0[3] == rhs.0[3] && self.0[2] == rhs.0[2] && self.0[1] == rhs.0[1] && self.0[0] < rhs.0[0]) {
+        if self.0[3] < rhs.0[3]
+            || (self.0[3] == rhs.0[3] && self.0[2] < rhs.0[2])
+            || (self.0[3] == rhs.0[3] && self.0[2] == rhs.0[2] && self.0[1] < rhs.0[1])
+            || (self.0[3] == rhs.0[3]
+                && self.0[2] == rhs.0[2]
+                && self.0[1] == rhs.0[1]
+                && self.0[0] < rhs.0[0])
+        {
             result = result + Self::from_raw(P);
         }
 
@@ -310,7 +309,9 @@ impl Mul for FieldElement {
         for i in 0..4 {
             let mut carry = 0u64;
             for j in 0..4 {
-                let product = (self.0[i] as u128) * (rhs.0[j] as u128) + (result[i + j] as u128) + (carry as u128);
+                let product = (self.0[i] as u128) * (rhs.0[j] as u128)
+                    + (result[i + j] as u128)
+                    + (carry as u128);
                 result[i + j] = product as u64;
                 carry = (product >> 64) as u64;
             }
@@ -327,9 +328,14 @@ impl Mul for FieldElement {
         }
 
         // Reduce modulo p
-        while reduced.0[3] > P[3] || (reduced.0[3] == P[3] && reduced.0[2] > P[2]) ||
-              (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] > P[1]) ||
-              (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] == P[1] && reduced.0[0] >= P[0]) {
+        while reduced.0[3] > P[3]
+            || (reduced.0[3] == P[3] && reduced.0[2] > P[2])
+            || (reduced.0[3] == P[3] && reduced.0[2] == P[2] && reduced.0[1] > P[1])
+            || (reduced.0[3] == P[3]
+                && reduced.0[2] == P[2]
+                && reduced.0[1] == P[1]
+                && reduced.0[0] >= P[0])
+        {
             let mut borrow = 0u64;
             for i in 0..4 {
                 let (diff1, borrow1) = reduced.0[i].overflowing_sub(P[i]);

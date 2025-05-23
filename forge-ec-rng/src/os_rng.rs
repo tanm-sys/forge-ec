@@ -3,8 +3,8 @@
 //! This module provides a wrapper around the OS's secure random number generator.
 
 use core::fmt;
-use rand_core::{CryptoRng, Error, RngCore};
 use rand_core::OsRng as RandOsRng;
+use rand_core::{CryptoRng, Error, RngCore};
 
 /// A wrapper around the OS's secure random number generator.
 pub struct OsRng;

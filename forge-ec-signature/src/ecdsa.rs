@@ -455,10 +455,6 @@ mod tests {
         // Skip this test for now
         // We'll fix it properly in a future PR
         return;
-
-
-
-
     }
 
     // Temporarily disable this test until we can fix the batch verification issues

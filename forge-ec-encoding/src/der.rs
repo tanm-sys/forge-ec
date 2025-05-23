@@ -3,13 +3,10 @@
 //! This module provides DER encoding and decoding for ECDSA keys and signatures
 //! following the ASN.1 structures defined in RFC5480 and SEC1.
 
-use std::vec::Vec;
+use der::{asn1::ObjectIdentifier, Error, ErrorKind, Tag};
 use std::string::ToString;
 use std::vec;
-use der::{
-    asn1::ObjectIdentifier,
-    Error, ErrorKind, Tag,
-};
+use std::vec::Vec;
 
 /// ASN.1 DER bit string.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,10 +30,7 @@ impl BitString {
             return Err(Error::from(ErrorKind::Value { tag: Tag::BitString }));
         }
 
-        Ok(Self {
-            data: data.to_vec(),
-            unused_bits,
-        })
+        Ok(Self { data: data.to_vec(), unused_bits })
     }
 
     /// Creates a new bit string from bytes.
@@ -65,8 +59,6 @@ pub struct EcdsaSignature<'a> {
     /// S value
     pub s: &'a [u8],
 }
-
-
 
 impl<'a> EcdsaSignature<'a> {
     /// Creates a new DER-encoded ECDSA signature.
@@ -148,7 +140,7 @@ impl<'a> EcdsaSignature<'a> {
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::Sequence),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -162,7 +154,7 @@ impl<'a> EcdsaSignature<'a> {
         if bytes[2] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::Integer),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -177,7 +169,7 @@ impl<'a> EcdsaSignature<'a> {
         if bytes[4 + r_len] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::Integer),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -203,8 +195,6 @@ pub struct EcPublicKey {
     /// Public key data
     pub public_key: BitString,
 }
-
-
 
 impl EcPublicKey {
     /// Creates a new DER-encoded EC public key.
@@ -334,7 +324,7 @@ impl EcPublicKey {
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::Sequence),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -348,7 +338,7 @@ impl EcPublicKey {
         if bytes[2] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::Sequence),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -361,7 +351,7 @@ impl EcPublicKey {
         if bytes[4] != 0x06 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::ObjectIdentifier),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -396,7 +386,7 @@ impl EcPublicKey {
         if offset >= bytes.len() || bytes[offset] != 0x03 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(Tag::BitString),
-                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null }
+                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null },
             }));
         }
 
@@ -411,13 +401,7 @@ impl EcPublicKey {
         // Create the public key
         let public_key = BitString::new(public_key_bytes, unused_bits).unwrap();
 
-        Ok(Self {
-            algorithm: EcdsaAlgorithmIdentifier {
-                algorithm,
-                parameters,
-            },
-            public_key,
-        })
+        Ok(Self { algorithm: EcdsaAlgorithmIdentifier { algorithm, parameters }, public_key })
     }
 }
 
@@ -439,8 +423,6 @@ pub struct EcPrivateKey<'a> {
     // #[asn1(context_specific = "1", optional = "true", tag_mode = "EXPLICIT")]
     pub public_key: Option<BitString>,
 }
-
-
 
 impl<'a> EcPrivateKey<'a> {
     /// Creates a new DER-encoded EC private key.
@@ -584,7 +566,7 @@ impl<'a> EcPrivateKey<'a> {
         if bytes[0] != 0x30 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::Sequence),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -598,7 +580,7 @@ impl<'a> EcPrivateKey<'a> {
         if bytes[2] != 0x02 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::Integer),
-                actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
             }));
         }
 
@@ -614,7 +596,7 @@ impl<'a> EcPrivateKey<'a> {
         if offset >= bytes.len() || bytes[offset] != 0x04 {
             return Err(Error::from(ErrorKind::TagUnexpected {
                 expected: Some(der::Tag::OctetString),
-                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null }
+                actual: if offset < bytes.len() { Tag::Integer } else { Tag::Null },
             }));
         }
 
@@ -655,7 +637,7 @@ impl<'a> EcPrivateKey<'a> {
             if bytes[current_offset + 2] != 0x03 {
                 return Err(Error::from(ErrorKind::TagUnexpected {
                     expected: Some(Tag::BitString),
-                    actual: Tag::Integer // Using Integer as a placeholder since we can't convert from u8
+                    actual: Tag::Integer, // Using Integer as a placeholder since we can't convert from u8
                 }));
             }
 
@@ -671,12 +653,7 @@ impl<'a> EcPrivateKey<'a> {
             public_key = Some(BitString::new(public_key_bytes, unused_bits).unwrap());
         }
 
-        Ok(Self {
-            version,
-            private_key,
-            parameters,
-            public_key,
-        })
+        Ok(Self { version, private_key, parameters, public_key })
     }
 }
 
@@ -705,8 +682,8 @@ pub trait DerEncoding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::string::String;
     use std::format;
+    use std::string::String;
 
     #[test]
     fn test_signature_encoding() {
@@ -817,11 +794,8 @@ mod tests {
             0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, // y-coordinate (partial)
         ];
 
-        let private_key = EcPrivateKey::new(
-            private_key_bytes,
-            Some(curve_oid),
-            Some(public_key_bytes),
-        );
+        let private_key =
+            EcPrivateKey::new(private_key_bytes, Some(curve_oid), Some(public_key_bytes));
 
         // Encode the private key
         let der_bytes = private_key.to_der().unwrap();
