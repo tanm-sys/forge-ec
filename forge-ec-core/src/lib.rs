@@ -48,6 +48,21 @@ use rand_core::RngCore;
 use subtle::{Choice, ConstantTimeEq, CtOption, ConditionallySelectable};
 use zeroize::Zeroize;
 
+/// Helper function to check if a < b for 256-bit integers represented as 4 u64 limbs
+/// This is used in the scalar reduction algorithm
+#[inline]
+fn is_less_than(a: &[u64; 4], b: &[u64; 4]) -> bool {
+    for i in (0..4).rev() {
+        if a[i] < b[i] {
+            return true;
+        } else if a[i] > b[i] {
+            return false;
+        }
+    }
+    // Equal
+    false
+}
+
 #[cfg(feature = "alloc")]
 use alloc::string::ToString;
 
@@ -446,19 +461,6 @@ pub trait Scalar:
         }
 
         <Self as Scalar>::from_bytes(&result_bytes).unwrap_or_else(|| Self::zero())
-    }
-
-    /// Helper function to check if a < b for 256-bit integers represented as 4 u64 limbs
-    fn is_less_than(a: &[u64; 4], b: &[u64; 4]) -> bool {
-        for i in (0..4).rev() {
-            if a[i] < b[i] {
-                return true;
-            } else if a[i] > b[i] {
-                return false;
-            }
-        }
-        // Equal
-        false
     }
 
     /// Converts bytes to a scalar, checking that the value is within the scalar field.
