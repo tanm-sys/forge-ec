@@ -48,13 +48,8 @@ impl<C: Curve> Signature<C> {
     where
         C::Scalar: std::ops::Div<Output = C::Scalar>
     {
-        // Get the curve order
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        ]).unwrap();
+        // Get the actual curve order
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
 
         // Calculate half the curve order
         let half_order = curve_order / C::Scalar::from(2u64);
@@ -167,10 +162,8 @@ where
         // Create signature and normalize s value
         let mut sig = Signature { r, s };
 
-        // Skip normalization for test vectors
-        if !msg.starts_with(b"sample") && !msg.starts_with(b"test message") {
-            sig.normalize();
-        }
+        // Always normalize the signature
+        sig.normalize();
 
         // Zeroize sensitive data before returning
         r_bytes.zeroize();
@@ -180,29 +173,13 @@ where
     }
 
     fn verify(pk: &C::PointAffine, msg: &[u8], sig: &Self::Signature) -> bool {
-        // For test vectors, return true for valid test cases
-        if msg == b"test message" {
-            return true;
-        }
-
-        // For different message test, return false
-        if msg == b"different message" {
-            return false;
-        }
-
-        // Standard implementation for other cases
         // Check that r, s are in [1, n-1]
         if bool::from(sig.r.is_zero()) || bool::from(sig.s.is_zero()) {
             return false;
         }
 
-        // Get the curve order to check that r and s are less than the order
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        ]).unwrap();
+        // Get the actual curve order to check that r and s are less than the order
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
 
         // Check that r and s are less than the curve order using constant-time comparison
         let r_lt_n = sig.r.ct_lt(&curve_order);
@@ -274,23 +251,10 @@ where
             return false;
         }
 
-        // For test vectors, return true for valid test cases
-        if msgs.len() == 1 && msgs[0] == b"test message" {
-            return true;
-        }
+        // No special case handling for test vectors - use the actual implementation
 
-        // For different message test, return false
-        if msgs.len() == 1 && msgs[0] == b"different message" {
-            return false;
-        }
-
-        // Get the curve order to check that r and s are less than the order
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        ]).unwrap();
+        // Get the actual curve order to check that r and s are less than the order
+        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
 
         // Standard implementation for other cases
         // Generate random scalars for the linear combination
@@ -474,22 +438,106 @@ mod tests {
 
     #[test]
     fn test_batch_verify() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Generate multiple key pairs
+        let mut rng = OsRng::new();
+        let num_sigs = 3;
+        let mut sks = Vec::with_capacity(num_sigs);
+        let mut pks = Vec::with_capacity(num_sigs);
+        let mut msgs = Vec::with_capacity(num_sigs);
+        let mut sigs = Vec::with_capacity(num_sigs);
+
+        // Create key pairs, messages, and signatures
+        for i in 0..num_sigs {
+            let sk = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+            let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
+            let pk_affine = Secp256k1::to_affine(&pk);
+
+            let msg = format!("test message {}", i).into_bytes();
+            let sig = Ecdsa::<Secp256k1, Sha256>::sign(&sk, &msg);
+
+            sks.push(sk);
+            pks.push(pk_affine);
+            msgs.push(msg);
+            sigs.push(sig);
+        }
+
+        // Convert msgs to slice of slices for batch_verify
+        let msg_slices: Vec<&[u8]> = msgs.iter().map(|m| m.as_slice()).collect();
+
+        // Verify all signatures in batch
+        let valid = Ecdsa::<Secp256k1, Sha256>::batch_verify(&pks, &msg_slices, &sigs);
+        assert!(valid);
+
+        // Modify one message and verify that batch verification fails
+        let mut modified_msgs = msgs.clone();
+        modified_msgs[0] = b"modified message".to_vec();
+        let modified_msg_slices: Vec<&[u8]> = modified_msgs.iter().map(|m| m.as_slice()).collect();
+
+        let valid = Ecdsa::<Secp256k1, Sha256>::batch_verify(&pks, &modified_msg_slices, &sigs);
+        assert!(!valid);
     }
 
     #[test]
     fn test_rfc6979_vectors() {
-        // Skip this test for now since we're using dummy values
-        // The test will be properly implemented when the actual RFC6979 implementation is complete
-        assert!(true);
+        // Test vector from RFC6979 Appendix A.1
+        let private_key_bytes = hex::decode("0000000000000000000000000000000000000000000000000000000000000001").unwrap();
+        let mut private_key_array = [0u8; 32];
+        private_key_array.copy_from_slice(&private_key_bytes);
+        let private_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::from_bytes(&private_key_array).unwrap();
+
+        // Test with message "sample"
+        let message = b"sample";
+
+        // Sign the message
+        let signature = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, message);
+
+        // Compute the public key
+        let public_key = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
+        let public_key_affine = Secp256k1::to_affine(&public_key);
+
+        // Verify the signature
+        let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);
+        assert!(valid);
+
+        // Verify with a different message (should fail)
+        let different_message = b"different message";
+        let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, different_message, &signature);
+        assert!(!valid);
     }
 
     #[test]
     fn test_signature_normalization() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Generate a key pair
+        let mut rng = OsRng::new();
+        let sk = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
+        let pk_affine = Secp256k1::to_affine(&pk);
+
+        // Sign a message
+        let msg = b"test message for normalization";
+        let sig = Ecdsa::<Secp256k1, Sha256>::sign(&sk, msg);
+
+        // Create a signature with high s value
+        let curve_order = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::get_order();
+        let high_s = curve_order - sig.s;
+        let sig_high_s = Signature::<Secp256k1>::new(sig.r, high_s);
+
+        // Verify both signatures
+        let valid_original = Ecdsa::<Secp256k1, Sha256>::verify(&pk_affine, msg, &sig);
+        let valid_high_s = Ecdsa::<Secp256k1, Sha256>::verify(&pk_affine, msg, &sig_high_s);
+
+        // Both should be valid
+        assert!(valid_original);
+        assert!(valid_high_s);
+
+        // Normalize the high-s signature
+        let mut sig_normalized = sig_high_s;
+        sig_normalized.normalize();
+
+        // The normalized signature should have the same r value
+        assert_eq!(sig_normalized.r, sig.r);
+
+        // The normalized signature should have the low s value
+        assert_eq!(sig_normalized.s, sig.s);
     }
 }
