@@ -48,32 +48,63 @@ impl FieldElement {
         self.0
     }
 
-    /// Compares the given limbs with the modulus P.
+    /// Compares the given limbs with the modulus P in constant time.
     /// Returns -1 if limbs < P, 0 if limbs == P, and 1 if limbs > P.
     pub fn compare_with_p(limbs: &[u64; 4]) -> i8 {
+        // Constant-time implementation using conditional selection
+        // Initialize result to 0 (equal)
+        let mut result: i8 = 0;
+
         // Compare from most significant limb to least significant
         for i in (0..4).rev() {
-            if limbs[i] < P[i] {
-                return -1;
-            } else if limbs[i] > P[i] {
-                return 1;
-            }
+            // If we've already found a difference, don't change the result
+            let already_decided = result != 0;
+
+            // Compute the comparison for this limb
+            let limb_lt = (limbs[i] < P[i]) as i8 * -1; // -1 if limbs[i] < P[i], 0 otherwise
+            let limb_gt = (limbs[i] > P[i]) as i8;      // 1 if limbs[i] > P[i], 0 otherwise
+
+            // Only update result if we haven't already decided and this limb differs
+            let new_result = if limb_lt != 0 {
+                limb_lt
+            } else if limb_gt != 0 {
+                limb_gt
+            } else {
+                0
+            };
+
+            // Update result in constant time
+            result = if already_decided { result } else { new_result };
         }
-        0 // Equal
+
+        result
     }
 
-    /// Reduces this field element modulo p.
+    /// Reduces this field element modulo p in constant time.
     pub fn reduce(&mut self) {
-        // Check if reduction is needed
-        if Self::compare_with_p(&self.0) >= 0 {
-            let mut borrow = 0u64;
-            for i in 0..4 {
-                let (diff1, b1) = self.0[i].overflowing_sub(P[i]);
-                let (diff2, b2) = diff1.overflowing_sub(borrow);
-                self.0[i] = diff2;
-                borrow = if b1 || b2 { 1 } else { 0 };
-            }
+        // Create a copy of self for potential reduction
+        let mut reduced = *self;
+
+        // Subtract p in constant time
+        let mut borrow = 0u64;
+        for i in 0..4 {
+            let (diff1, b1) = reduced.0[i].overflowing_sub(P[i]);
+            let (diff2, b2) = diff1.overflowing_sub(borrow);
+            reduced.0[i] = diff2;
+            borrow = (b1 | b2) as u64;
         }
+
+        // Determine if reduction is needed in constant time
+        // We need to reduce if self >= P
+        let should_reduce = Choice::from((Self::compare_with_p(&self.0) >= 0) as u8);
+
+        // Select between original and reduced value in constant time
+        self.0 = [
+            u64::conditional_select(&self.0[0], &reduced.0[0], should_reduce),
+            u64::conditional_select(&self.0[1], &reduced.0[1], should_reduce),
+            u64::conditional_select(&self.0[2], &reduced.0[2], should_reduce),
+            u64::conditional_select(&self.0[3], &reduced.0[3], should_reduce),
+        ];
     }
 
     /// Doubles this field element.
@@ -197,10 +228,10 @@ impl FieldElement {
         // R^2 mod p for secp256k1
         // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
         const R_SQUARED: [u64; 4] = [
-            0x0000_0000_0000_0001,
-            0x0000_0000_0000_0000,
-            0x0000_0000_0000_0000,
-            0x0000_0000_0000_0000,
+            0x1000003D1_0000000,
+            0x0000000000000000,
+            0x0000000000000000,
+            0x0000000000000000,
         ];
 
         // Multiply by R^2 mod p

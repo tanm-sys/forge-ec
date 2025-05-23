@@ -89,7 +89,7 @@ use core::marker::PhantomData;
 use core::ops::Div;
 use digest::Digest;
 use forge_ec_core::{Curve, Error, FieldElement, HashToCurve, PointAffine, Result};
-use subtle::{ConditionallySelectable, ConstantTimeEq};
+use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -737,13 +737,18 @@ where
         // Compute Elligator 2 map in constant time
         // 1. v = -A / (1 + 2*u^2)
         let u_squared = *u * *u;
-        let two_u_squared = u_squared + u_squared;
+        let two = C::Field::one() + C::Field::one();
+        let two_u_squared = u_squared * two;
         let one = C::Field::one();
         let denominator = one + two_u_squared;
 
         // Handle division by zero in constant time
         let denominator_inv_opt = denominator.invert();
-        let denominator_inv = denominator_inv_opt.unwrap_or_else(|| C::Field::zero());
+
+        // If denominator is zero, use a default value
+        let is_denom_zero = denominator_inv_opt.is_none();
+        let denominator_inv = denominator_inv_opt.unwrap_or_else(|| C::Field::one());
+
         let neg_a = -a;
         let v = neg_a * denominator_inv;
 
@@ -754,62 +759,66 @@ where
         let y_squared = v_cubed + a_v_squared + v;
 
         // 3. Compute legendre symbol (is y_squared a quadratic residue?)
-        // This is done by raising to the power (p-1)/2
-        // where p is the field modulus
-        // We need to use the correct exponent for the specific curve's field
-        // For a prime field with p = 2^255 - 19 (Curve25519), the exponent is (p-1)/2
-        // For other curves, we need to calculate the appropriate exponent
-        let one = <C::Field as FieldElement>::one();
-        let two = one + one;
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
-        let curve_order_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&curve_order);
+        // This is done by computing the square root and checking if it exists
+        let y_sqrt_opt = y_squared.sqrt();
+        let is_quadratic_residue = y_sqrt_opt.is_some();
 
-        // Use the curve's field operations to compute (p-1)/2
-        // This ensures we use the correct exponent for any curve
-        let exponent = [(curve_order_bytes[0] >> 1) as u64];
-        let legendre = y_squared.pow(&exponent);
+        // Get the square root value (or zero if it doesn't exist)
+        let y_sqrt = y_sqrt_opt.unwrap_or_else(|| C::Field::zero());
 
         // 4. Compute x based on legendre symbol
         // x = e*v - (1-e)*(A/2)
-        // Create constant for division
-        let one = <C::Field as FieldElement>::one();
-        let two = one + one;
-        let half_a = a * two.invert().unwrap_or_else(|| <C::Field as FieldElement>::zero());
-        let e_v = v;  // If legendre is 1
-        let one_minus_e_half_a = half_a;  // If legendre is 0
+        // where e = 1 if y_squared is a quadratic residue, 0 otherwise
+        let half_a = a * two.invert().unwrap_or_else(|| C::Field::zero());
 
-        // Select x based on legendre symbol in constant time
-        let is_quadratic_residue = legendre.ct_eq(&one);
-        let x = C::Field::conditional_select(&one_minus_e_half_a, &e_v, is_quadratic_residue);
+        // Compute both possible x values
+        let x_if_qr = v;                  // If y_squared is a quadratic residue
+        let x_if_not_qr = -half_a;        // If y_squared is not a quadratic residue
 
-        // 5. Compute y = sqrt(x^3 + A*x^2 + x)
+        // Select x based on whether y_squared is a quadratic residue
+        let x = C::Field::conditional_select(&x_if_not_qr, &x_if_qr, is_quadratic_residue);
+
+        // 5. Recompute y_squared = x^3 + A*x^2 + x for the selected x
         let x_squared = x * x;
         let x_cubed = x_squared * x;
         let a_x_squared = a * x_squared;
         let y_squared_value = x_cubed + a_x_squared + x;
 
-        // Compute square root in constant time
-        // For fields where p ≡ 3 (mod 4), the square root can be computed as y = x^((p+1)/4)
-        // We need to use the correct exponent for the specific curve's field
-        let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
-        let curve_order_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&curve_order);
+        // Compute the square root of y_squared_value
+        let y_opt = y_squared_value.sqrt();
 
-        // Calculate (p+1)/4 using the curve's field operations
-        // This ensures we use the correct exponent for any curve
-        let sqrt_exponent = (curve_order_bytes[0] + 1) / 4;
-        let y = y_squared_value.sqrt().unwrap_or_else(|| <C::Field as FieldElement>::zero());
+        // If the square root doesn't exist (which shouldn't happen if our implementation is correct),
+        // use a default value
+        let y = y_opt.unwrap_or_else(|| C::Field::zero());
 
-        // Negate y if legendre is -1
+        // Choose the sign of y based on some criteria (typically based on the input u)
+        // This ensures deterministic mapping
+        let y_sign_bit = (u.to_bytes()[0] & 1) == 1;
         let neg_y = -y;
-        let final_y = C::Field::conditional_select(&neg_y, &y, is_quadratic_residue);
+
+        // Select the appropriate y value based on the sign bit
+        let final_y = C::Field::conditional_select(
+            &y,
+            &neg_y,
+            Choice::from(y_sign_bit as u8)
+        );
 
         // Create the point
         let point_opt = <C::PointAffine as PointAffine>::new(x, final_y);
+
+        // If point creation fails (which shouldn't happen if our implementation is correct),
+        // use a default point
         let point = point_opt.unwrap_or_else(|| C::PointAffine::default());
 
-        // Select the default point if u is zero, otherwise use the computed point
+        // If the denominator was zero or u was zero, return the default point
+        // Otherwise, return the computed point
         // This is done in constant time to prevent timing attacks
-        <C::PointAffine as ConditionallySelectable>::conditional_select(&default_point, &point, !is_zero)
+        let should_use_default = is_zero | is_denom_zero;
+        <C::PointAffine as ConditionallySelectable>::conditional_select(
+            &default_point,
+            &point,
+            !should_use_default
+        )
     }
 
     /// Hashes a message to a field element.
