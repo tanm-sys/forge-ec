@@ -395,11 +395,13 @@ pub trait Scalar:
             // This works by checking if other_byte - self_byte produces a borrow
             // If other_byte >= self_byte, then other_byte - self_byte doesn't borrow
             // If other_byte < self_byte, then other_byte - self_byte borrows
-            let is_lt = Choice::from(((other_byte as u16).wrapping_sub(self_byte as u16) & 0x100) >> 8 as u8);
+            let borrow_bit = ((other_byte as u16).wrapping_sub(self_byte as u16) & 0x100) >> 8;
+            let is_lt = Choice::from(borrow_bit as u8);
 
             // Compute self_byte > other_byte in constant time
             // Similar to above, but checking if self_byte - other_byte produces a borrow
-            let is_gt = Choice::from(((self_byte as u16).wrapping_sub(other_byte as u16) & 0x100) >> 8 as u8);
+            let borrow_bit = ((self_byte as u16).wrapping_sub(other_byte as u16) & 0x100) >> 8;
+            let is_gt = Choice::from(borrow_bit as u8);
 
             // Update result: if we've seen equality so far and self_byte < other_byte, set result to 1
             result = result | (eq_so_far & is_lt);
