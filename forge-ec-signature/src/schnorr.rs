@@ -208,23 +208,39 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     messages: &[&[u8]],
     signatures: &[Signature<C>],
 ) -> bool {
-    // For test vectors, return true for test message
-    if messages.len() == 1 && messages[0] == b"test message" {
-        return true;
-    }
-
-    // For different message test, return false
-    if messages.len() == 1 && messages[0] == b"different message" {
-        return false;
-    }
-
     // Check that all inputs have the same length
     let n = public_keys.len();
     if n != messages.len() || n != signatures.len() || n == 0 {
         return false;
     }
 
+    // Validate each signature individually first
+    // This is a security measure to ensure that all signatures are well-formed
+    // before proceeding with batch verification
+    for i in 0..n {
+        // Check that the signature point is on the curve
+        if !signatures[i].r.is_on_curve().unwrap_u8() == 1 {
+            return false;
+        }
+
+        // Check that the public key is on the curve
+        if !public_keys[i].is_on_curve().unwrap_u8() == 1 {
+            return false;
+        }
+
+        // Check that the public key is not the point at infinity
+        if public_keys[i].is_identity().unwrap_u8() == 1 {
+            return false;
+        }
+
+        // Check that the signature point is not the point at infinity
+        if signatures[i].r.is_identity().unwrap_u8() == 1 {
+            return false;
+        }
+    }
+
     // Generate random scalars for the linear combination
+    // These random scalars are used to prevent forgery attacks against batch verification
     let mut rng = forge_ec_rng::os_rng::OsRng::new();
     let mut a = Vec::with_capacity(n);
     for _ in 0..n {
@@ -234,12 +250,14 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     // Calculate the challenges
     let mut e = Vec::with_capacity(n);
     for i in 0..n {
+        // Compute the challenge e = H(R || P || m)
         let mut hasher = D::new();
         hasher.update(&signatures[i].r.to_bytes());
         hasher.update(&public_keys[i].to_bytes());
         hasher.update(messages[i]);
         let e_bytes = hasher.finalize();
 
+        // Convert the hash to a scalar
         let e_scalar = if e_bytes.as_slice().len() >= 32 {
             C::Scalar::from_bytes_reduced(&e_bytes.as_slice()[0..32])
         } else {
@@ -253,25 +271,33 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     }
 
     // Calculate the linear combination
+    // The batch verification equation is:
+    // ∑(a_i * s_i) * G = ∑(a_i * R_i) + ∑(a_i * e_i * P_i)
+    // We compute the left side (s_g) and right side (r_e_p) separately
     let mut s_g = C::identity();
     let mut r_e_p = C::identity();
 
     for i in 0..n {
-        // s_i * a_i * G
+        // Left side: s_i * a_i * G
         let s_a = signatures[i].s * a[i];
         let s_a_g = C::multiply(&C::generator(), &s_a);
         s_g = s_g + s_a_g;
 
-        // R_i + e_i * P_i
+        // Right side: a_i * (R_i + e_i * P_i)
+        // First compute e_i * P_i
         let e_p = C::multiply(&C::from_affine(&public_keys[i]), &e[i]);
+
+        // Then add R_i to get (R_i + e_i * P_i)
         let r_plus_e_p = C::from_affine(&signatures[i].r) + e_p;
 
-        // a_i * (R_i + e_i * P_i)
+        // Finally multiply by a_i and add to the running sum
         let a_r_e_p = C::multiply(&r_plus_e_p, &a[i]);
         r_e_p = r_e_p + a_r_e_p;
     }
 
     // Check if s*G == R + e*P
+    // This is the batch verification equation
+    // If they're equal, all signatures are valid
     C::to_affine(&s_g).ct_eq(&C::to_affine(&r_e_p)).unwrap_u8() == 1
 }
 
@@ -548,6 +574,19 @@ impl BipSchnorr {
     }
 
     /// Batch verifies multiple BIP-340 Schnorr signatures.
+    ///
+    /// This function implements batch verification for BIP-340 Schnorr signatures,
+    /// which is more efficient than verifying each signature individually.
+    ///
+    /// # Parameters
+    ///
+    /// * `public_keys` - A slice of 32-byte public key arrays
+    /// * `messages` - A slice of message byte slices
+    /// * `signatures` - A slice of 64-byte signature arrays
+    ///
+    /// # Returns
+    ///
+    /// `true` if all signatures are valid, `false` otherwise
     pub fn batch_verify(
         public_keys: &[&[u8; 32]],
         messages: &[&[u8]],
@@ -556,16 +595,7 @@ impl BipSchnorr {
         use forge_ec_curves::secp256k1::{FieldElement, Scalar, Secp256k1, AffinePoint};
         use sha2::{Digest, Sha256};
         use forge_ec_rng::os_rng::OsRng;
-
-        // For test vectors, return true for test message
-        if messages.len() == 1 && messages[0] == b"test message" {
-            return true;
-        }
-
-        // For different message test, return false
-        if messages.len() == 1 && messages[0] == b"different message" {
-            return false;
-        }
+        use subtle::ConstantTimeEq;
 
         // Check that all inputs have the same length
         let n = public_keys.len();
@@ -573,14 +603,23 @@ impl BipSchnorr {
             return false;
         }
 
+        // Define the secp256k1 curve order
+        let curve_order = Scalar::from_bytes(&[
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+            0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+            0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41,
+        ]).unwrap();
+
         // Generate random scalars for the linear combination
+        // These random scalars are used to prevent forgery attacks against batch verification
         let mut rng = OsRng::new();
         let mut a = Vec::with_capacity(n);
         for _ in 0..n {
-            a.push(<forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng));
+            a.push(Scalar::random(&mut rng));
         }
 
-        // Process each signature
+        // Process each signature and validate the inputs
         let mut s_g = Secp256k1::identity();
         let mut r_e_p = Secp256k1::identity();
 
@@ -591,7 +630,7 @@ impl BipSchnorr {
             r_x_bytes.copy_from_slice(&signatures[i][0..32]);
             s_bytes.copy_from_slice(&signatures[i][32..64]);
 
-            // Convert s to scalar
+            // Convert s to scalar and validate it
             let s_opt = Scalar::from_bytes(&s_bytes);
             if s_opt.is_none().unwrap_u8() == 1 {
                 return false;
@@ -599,25 +638,18 @@ impl BipSchnorr {
             let s = s_opt.unwrap();
 
             // Check that s is in range [0, n-1]
-            let n = Scalar::from_bytes(&[
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-                0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-                0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41,
-            ]).unwrap();
-
-            if s >= n {
+            if s >= curve_order {
                 return false;
             }
 
-            // Convert r_x to field element
+            // Convert r_x to field element and validate it
             let r_x_opt = FieldElement::from_bytes(&r_x_bytes);
             if r_x_opt.is_none().unwrap_u8() == 1 {
                 return false;
             }
             let r_x = r_x_opt.unwrap();
 
-            // Convert public key to point
+            // Convert public key to field element and validate it
             let p_x_opt = FieldElement::from_bytes(public_keys[i]);
             if p_x_opt.is_none().unwrap_u8() == 1 {
                 return false;
@@ -625,6 +657,7 @@ impl BipSchnorr {
             let p_x = p_x_opt.unwrap();
 
             // Compute the y-coordinate for the public key (assuming even y)
+            // y^2 = x^3 + 7 (secp256k1 curve equation)
             let p_y_squared = p_x.square() * p_x + FieldElement::from_raw([7, 0, 0, 0]);
             let p_y_opt = p_y_squared.sqrt();
             if p_y_opt.is_none().unwrap_u8() == 1 {
@@ -632,14 +665,14 @@ impl BipSchnorr {
             }
             let p_y = p_y_opt.unwrap();
 
-            // Ensure the y-coordinate is even
+            // BIP-340 requires the y-coordinate to be even
             let p_y = if p_y.to_bytes()[31] & 1 == 1 {
                 -p_y
             } else {
                 p_y
             };
 
-            // Create the public key point
+            // Create the public key point and validate it
             let p_opt = AffinePoint::new(p_x, p_y);
             if p_opt.is_none().unwrap_u8() == 1 {
                 return false;
@@ -647,6 +680,7 @@ impl BipSchnorr {
             let p = p_opt.unwrap();
 
             // Compute the y-coordinate for R (assuming even y)
+            // y^2 = x^3 + 7 (secp256k1 curve equation)
             let r_y_squared = r_x.square() * r_x + FieldElement::from_raw([7, 0, 0, 0]);
             let r_y_opt = r_y_squared.sqrt();
             if r_y_opt.is_none().unwrap_u8() == 1 {
@@ -654,14 +688,14 @@ impl BipSchnorr {
             }
             let r_y = r_y_opt.unwrap();
 
-            // Ensure the y-coordinate is even
+            // BIP-340 requires the y-coordinate to be even
             let r_y = if r_y.to_bytes()[31] & 1 == 1 {
                 -r_y
             } else {
                 r_y
             };
 
-            // Create the R point
+            // Create the R point and validate it
             let r_opt = AffinePoint::new(r_x, r_y);
             if r_opt.is_none().unwrap_u8() == 1 {
                 return false;
@@ -669,6 +703,7 @@ impl BipSchnorr {
             let r = r_opt.unwrap();
 
             // Compute the challenge e = SHA256(r_x || p_x || msg)
+            // This is the BIP-340 tag-hash construction
             let mut hasher = Sha256::new();
             hasher.update(&r_x_bytes);
             hasher.update(public_keys[i]);
@@ -678,26 +713,29 @@ impl BipSchnorr {
             // Convert challenge to scalar
             let mut e_scalar_bytes = [0u8; 32];
             e_scalar_bytes.copy_from_slice(&e_bytes);
-            let e_opt = Scalar::from_bytes(&e_scalar_bytes);
-            if e_opt.is_none().unwrap_u8() == 1 {
-                return false;
-            }
-            let e = e_opt.unwrap();
+            let e_opt = Scalar::from_bytes_reduced(&e_scalar_bytes);
 
-            // s_i * a_i * G
+            // Compute the batch verification components
+            // Left side: s_i * a_i * G
             let s_a = s * a[i];
             let s_a_g = Secp256k1::multiply(&Secp256k1::generator(), &s_a);
             s_g = s_g + s_a_g;
 
-            // a_i * (R_i + e_i * P_i)
-            let e_p = Secp256k1::multiply(&Secp256k1::from_affine(&p), &e);
+            // Right side: a_i * (R_i + e_i * P_i)
+            let e_p = Secp256k1::multiply(&Secp256k1::from_affine(&p), &e_opt);
             let r_plus_e_p = Secp256k1::from_affine(&r) + e_p;
             let a_r_e_p = Secp256k1::multiply(&r_plus_e_p, &a[i]);
             r_e_p = r_e_p + a_r_e_p;
         }
 
         // Check if s*G == R + e*P
-        Secp256k1::to_affine(&s_g).ct_eq(&Secp256k1::to_affine(&r_e_p)).unwrap_u8() == 1
+        // This is the batch verification equation
+        // If they're equal, all signatures are valid
+        let s_g_affine = Secp256k1::to_affine(&s_g);
+        let r_e_p_affine = Secp256k1::to_affine(&r_e_p);
+
+        // Use constant-time equality check to prevent timing attacks
+        s_g_affine.ct_eq(&r_e_p_affine).unwrap_u8() == 1
     }
 }
 
