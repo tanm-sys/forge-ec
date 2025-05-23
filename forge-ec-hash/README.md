@@ -219,14 +219,19 @@ let point = hash_to_curve::<Curve25519, Sha256>(
 let point_affine = Curve25519::to_affine(&point);
 ```
 
-#### Recent Improvements to Elligator 2 Implementation
+#### Recent Improvements to Hash-to-Curve Implementations
 
-The Elligator 2 implementation has been recently improved to ensure proper constant-time behavior and curve-specific calculations:
+The hash-to-curve implementations have been recently improved to ensure proper constant-time behavior and curve-specific calculations:
 
 - Fixed the legendre symbol calculation to use curve-specific exponents instead of fixed values
 - Replaced the non-constant-time `pow_vartime` method with the constant-time `pow` method
 - Enhanced square root computation to be constant-time and curve-specific
 - Improved overall security against timing attacks
+- Fixed compatibility issues with secp256k1 curve by implementing missing traits:
+  - Added `ConditionallySelectable` trait for `AffinePoint` to ensure constant-time point selection
+  - Implemented `Div` and `DivAssign` traits for `FieldElement` to support Icart method operations
+- Resolved test execution hanging issues by ensuring all required traits are properly implemented
+- Enhanced error handling and validation in hash-to-curve operations
 
 ## Implementation Details
 

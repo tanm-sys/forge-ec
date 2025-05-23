@@ -101,6 +101,10 @@ let shared_secret = Secp256k1::multiply(&peer_public_key, &secret_key);
 - Fixed syntax error in secp256k1.rs by removing an extra closing brace
 - Corrected the Montgomery form conversion constant (R_SQUARED) for proper Montgomery arithmetic
 - Improved constant-time operations for field arithmetic and point operations
+- Implemented missing `ConditionallySelectable` trait for `AffinePoint` to ensure constant-time point selection
+- Added `Div` and `DivAssign` trait implementations for `FieldElement` to support hash-to-curve operations
+- Fixed test execution hanging issues by implementing required traits for cryptographic operations
+- Enhanced compatibility with hash-to-curve methods by ensuring all necessary operations are available
 
 ### P-256 (NIST P-256)
 

@@ -163,6 +163,9 @@ We've recently made several important improvements to the core API and fixed cri
 - Replaced non-constant-time `pow_vartime` method with the constant-time `pow` method in hash-to-curve implementation
 - Fixed syntax error in secp256k1.rs by removing an extra closing brace
 - Improved overall code quality and fixed compiler warnings
+- Implemented missing `ConditionallySelectable` trait for `AffinePoint` in secp256k1 module to ensure constant-time operations
+- Added `Div` and `DivAssign` trait implementations for `FieldElement` in secp256k1 module to support hash-to-curve operations
+- Fixed test execution hanging issues by implementing required traits for cryptographic operations
 
 These changes ensure that the library compiles correctly and maintains the constant-time behavior required for cryptographic security.
 
@@ -196,6 +199,9 @@ We've also made significant improvements to the HashToCurve implementation:
 - Addressed compiler warnings across the codebase
 - Added better documentation for cryptographic operations
 - Fixed build issues in the hash-to-curve implementation
+- Implemented missing `ConditionallySelectable` trait for `AffinePoint` in secp256k1 module to ensure proper point selection in constant time
+- Added `Div` and `DivAssign` trait implementations for `FieldElement` in secp256k1 module to support Icart method in hash-to-curve operations
+- Fixed test execution hanging issues by ensuring all required traits are properly implemented for hash-to-curve operations
 
 These improvements ensure that the hash-to-curve operations are secure against timing attacks and follow the RFC9380 specification more closely.
 
@@ -399,6 +405,22 @@ cargo run --example schnorr
 1. Disable the failing tests by using `#[ignore]` attributes
 2. Use only the functionality that has been fully implemented and tested
 3. Contribute fixes for the failing tests (see [CONTRIBUTING.md](CONTRIBUTING.md))
+
+#### Test Execution Hanging
+
+**Issue**: Tests hang indefinitely during execution, particularly in hash-to-curve operations.
+
+**Solution**: We've recently fixed several issues that caused tests to hang:
+
+1. Implemented missing `ConditionallySelectable` trait for `AffinePoint` in secp256k1 module
+2. Added `Div` and `DivAssign` trait implementations for `FieldElement` in secp256k1 module
+3. Fixed trait imports in test files
+
+If you're still experiencing hanging tests, check for:
+- Missing trait implementations for your custom types
+- Infinite loops in recursive operations
+- Deadlocks in concurrent code
+- Missing trait imports in your test files
 
 #### Build Failures
 
