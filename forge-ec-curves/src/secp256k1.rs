@@ -614,7 +614,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             while j >= 0 {
                 result = result.square();
                 if ((p_minus_2[i] >> j) & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 j -= 1;
             }
@@ -717,7 +717,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             let mut j = 0;
             while j < 64 {
                 if ((limb >> j) & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 base = base.square();
                 j += 1;
@@ -2042,7 +2042,7 @@ impl forge_ec_core::FieldElement for Scalar {
             while j >= 0 {
                 result = result.square();
                 if ((n_minus_2[i] >> j) & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 j -= 1;
             }
@@ -2070,7 +2070,7 @@ impl forge_ec_core::FieldElement for Scalar {
             let mut j = 0;
             while j < 64 {
                 if ((limb >> j) & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 base = base.square();
                 j += 1;
@@ -2357,10 +2357,10 @@ impl forge_ec_core::Scalar for Scalar {
             let limb_eq = !limb_lt & !limb_gt;
 
             // If all previous limbs were equal and this limb is less, set result to 1
-            result = result | (eq_so_far & limb_lt);
+            result |= eq_so_far & limb_lt;
 
             // Update eq_so_far to be 1 only if all limbs so far are equal
-            eq_so_far = eq_so_far & limb_eq;
+            eq_so_far &= limb_eq;
         }
 
         result

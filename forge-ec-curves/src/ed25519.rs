@@ -396,9 +396,9 @@ impl forge_ec_core::FieldElement for FieldElement {
         // First, compute self^11
         let mut temp = self_cubed; // self^3
         temp = temp.square(); // self^6
-        temp = temp * self_cubed; // self^9
-        temp = temp * *self; // self^10
-        temp = temp * *self; // self^11
+        temp *= self_cubed; // self^9
+        temp *= *self; // self^10
+        temp *= *self; // self^11
 
         // Now compute the rest of the exponentiation
         for _ in 0..239 {
@@ -409,7 +409,7 @@ impl forge_ec_core::FieldElement for FieldElement {
         let mut power = *self;
         for _ in 0..3 {
             power = power.square();
-            power = power * *self;
+            power *= *self;
         }
 
         result = temp * power;
@@ -418,10 +418,10 @@ impl forge_ec_core::FieldElement for FieldElement {
         power = *self;
         for _ in 0..2 {
             power = power.square();
-            power = power * *self;
+            power *= *self;
         }
 
-        result = result * power;
+        result *= power;
 
         // Return the result
         CtOption::new(result, Choice::from(1))
@@ -463,7 +463,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             for j in 0..64 {
                 // If the current bit is 1, multiply the result by the current base
                 if (limb >> j) & 1 == 1 {
-                    result = result * base;
+                    result *= base;
                 }
 
                 // Square the base for the next bit
@@ -755,7 +755,7 @@ impl forge_ec_core::FieldElement for Scalar {
             for j in 0..64 {
                 // If the current bit is 1, multiply the result by the current base
                 if (limb >> j) & 1 == 1 {
-                    result = result * base;
+                    result *= base;
                 }
 
                 // Square the base for the next bit
@@ -803,7 +803,7 @@ impl forge_ec_core::FieldElement for Scalar {
             for j in 0..64 {
                 // If the current bit is 1, multiply the result by the current base
                 if (limb >> j) & 1 == 1 {
-                    result = result * base;
+                    result *= base;
                 }
 
                 // Square the base for the next bit
@@ -1254,7 +1254,7 @@ impl Mul for Scalar {
                 // Now add the high bits (multiplied by 2^256 mod L) to the result
                 // We'll do this by repeatedly adding the high bits and reducing modulo L
                 for _ in 0..256 {
-                    result = result + high_bits;
+                    result += high_bits;
                 }
             }
 

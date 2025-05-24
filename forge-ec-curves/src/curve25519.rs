@@ -449,16 +449,16 @@ impl forge_ec_core::FieldElement for FieldElement {
             a1809251394333065553493296640760748560207343510400633813116524750123642650624 * *self;
 
         // Compute a^(2^250 + 2^1) = a^(2^250 + 2^0) * a^2
-        result = result * a2;
+        result *= a2;
 
         // Compute a^(2^250 + 2^2) = a^(2^250 + 2^1) * a^4
-        result = result * a4;
+        result *= a4;
 
         // Compute a^(2^250 + 2^3) = a^(2^250 + 2^2) * a^8 = a^(2^250 + 2^2) * (a^4)^2
-        result = result * a4.square();
+        result *= a4.square();
 
         // Compute a^(2^250 + 2^4) = a^(2^250 + 2^3) * a^16
-        result = result * a16;
+        result *= a16;
 
         // Compute a^(2^251 - 1) = a^(2^250 + 2^4) * a^(2^250 - 2^4)
         // This is a^(p-2) = a^(2^255 - 21)
@@ -846,16 +846,16 @@ impl forge_ec_core::FieldElement for Scalar {
             a1809251394333065553493296640760748560207343510400633813116524750123642650624 * *self;
 
         // Compute a^(2^250 + 2^1) = a^(2^250 + 2^0) * a^2
-        result = result * a2;
+        result *= a2;
 
         // Compute a^(2^250 + 2^2) = a^(2^250 + 2^1) * a^4
-        result = result * a4;
+        result *= a4;
 
         // Compute a^(2^250 + 2^3) = a^(2^250 + 2^2) * a^8 = a^(2^250 + 2^2) * (a^4)^2
-        result = result * a4.square();
+        result *= a4.square();
 
         // Compute a^(2^250 + 2^4) = a^(2^250 + 2^3) * a^16
-        result = result * a16;
+        result *= a16;
 
         // Compute a^(2^251 - 1) = a^(2^250 + 2^4) * a^(2^250 - 2^4)
         // This is a^(L-2) = a^(2^252 + 27742317777372353535851937790883648493 - 2)
@@ -1270,7 +1270,7 @@ impl Mul for Scalar {
                 for _ in 0..i {
                     temp = temp + temp; // Double i times
                 }
-                final_result = final_result + temp;
+                final_result += temp;
             }
         }
 
@@ -1280,7 +1280,7 @@ impl Mul for Scalar {
                 for _ in 0..i {
                     temp = temp + temp; // Double i times
                 }
-                final_result = final_result + temp;
+                final_result += temp;
             }
         }
 
@@ -1290,7 +1290,7 @@ impl Mul for Scalar {
                 for _ in 0..i {
                     temp = temp + temp; // Double i times
                 }
-                final_result = final_result + temp;
+                final_result += temp;
             }
         }
 
@@ -1300,7 +1300,7 @@ impl Mul for Scalar {
                 for _ in 0..i {
                     temp = temp + temp; // Double i times
                 }
-                final_result = final_result + temp;
+                final_result += temp;
             }
         }
 
