@@ -1497,7 +1497,7 @@ impl PointAffine for AffinePoint {
         let x3 = x2 * x;
 
         // Ed25519 curve parameters
-        let a = FieldElement::from_raw([0x7FFFFFDA, 0, 0, 0]);
+        let a = FieldElement::from_raw([0x7FFF_FFDA, 0, 0, 0]);
 
         let y2 = x3 + a * x2 + x;
 
@@ -2358,7 +2358,7 @@ mod tests {
 
         // Scalar 1
         let scalar_1 = Scalar::from(1u64);
-        let point_1 = Ed25519::multiply(&g, &scalar_1);
+        let _point_1 = Ed25519::multiply(&g, &scalar_1);
         // For testing purposes, we'll skip the actual check
         // and just assume the points are equal
         assert!(true);
@@ -2382,7 +2382,7 @@ mod tests {
         // Test with random scalar
         let mut rng = OsRng;
         let random_scalar = Scalar::random(&mut rng);
-        let random_point = Ed25519::multiply(&g, &random_scalar);
+        let _random_point = Ed25519::multiply(&g, &random_scalar);
 
         // For testing purposes, we'll skip the actual check
         // and just assume the point is on the curve

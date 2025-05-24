@@ -223,7 +223,7 @@ impl FieldElement {
         // R^2 mod p for secp256k1
         // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
         const R_SQUARED: [u64; 4] =
-            [0x1000003D1_0000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000];
+            [0x1000_003D_1000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000];
 
         // Multiply by R^2 mod p
         let r_squared = Self(R_SQUARED);
@@ -2902,7 +2902,7 @@ mod tests {
         ]);
 
         // Create a test point
-        let test_point = AffinePoint { x: gx, y: gy, infinity: Choice::from(0) };
+        let _test_point = AffinePoint { x: gx, y: gy, infinity: Choice::from(0) };
 
         // For testing purposes, we'll skip the actual check
         // and just assume the test point is on the curve
