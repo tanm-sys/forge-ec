@@ -241,7 +241,7 @@ impl FieldElement {
             let mut e = exp[i];
             for _ in 0..64 {
                 if (e & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 base = base.square();
                 e >>= 1;
@@ -306,13 +306,12 @@ impl Sub for FieldElement {
 
         // If self < rhs, add p to ensure the result is positive
         if Self::compare(&self.0, &rhs.0) < 0 {
-            result = result
-                + Self::from_raw([
-                    0x0000_0000_0000_0001,
-                    0xFFFF_FFFF_0000_0000,
-                    0xFFFF_FFFF_FFFF_FFFF,
-                    0x0000_0000_FFFF_FFFF,
-                ]);
+            result += Self::from_raw([
+                0x0000_0000_0000_0001,
+                0xFFFF_FFFF_0000_0000,
+                0xFFFF_FFFF_FFFF_FFFF,
+                0x0000_0000_FFFF_FFFF,
+            ]);
         }
 
         // Perform subtraction with borrow
@@ -688,7 +687,7 @@ impl Scalar {
             let mut e = exp[i];
             for _ in 0..64 {
                 if (e & 1) == 1 {
-                    result = result * base;
+                    result *= base;
                 }
                 base = base.square();
                 e >>= 1;
@@ -963,13 +962,12 @@ impl Sub for Scalar {
 
         // If self < rhs, add n to ensure the result is positive
         if Self::compare(&self.0, &rhs.0) < 0 {
-            result = result
-                + Self::from_raw([
-                    0xF3B9_CAC2_FC63_2551,
-                    0xBCE6_FAAD_A717_9E84,
-                    0xFFFF_FFFF_FFFF_FFFF,
-                    0xFFFF_FFFF_0000_0000,
-                ]);
+            result += Self::from_raw([
+                0xF3B9_CAC2_FC63_2551,
+                0xBCE6_FAAD_A717_9E84,
+                0xFFFF_FFFF_FFFF_FFFF,
+                0xFFFF_FFFF_0000_0000,
+            ]);
         }
 
         // Perform subtraction with borrow
@@ -1808,7 +1806,7 @@ impl Curve for P256 {
         let mut result = Self::identity();
         for i in 0..points.len() {
             let product = Self::multiply(&points[i], &scalars[i]);
-            result = result + product;
+            result += product;
         }
 
         result
