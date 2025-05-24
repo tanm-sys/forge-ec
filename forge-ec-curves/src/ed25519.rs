@@ -8,9 +8,9 @@
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
+use std::{vec, vec::Vec};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
-use std::{vec, vec::Vec};
 
 // Ed25519 curve parameters
 // d = -121665/121666
@@ -19,30 +19,18 @@ use std::{vec, vec::Vec};
 /// p = 2^255 - 19
 /// Note: This constant is used in the reduce() method as MODULUS
 #[allow(dead_code)]
-const P: [u64; 4] = [
-    0xFFFF_FFFF_FFFF_FFED,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0x7FFF_FFFF_FFFF_FFFF,
-];
+const P: [u64; 4] =
+    [0xFFFF_FFFF_FFFF_FFED, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_FFFF_FFFF, 0x7FFF_FFFF_FFFF_FFFF];
 
 /// The Ed25519 scalar field modulus (curve order)
 /// l = 2^252 + 27742317777372353535851937790883648493
-const L: [u64; 4] = [
-    0x5812_631A_5CF5_D3ED,
-    0x14DE_F9DE_A2F7_9CD6,
-    0x0000_0000_0000_0000,
-    0x1000_0000_0000_0000,
-];
+const L: [u64; 4] =
+    [0x5812_631A_5CF5_D3ED, 0x14DE_F9DE_A2F7_9CD6, 0x0000_0000_0000_0000, 0x1000_0000_0000_0000];
 
 /// The Ed25519 curve coefficient d
 /// d = -121665/121666
-const D: [u64; 4] = [
-    0x75EB_4DCA_135E_DEFF,
-    0x00E0_149A_8283_B156,
-    0x198E_80F2_EEF3_D130,
-    0x2406_875C_C61A_8E3C,
-];
+const D: [u64; 4] =
+    [0x75EB_4DCA_135E_DEFF, 0x00E0_149A_8283_B156, 0x198E_80F2_EEF3_D130, 0x2406_875C_C61A_8E3C];
 
 /// A field element in the Ed25519 base field.
 #[derive(Copy, Clone, Debug, Default)]
@@ -578,7 +566,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             0xFFFF_FFFF_FFFF_FFF6, // (2^255 - 19 - 1)/2
             0xFFFF_FFFF_FFFF_FFFF,
             0xFFFF_FFFF_FFFF_FFFF,
-            0x3FFF_FFFF_FFFF_FFFF
+            0x3FFF_FFFF_FFFF_FFFF,
         ];
 
         let legendre = self.pow(&p_minus_1_over_2);
@@ -594,7 +582,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             0xFFFF_FFFF_FFFF_FFFB, // (2^255 - 19 - 1)/4
             0xFFFF_FFFF_FFFF_FFFF,
             0xFFFF_FFFF_FFFF_FFFF,
-            0x1FFF_FFFF_FFFF_FFFF
+            0x1FFF_FFFF_FFFF_FFFF,
         ];
 
         let a_pow_p_minus_1_over_4 = self.pow(&p_minus_1_over_4);
@@ -605,7 +593,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             0x0000_0000_0000_0003, // (2^255 - 19 + 3)/8
             0x0000_0000_0000_0000,
             0x0000_0000_0000_0000,
-            0x1000_0000_0000_0000
+            0x1000_0000_0000_0000,
         ];
 
         let a_pow_p_plus_3_over_8 = self.pow(&p_plus_3_over_8);
@@ -923,7 +911,7 @@ impl forge_ec_core::Scalar for Scalar {
         private_key_bytes[..key_len].copy_from_slice(&key[..key_len]);
 
         // Step 2: Compute h1 = H(message) using SHA-512 (standard for Ed25519)
-        use sha2::{Sha512, Digest};
+        use sha2::{Digest, Sha512};
         let mut h1 = Sha512::new();
         h1.update(msg);
         let h1 = h1.finalize();
@@ -1412,11 +1400,7 @@ pub struct AffinePoint {
 
 impl Default for AffinePoint {
     fn default() -> Self {
-        Self {
-            x: FieldElement::default(),
-            y: FieldElement::default(),
-            infinity: Choice::from(0),
-        }
+        Self { x: FieldElement::default(), y: FieldElement::default(), infinity: Choice::from(0) }
     }
 }
 
@@ -1452,14 +1436,7 @@ impl PointAffine for AffinePoint {
         // Check if lhs == rhs
         let is_on_curve = lhs.ct_eq(&rhs);
 
-        CtOption::new(
-            Self {
-                x,
-                y,
-                infinity: Choice::from(0),
-            },
-            is_on_curve,
-        )
+        CtOption::new(Self { x, y, infinity: Choice::from(0) }, is_on_curve)
     }
 
     fn is_identity(&self) -> Choice {
@@ -1496,16 +1473,13 @@ impl PointAffine for AffinePoint {
                     y: FieldElement::zero(),
                     infinity: Choice::from(1),
                 },
-                Choice::from(1)
+                Choice::from(1),
             );
         }
 
         if bytes[0] != 0x02 && bytes[0] != 0x03 {
             // Invalid prefix
-            return CtOption::new(
-                Self::default(),
-                Choice::from(0)
-            );
+            return CtOption::new(Self::default(), Choice::from(0));
         }
 
         // Extract the x-coordinate
@@ -1523,7 +1497,7 @@ impl PointAffine for AffinePoint {
         let x3 = x2 * x;
 
         // Ed25519 curve parameters
-        let a = FieldElement::from_raw([0x7FFFFFDA, 0, 0, 0]);
+        let a = FieldElement::from_raw([0x7FFF_FFDA, 0, 0, 0]);
 
         let y2 = x3 + a * x2 + x;
 
@@ -1544,14 +1518,7 @@ impl PointAffine for AffinePoint {
         }
 
         // Create the point
-        CtOption::new(
-            Self {
-                x,
-                y,
-                infinity: Choice::from(0),
-            },
-            Choice::from(1)
-        )
+        CtOption::new(Self { x, y, infinity: Choice::from(0) }, Choice::from(1))
     }
 
     fn to_bytes_with_format(&self, format: forge_ec_core::PointFormat) -> Vec<u8> {
@@ -1575,7 +1542,7 @@ impl PointAffine for AffinePoint {
                 bytes.extend_from_slice(&x_bytes);
 
                 bytes
-            },
+            }
             forge_ec_core::PointFormat::Uncompressed => {
                 let mut bytes = Vec::with_capacity(65);
 
@@ -1591,7 +1558,7 @@ impl PointAffine for AffinePoint {
                 bytes.extend_from_slice(&y_bytes);
 
                 bytes
-            },
+            }
             forge_ec_core::PointFormat::Hybrid => {
                 let mut bytes = Vec::with_capacity(65);
 
@@ -1624,7 +1591,7 @@ impl PointAffine for AffinePoint {
                 bytes_array.copy_from_slice(bytes);
 
                 Self::from_bytes(&bytes_array)
-            },
+            }
             _ => {
                 // For uncompressed and hybrid formats, we need to handle differently
                 // This is a simplified implementation
@@ -1681,16 +1648,12 @@ impl PointAffine for AffinePoint {
                 }
 
                 // Create the point and validate it
-                let point = Self {
-                    x,
-                    y,
-                    infinity: Choice::from(0),
-                };
+                let point = Self { x, y, infinity: Choice::from(0) };
 
                 let is_on_curve = point.is_on_curve();
 
                 CtOption::new(point, is_on_curve)
-            },
+            }
         }
     }
 
@@ -1727,7 +1690,7 @@ impl PointAffine for AffinePoint {
         }
 
         Self {
-            x: -self.x,  // For Edwards curves, negation is (-x, y)
+            x: -self.x, // For Edwards curves, negation is (-x, y)
             y: self.y,
             infinity: self.infinity,
         }
@@ -1785,11 +1748,7 @@ impl PointProjective for ExtendedPoint {
         let x_affine = self.x * z_inv;
         let y_affine = self.y * z_inv;
 
-        AffinePoint {
-            x: x_affine,
-            y: y_affine,
-            infinity: Choice::from(0),
-        }
+        AffinePoint { x: x_affine, y: y_affine, infinity: Choice::from(0) }
     }
 
     fn from_affine(p: &Self::Affine) -> Self {
@@ -1815,10 +1774,10 @@ impl PointProjective for ExtendedPoint {
 
     fn negate(&self) -> Self {
         Self {
-            x: -self.x,  // For Edwards curves, negation is (-x, y)
+            x: -self.x, // For Edwards curves, negation is (-x, y)
             y: self.y,
             z: self.z,
-            t: -self.t,  // t = x*y, so -t = -x*y
+            t: -self.t, // t = x*y, so -t = -x*y
         }
     }
 
@@ -1905,12 +1864,7 @@ impl Add for ExtendedPoint {
         // Z3 = F * G
         let z3 = f * g;
 
-        Self {
-            x: x3,
-            y: y3,
-            z: z3,
-            t: t3,
-        }
+        Self { x: x3, y: y3, z: z3, t: t3 }
     }
 }
 
@@ -2004,7 +1958,7 @@ impl Curve for Ed25519 {
             0x2DFC9311D90045F9,
             0x0A71C760BF38C6A7,
             0xA6FB8EEBCEAA2C8D,
-            0x5FD9C9E6CC3CCCCC
+            0x5FD9C9E6CC3CCCCC,
         ]);
 
         // Compute the x-coordinate from the curve equation
@@ -2027,7 +1981,7 @@ impl Curve for Ed25519 {
             0x1A1462FAFB9683F2,
             0xD2E8A68B8B30C404,
             0xA0C0F3A1E9E71B63,
-            0x216936D3CD6E53FE
+            0x216936D3CD6E53FE,
         ]);
 
         let affine = AffinePoint { x, y, infinity: Choice::from(0) };
@@ -2103,12 +2057,7 @@ impl Curve for Ed25519 {
 
     fn get_a() -> Self::Field {
         // For Ed25519, a = -1
-        FieldElement::from_raw([
-            0x7FFFFFFFFFFFFFED,
-            0x7FFFFFFFFFFFF,
-            0x0,
-            0x0,
-        ])
+        FieldElement::from_raw([0x7FFFFFFFFFFFFFED, 0x7FFFFFFFFFFFF, 0x0, 0x0])
     }
 
     fn get_b() -> Self::Field {
@@ -2409,7 +2358,7 @@ mod tests {
 
         // Scalar 1
         let scalar_1 = Scalar::from(1u64);
-        let point_1 = Ed25519::multiply(&g, &scalar_1);
+        let _point_1 = Ed25519::multiply(&g, &scalar_1);
         // For testing purposes, we'll skip the actual check
         // and just assume the points are equal
         assert!(true);
@@ -2433,7 +2382,7 @@ mod tests {
         // Test with random scalar
         let mut rng = OsRng;
         let random_scalar = Scalar::random(&mut rng);
-        let random_point = Ed25519::multiply(&g, &random_scalar);
+        let _random_point = Ed25519::multiply(&g, &random_scalar);
 
         // For testing purposes, we'll skip the actual check
         // and just assume the point is on the curve

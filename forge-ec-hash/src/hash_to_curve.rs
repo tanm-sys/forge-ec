@@ -92,8 +92,8 @@ use forge_ec_core::{Curve, Error, FieldElement, HashToCurve, PointAffine, Result
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
 extern crate alloc;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 
 /// The hash-to-curve method to use.
 ///
@@ -267,21 +267,15 @@ where
 
     // Apply the selected hash-to-curve method
     match method {
-        HashToCurveMethod::SimplifiedSwu => {
-            Ok(HashToCurveSwu::<C, D>::hash(msg, dst))
-        },
-        HashToCurveMethod::Icart => {
-            Ok(HashToCurveIcart::<C, D>::hash(msg, dst))
-        },
+        HashToCurveMethod::SimplifiedSwu => Ok(HashToCurveSwu::<C, D>::hash(msg, dst)),
+        HashToCurveMethod::Icart => Ok(HashToCurveIcart::<C, D>::hash(msg, dst)),
         HashToCurveMethod::Elligator2 => {
             // Check if the curve is a Montgomery curve
             // For now, we'll use a generic implementation
             Ok(HashToCurveElligator2::<C, D>::hash(msg, dst))
-        },
+        }
     }
 }
-
-
 
 /// The hash-to-curve method using simplified SWU as specified in RFC9380.
 pub struct HashToCurveSwu<C: HashToCurve, D: Digest> {
@@ -332,7 +326,8 @@ where
         dst_prime.push(dst.len() as u8);
 
         // Step 3: Initialize uniform_bytes
-        let uniform_bytes = Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
+        let uniform_bytes =
+            Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
 
         // Step 4: Initialize u
         let mut u = Vec::with_capacity(count);
@@ -377,7 +372,7 @@ where
         <C::Field as ConditionallySelectable>::conditional_select(
             &default_value,
             &field_value,
-            is_some
+            is_some,
         )
     }
 
@@ -430,7 +425,7 @@ where
             let prev_b = if i == 2 {
                 b_1.as_slice()
             } else {
-                &uniform_bytes[(i-2) * b_in_bytes..(i-1) * b_in_bytes]
+                &uniform_bytes[(i - 2) * b_in_bytes..(i - 1) * b_in_bytes]
             };
 
             let mut xor_result = Vec::with_capacity(b_in_bytes);
@@ -523,13 +518,39 @@ where
         let u_sixth = u_fourth * u_squared;
         // Create constants for division
         let one = <C::Field as FieldElement>::one();
-        let twenty_seven = one + one + one + one + one + one + one + one + one +
-                          one + one + one + one + one + one + one + one + one +
-                          one + one + one + one + one + one + one + one + one;
+        let twenty_seven = one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one
+            + one;
         let three = one + one + one;
 
-        let u_sixth_div_27 = u_sixth * twenty_seven.invert().unwrap_or_else(|| <C::Field as FieldElement>::zero());
-        let two_a_div_3 = (a + a) * three.invert().unwrap_or_else(|| <C::Field as FieldElement>::zero());
+        let u_sixth_div_27 =
+            u_sixth * twenty_seven.invert().unwrap_or_else(|| <C::Field as FieldElement>::zero());
+        let two_a_div_3 =
+            (a + a) * three.invert().unwrap_or_else(|| <C::Field as FieldElement>::zero());
         let x = v_squared - u_sixth_div_27 - two_a_div_3;
 
         // 3. y = u*x + v
@@ -541,7 +562,11 @@ where
 
         // Select the default point if u is zero, otherwise use the computed point
         // This is done in constant time to prevent timing attacks
-        <C::PointAffine as ConditionallySelectable>::conditional_select(&default_point, &point, !is_zero)
+        <C::PointAffine as ConditionallySelectable>::conditional_select(
+            &default_point,
+            &point,
+            !is_zero,
+        )
     }
 
     /// Hashes a message to a field element.
@@ -559,7 +584,8 @@ where
         dst_prime.push(dst.len() as u8);
 
         // Step 3: Initialize uniform_bytes
-        let uniform_bytes = Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
+        let uniform_bytes =
+            Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
 
         // Step 4: Initialize u
         let mut u = Vec::with_capacity(count);
@@ -604,7 +630,7 @@ where
         <C::Field as ConditionallySelectable>::conditional_select(
             &default_value,
             &field_value,
-            is_some
+            is_some,
         )
     }
 
@@ -657,7 +683,7 @@ where
             let prev_b = if i == 2 {
                 b_1.as_slice()
             } else {
-                &uniform_bytes[(i-2) * b_in_bytes..(i-1) * b_in_bytes]
+                &uniform_bytes[(i - 2) * b_in_bytes..(i - 1) * b_in_bytes]
             };
 
             let mut xor_result = Vec::with_capacity(b_in_bytes);
@@ -772,8 +798,8 @@ where
         let half_a = a * two.invert().unwrap_or_else(|| C::Field::zero());
 
         // Compute both possible x values
-        let x_if_qr = v;                  // If y_squared is a quadratic residue
-        let x_if_not_qr = -half_a;        // If y_squared is not a quadratic residue
+        let x_if_qr = v; // If y_squared is a quadratic residue
+        let x_if_not_qr = -half_a; // If y_squared is not a quadratic residue
 
         // Select x based on whether y_squared is a quadratic residue
         let x = C::Field::conditional_select(&x_if_not_qr, &x_if_qr, is_quadratic_residue);
@@ -797,11 +823,7 @@ where
         let neg_y = -y;
 
         // Select the appropriate y value based on the sign bit
-        let final_y = C::Field::conditional_select(
-            &y,
-            &neg_y,
-            Choice::from(y_sign_bit as u8)
-        );
+        let final_y = C::Field::conditional_select(&y, &neg_y, Choice::from(y_sign_bit as u8));
 
         // Create the point
         let point_opt = <C::PointAffine as PointAffine>::new(x, final_y);
@@ -817,7 +839,7 @@ where
         <C::PointAffine as ConditionallySelectable>::conditional_select(
             &default_point,
             &point,
-            !should_use_default
+            !should_use_default,
         )
     }
 
@@ -836,7 +858,8 @@ where
         dst_prime.push(dst.len() as u8);
 
         // Step 3: Initialize uniform_bytes
-        let uniform_bytes = Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
+        let uniform_bytes =
+            Self::expand_message_xmd::<D>(msg, &dst_prime, len_in_bytes * count * m);
 
         // Step 4: Initialize u
         let mut u = Vec::with_capacity(count);
@@ -881,7 +904,7 @@ where
         <C::Field as ConditionallySelectable>::conditional_select(
             &default_value,
             &field_value,
-            is_some
+            is_some,
         )
     }
 
@@ -957,7 +980,7 @@ where
             uniform_bytes.extend_from_slice(b_i.as_slice());
 
             // Update prev_b for the next iteration
-            prev_b = &uniform_bytes[(i-1) * b_in_bytes..i * b_in_bytes];
+            prev_b = &uniform_bytes[(i - 1) * b_in_bytes..i * b_in_bytes];
         }
 
         // Step 11: Return the first len_in_bytes bytes of uniform_bytes
@@ -1031,7 +1054,7 @@ where
             let q = C::from_affine(&q_affine);
 
             Ok(q)
-        },
+        }
         HashToCurveMethod::Icart => {
             // Step 1: u = hash_to_field(msg, 1)
             let u = HashToCurveIcart::<C, D>::hash_to_field(msg, dst, 1);
@@ -1041,7 +1064,7 @@ where
             let q = C::from_affine(&q_affine);
 
             Ok(q)
-        },
+        }
         HashToCurveMethod::Elligator2 => {
             // Step 1: u = hash_to_field(msg, 1)
             let u = HashToCurveElligator2::<C, D>::hash_to_field(msg, dst, 1);
@@ -1051,7 +1074,7 @@ where
             let q = C::from_affine(&q_affine);
 
             Ok(q)
-        },
+        }
     }
 }
 
@@ -1060,9 +1083,9 @@ mod tests {
     #[cfg(feature = "test-utils")]
     use super::*;
     #[cfg(feature = "test-utils")]
-    use forge_ec_curves::secp256k1::Secp256k1;
-    #[cfg(feature = "test-utils")]
     use forge_ec_curves::p256::P256;
+    #[cfg(feature = "test-utils")]
+    use forge_ec_curves::secp256k1::Secp256k1;
 
     #[test]
     #[cfg(feature = "test-utils")]
@@ -1146,18 +1169,11 @@ mod tests {
         let dst = b"FORGE-EC-TEST";
 
         // Test with SimplifiedSwu method
-        let p1 = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p1 =
+            hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu).unwrap();
 
         // Test with Icart method
-        let p2 = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::Icart
-        ).unwrap();
+        let p2 = hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::Icart).unwrap();
 
         // Convert to affine for validation
         let p1_affine = Secp256k1::to_affine(&p1);
@@ -1179,18 +1195,11 @@ mod tests {
         let dst = b"FORGE-EC-TEST";
 
         // Test with SimplifiedSwu method
-        let p1 = encode_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p1 = encode_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu)
+            .unwrap();
 
         // Test with Icart method
-        let p2 = encode_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::Icart
-        ).unwrap();
+        let p2 = encode_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::Icart).unwrap();
 
         // Convert to affine for validation
         let p1_affine = Secp256k1::to_affine(&p1);
@@ -1211,11 +1220,7 @@ mod tests {
         let msg = b"test message";
         let dst = b"";
 
-        let result = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        );
+        let result = hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu);
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::DomainSeparationFailure);
@@ -1247,18 +1252,10 @@ mod tests {
         let dst = b"FORGE-EC-TEST-P256";
 
         // Test with SimplifiedSwu method
-        let p1 = hash_to_curve::<P256, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p1 = hash_to_curve::<P256, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu).unwrap();
 
         // Test with Icart method
-        let p2 = hash_to_curve::<P256, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::Icart
-        ).unwrap();
+        let p2 = hash_to_curve::<P256, Sha256>(msg, dst, HashToCurveMethod::Icart).unwrap();
 
         // Convert to affine for validation
         let p1_affine = P256::to_affine(&p1);
@@ -1280,18 +1277,12 @@ mod tests {
         let dst = b"FORGE-EC-TEST-HASH";
 
         // Test with SHA-256
-        let p1 = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p1 =
+            hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu).unwrap();
 
         // Test with SHA3-256
-        let p2 = hash_to_curve::<Secp256k1, Sha3_256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p2 = hash_to_curve::<Secp256k1, Sha3_256>(msg, dst, HashToCurveMethod::SimplifiedSwu)
+            .unwrap();
 
         // Convert to affine for validation
         let p1_affine = Secp256k1::to_affine(&p1);
@@ -1313,11 +1304,8 @@ mod tests {
         let dst = b"FORGE-EC-TEST-EMPTY";
 
         // Test with SimplifiedSwu method
-        let p = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p =
+            hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu).unwrap();
 
         // Convert to affine for validation
         let p_affine = Secp256k1::to_affine(&p);
@@ -1334,11 +1322,8 @@ mod tests {
         let dst = b"FORGE-EC-TEST-LONG";
 
         // Test with SimplifiedSwu method
-        let p = hash_to_curve::<Secp256k1, Sha256>(
-            &msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p = hash_to_curve::<Secp256k1, Sha256>(&msg, dst, HashToCurveMethod::SimplifiedSwu)
+            .unwrap();
 
         // Convert to affine for validation
         let p_affine = Secp256k1::to_affine(&p);
@@ -1355,11 +1340,8 @@ mod tests {
         let dst = [0u8; 255]; // 255-byte DST (maximum allowed by RFC9380)
 
         // Test with SimplifiedSwu method
-        let p = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            &dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p = hash_to_curve::<Secp256k1, Sha256>(msg, &dst, HashToCurveMethod::SimplifiedSwu)
+            .unwrap();
 
         // Convert to affine for validation
         let p_affine = Secp256k1::to_affine(&p);
@@ -1377,17 +1359,11 @@ mod tests {
         let dst = b"FORGE-EC-TEST-ENCODE-VS-HASH";
 
         // For curves with cofactor = 1 (like secp256k1 and P-256), the results should be the same
-        let p1 = encode_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p1 = encode_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu)
+            .unwrap();
 
-        let p2 = hash_to_curve::<Secp256k1, Sha256>(
-            msg,
-            dst,
-            HashToCurveMethod::SimplifiedSwu
-        ).unwrap();
+        let p2 =
+            hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu).unwrap();
 
         // Convert to affine for comparison
         let p1_affine = Secp256k1::to_affine(&p1);
@@ -1407,22 +1383,17 @@ mod tests {
         // This is important for cryptographic applications
 
         // Define test vectors (message, DST, expected x-coordinate in hex)
-        let test_vectors = [
-            (
-                b"abc" as &[u8],
-                b"QUUX-V01-CS02-with-secp256k1_XMD:SHA-256_SSWU_RO_" as &[u8],
-                // This is a placeholder - in a real test, we would use actual test vectors from RFC9380
-                "placeholder_for_expected_x_coordinate"
-            ),
-        ];
+        let test_vectors = [(
+            b"abc" as &[u8],
+            b"QUUX-V01-CS02-with-secp256k1_XMD:SHA-256_SSWU_RO_" as &[u8],
+            // This is a placeholder - in a real test, we would use actual test vectors from RFC9380
+            "placeholder_for_expected_x_coordinate",
+        )];
 
         for (msg, dst, _expected_x) in &test_vectors {
             // Hash to curve
-            let p = hash_to_curve::<Secp256k1, Sha256>(
-                msg,
-                dst,
-                HashToCurveMethod::SimplifiedSwu
-            ).unwrap();
+            let p = hash_to_curve::<Secp256k1, Sha256>(msg, dst, HashToCurveMethod::SimplifiedSwu)
+                .unwrap();
 
             // Convert to affine
             let p_affine = Secp256k1::to_affine(&p);

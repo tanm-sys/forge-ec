@@ -3,22 +3,22 @@
 //! This module provides PEM encoding and decoding for elliptic curve keys and signatures.
 //! PEM is a base64-encoded format with header and footer lines.
 
-#[cfg(feature = "std")]
-use std::string::{String, ToString};
-#[cfg(feature = "std")]
-use std::vec::{Vec};
-#[cfg(feature = "std")]
-use std::vec;
-#[cfg(feature = "std")]
-use std::format;
+#[cfg(feature = "alloc")]
+use alloc::format;
 #[cfg(feature = "alloc")]
 use alloc::string::{String, ToString};
 #[cfg(feature = "alloc")]
-use alloc::vec::{Vec};
-#[cfg(feature = "alloc")]
 use alloc::vec;
 #[cfg(feature = "alloc")]
-use alloc::format;
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use std::format;
+#[cfg(feature = "std")]
+use std::string::{String, ToString};
+#[cfg(feature = "std")]
+use std::vec;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 /// Error type for PEM encoding/decoding operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,10 +127,7 @@ pub fn decode_pem(pem: &str) -> Result<(Vec<u8>, String), PemError> {
     let content = &pem[header_end_pos..footer_start];
 
     // Clean up the base64 data
-    let base64_data = content
-        .replace("\r", "")
-        .replace("\n", "")
-        .replace(" ", "");
+    let base64_data = content.replace("\r", "").replace("\n", "").replace(" ", "");
 
     // Decode the base64 data
     let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &base64_data)

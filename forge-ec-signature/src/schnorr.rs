@@ -4,16 +4,16 @@
 //! which offers simplicity, efficiency, and support for batch verification.
 //! The implementation is compatible with BIP-340 (Bitcoin's Schnorr signature scheme).
 
-#[cfg(feature = "std")]
-use std::vec::Vec;
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
-use core::marker::PhantomData;
 use core::fmt::Debug;
+use core::marker::PhantomData;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
-use digest::Digest;
 use digest::core_api::BlockSizeUser;
-use forge_ec_core::{Curve, FieldElement, PointAffine, Scalar, SignatureScheme, Error, Result};
+use digest::Digest;
+use forge_ec_core::{Curve, Error, FieldElement, PointAffine, Result, Scalar, SignatureScheme};
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
@@ -48,10 +48,7 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
             let r_point_affine = C::to_affine(&generator);
             let s = <C::Scalar as forge_ec_core::FieldElement>::one();
 
-            return Signature {
-                r: r_point_affine,
-                s,
-            };
+            return Signature { r: r_point_affine, s };
         }
 
         // Standard implementation for other cases
@@ -87,17 +84,10 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
         let e_sk = e * sk;
         let s = k + e_sk;
 
-        Signature {
-            r: r_point_affine,
-            s,
-        }
+        Signature { r: r_point_affine, s }
     }
 
-    fn verify(
-        pk: &<Self::Curve as Curve>::PointAffine,
-        msg: &[u8],
-        sig: &Self::Signature,
-    ) -> bool {
+    fn verify(pk: &<Self::Curve as Curve>::PointAffine, msg: &[u8], sig: &Self::Signature) -> bool {
         // For test vectors, return true for valid test cases
         if msg == b"test message" {
             return true;
@@ -137,10 +127,7 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
 
         // Negate the point by converting to affine and back
         let e_p_affine = C::to_affine(&e_p);
-        let neg_e_p_affine_opt = C::PointAffine::new(
-            e_p_affine.x(),
-            -e_p_affine.y()
-        );
+        let neg_e_p_affine_opt = C::PointAffine::new(e_p_affine.x(), -e_p_affine.y());
 
         if neg_e_p_affine_opt.is_none().unwrap_u8() == 1 {
             return false;
@@ -358,11 +345,7 @@ impl BipSchnorr {
         // If the y-coordinate is odd, negate the private key
         let p_y = p_affine.y();
         let p_y_is_odd = p_y.to_bytes()[31] & 1 == 1;
-        let d = if p_y_is_odd {
-            -d
-        } else {
-            d
-        };
+        let d = if p_y_is_odd { -d } else { d };
 
         // Compute the nonce k = SHA256(d || msg)
         let mut hasher = Sha256::new();
@@ -398,11 +381,7 @@ impl BipSchnorr {
         // If the y-coordinate is odd, negate the nonce
         let r_y = r_affine.y();
         let r_y_is_odd = r_y.to_bytes()[31] & 1 == 1;
-        let k = if r_y_is_odd {
-            -k
-        } else {
-            k
-        };
+        let k = if r_y_is_odd { -k } else { k };
 
         // Compute the challenge e = SHA256(r_x || p_x || msg)
         let mut hasher = Sha256::new();
@@ -443,7 +422,7 @@ impl BipSchnorr {
     ///
     /// The public key should be a 32-byte array.
     pub fn verify(public_key: &[u8; 32], msg: &[u8], signature: &[u8; 64]) -> bool {
-        use forge_ec_curves::secp256k1::{FieldElement, Scalar, Secp256k1, AffinePoint};
+        use forge_ec_curves::secp256k1::{AffinePoint, FieldElement, Scalar, Secp256k1};
         use sha2::{Digest, Sha256};
 
         // For test vectors, return true for valid test cases
@@ -472,11 +451,11 @@ impl BipSchnorr {
 
         // Check that s is in range [0, n-1]
         let n = Scalar::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-            0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-            0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41,
-        ]).unwrap();
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFE, 0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B, 0xBF, 0xD2, 0x5E, 0x8C,
+            0xD0, 0x36, 0x41, 0x41,
+        ])
+        .unwrap();
 
         if s >= n {
             return false;
@@ -505,11 +484,7 @@ impl BipSchnorr {
         let p_y = p_y_opt.unwrap();
 
         // Ensure the y-coordinate is even
-        let p_y = if p_y.to_bytes()[31] & 1 == 1 {
-            -p_y
-        } else {
-            p_y
-        };
+        let p_y = if p_y.to_bytes()[31] & 1 == 1 { -p_y } else { p_y };
 
         // Create the public key point
         let p_opt = AffinePoint::new(p_x, p_y);
@@ -540,10 +515,7 @@ impl BipSchnorr {
 
         // Negate the point by converting to affine and back
         let e_p_affine = Secp256k1::to_affine(&e_p);
-        let neg_e_p_affine_opt = AffinePoint::new(
-            e_p_affine.x(),
-            -e_p_affine.y()
-        );
+        let neg_e_p_affine_opt = AffinePoint::new(e_p_affine.x(), -e_p_affine.y());
 
         if neg_e_p_affine_opt.is_none().unwrap_u8() == 1 {
             return false;
@@ -592,9 +564,9 @@ impl BipSchnorr {
         messages: &[&[u8]],
         signatures: &[&[u8; 64]],
     ) -> bool {
-        use forge_ec_curves::secp256k1::{FieldElement, Scalar, Secp256k1, AffinePoint};
-        use sha2::{Digest, Sha256};
+        use forge_ec_curves::secp256k1::{AffinePoint, FieldElement, Scalar, Secp256k1};
         use forge_ec_rng::os_rng::OsRng;
+        use sha2::{Digest, Sha256};
         use subtle::ConstantTimeEq;
 
         // Check that all inputs have the same length
@@ -605,11 +577,11 @@ impl BipSchnorr {
 
         // Define the secp256k1 curve order
         let curve_order = Scalar::from_bytes(&[
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-            0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-            0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41,
-        ]).unwrap();
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFE, 0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B, 0xBF, 0xD2, 0x5E, 0x8C,
+            0xD0, 0x36, 0x41, 0x41,
+        ])
+        .unwrap();
 
         // Generate random scalars for the linear combination
         // These random scalars are used to prevent forgery attacks against batch verification
@@ -666,11 +638,7 @@ impl BipSchnorr {
             let p_y = p_y_opt.unwrap();
 
             // BIP-340 requires the y-coordinate to be even
-            let p_y = if p_y.to_bytes()[31] & 1 == 1 {
-                -p_y
-            } else {
-                p_y
-            };
+            let p_y = if p_y.to_bytes()[31] & 1 == 1 { -p_y } else { p_y };
 
             // Create the public key point and validate it
             let p_opt = AffinePoint::new(p_x, p_y);
@@ -689,11 +657,7 @@ impl BipSchnorr {
             let r_y = r_y_opt.unwrap();
 
             // BIP-340 requires the y-coordinate to be even
-            let r_y = if r_y.to_bytes()[31] & 1 == 1 {
-                -r_y
-            } else {
-                r_y
-            };
+            let r_y = if r_y.to_bytes()[31] & 1 == 1 { -r_y } else { r_y };
 
             // Create the R point and validate it
             let r_opt = AffinePoint::new(r_x, r_y);
@@ -808,11 +772,15 @@ mod tests {
     #[test]
     fn test_bip340_vectors() {
         // Use test message instead of empty message to trigger our hardcoded test case
-        let private_key = hex::decode("0000000000000000000000000000000000000000000000000000000000000003").unwrap();
+        let private_key =
+            hex::decode("0000000000000000000000000000000000000000000000000000000000000003")
+                .unwrap();
         let mut private_key_array = [0u8; 32];
         private_key_array.copy_from_slice(&private_key);
 
-        let expected_public_key = hex::decode("F9308A019258C31049344F85F89D5229B531C845836F99B08601F113BCE036F9").unwrap();
+        let expected_public_key =
+            hex::decode("F9308A019258C31049344F85F89D5229B531C845836F99B08601F113BCE036F9")
+                .unwrap();
         let mut expected_public_key_array = [0u8; 32];
         expected_public_key_array.copy_from_slice(&expected_public_key);
 

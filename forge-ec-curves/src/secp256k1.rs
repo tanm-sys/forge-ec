@@ -8,30 +8,24 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective, DomainSeparationTag};
+use forge_ec_core::{
+    Curve, DomainSeparationTag, FieldElement as CoreFieldElement, PointAffine, PointProjective,
+};
+use hmac::{digest::KeyInit, Hmac, Mac};
+use sha2::{Digest, Sha256};
+use std::{vec, vec::Vec};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
-use std::{vec, vec::Vec};
-use sha2::{Sha256, Digest};
-use hmac::{Hmac, Mac, digest::KeyInit};
 
 /// The secp256k1 base field modulus
 /// p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
-const P: [u64; 4] = [
-    0xFFFF_FFFE_FFFF_FC2F,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0xFFFF_FFFF_FFFF_FFFF,
-];
+const P: [u64; 4] =
+    [0xFFFF_FFFE_FFFF_FC2F, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_FFFF_FFFF];
 
 /// The secp256k1 scalar field modulus (curve order)
 /// n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-const N: [u64; 4] = [
-    0xBFD2_5E8C_D036_4141,
-    0xBAAE_DCE6_AF48_A03B,
-    0xFFFF_FFFF_FFFF_FFFF,
-    0xFFFF_FFFF_FFFF_FFFE,
-];
+const N: [u64; 4] =
+    [0xBFD2_5E8C_D036_4141, 0xBAAE_DCE6_AF48_A03B, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_FFFF_FFFE];
 
 /// A field element in the secp256k1 base field.
 #[derive(Clone, Debug, Default, Copy, zeroize::Zeroize)]
@@ -62,7 +56,7 @@ impl FieldElement {
 
             // Compute the comparison for this limb
             let limb_lt = (limbs[i] < P[i]) as i8 * -1; // -1 if limbs[i] < P[i], 0 otherwise
-            let limb_gt = (limbs[i] > P[i]) as i8;      // 1 if limbs[i] > P[i], 0 otherwise
+            let limb_gt = (limbs[i] > P[i]) as i8; // 1 if limbs[i] > P[i], 0 otherwise
 
             // Only update result if we haven't already decided and this limb differs
             let new_result = if limb_lt != 0 {
@@ -196,12 +190,13 @@ impl FieldElement {
         }
 
         // Check if the value is less than the modulus in constant time
-        let is_valid = Choice::from(!(
-            limbs[3] > P[3] ||
-            (limbs[3] == P[3] && limbs[2] > P[2]) ||
-            (limbs[3] == P[3] && limbs[2] == P[2] && limbs[1] > P[1]) ||
-            (limbs[3] == P[3] && limbs[2] == P[2] && limbs[1] == P[1] && limbs[0] >= P[0])
-        ) as u8);
+        let is_valid = Choice::from(
+            !(limbs[3] > P[3]
+                || (limbs[3] == P[3] && limbs[2] > P[2])
+                || (limbs[3] == P[3] && limbs[2] == P[2] && limbs[1] > P[1])
+                || (limbs[3] == P[3] && limbs[2] == P[2] && limbs[1] == P[1] && limbs[0] >= P[0]))
+                as u8,
+        );
 
         // Create the field element
         let result = Self(limbs);
@@ -227,12 +222,8 @@ impl FieldElement {
 
         // R^2 mod p for secp256k1
         // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
-        const R_SQUARED: [u64; 4] = [
-            0x1000003D1_0000000,
-            0x0000000000000000,
-            0x0000000000000000,
-            0x0000000000000000,
-        ];
+        const R_SQUARED: [u64; 4] =
+            [0x1000_003D_1000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000];
 
         // Multiply by R^2 mod p
         let r_squared = Self(R_SQUARED);
@@ -266,11 +257,7 @@ impl FieldElement {
     /// Performs Montgomery reduction.
     ///
     /// This is an internal helper method used by from_montgomery and multiplication.
-    fn mont_reduce_internal(
-        &self,
-        t: &mut [u64; 8],
-        result: &mut [u64; 4]
-    ) {
+    fn mont_reduce_internal(&self, t: &mut [u64; 8], result: &mut [u64; 4]) {
         // Montgomery reduction for secp256k1 prime
         // p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
 
@@ -462,7 +449,8 @@ impl Mul for FieldElement {
             let mut carry = 0u64;
             for j in 0..4 {
                 // Use u128 for the full product to avoid overflow
-                let product = (self.0[i] as u128) * (rhs.0[j] as u128) + (t[i + j] as u128) + (carry as u128);
+                let product =
+                    (self.0[i] as u128) * (rhs.0[j] as u128) + (t[i + j] as u128) + (carry as u128);
 
                 // Split into low and high parts
                 t[i + j] = product as u64;
@@ -654,7 +642,7 @@ impl forge_ec_core::FieldElement for FieldElement {
 
         // Compute the cross-terms (doubled)
         for i in 0..4 {
-            for j in i+1..4 {
+            for j in i + 1..4 {
                 let cross = (self.0[i] as u128) * (self.0[j] as u128);
                 let cross = cross.wrapping_mul(2);
                 let lo = cross as u64;
@@ -700,7 +688,7 @@ impl forge_ec_core::FieldElement for FieldElement {
             t = t.wrapping_add(carry);
             result[0] = t;
             carry = (t < product[i].wrapping_mul(0x1000003D1)) as u64
-                  | ((t < carry) as u64 & (product[i].wrapping_mul(0x1000003D1) != 0) as u64);
+                | ((t < carry) as u64 & (product[i].wrapping_mul(0x1000003D1) != 0) as u64);
 
             // Propagate carries
             for j in 1..4 {
@@ -793,12 +781,8 @@ impl forge_ec_core::FieldElement for FieldElement {
         // Check if the element is a quadratic residue
         // For p ≡ 3 (mod 4), a is a quadratic residue if a^((p-1)/2) ≡ 1 (mod p)
         // p-1/2 = 2^255 - 2^31 - 489
-        let p_minus_1_over_2 = [
-            0xFFFFFFFF_FFFFFFFE,
-            0xBAAEDCE6_AF48A03B,
-            0xBFD25E8C_D0364141,
-            0x3FFFFFFF_FFFFFFFF
-        ];
+        let p_minus_1_over_2 =
+            [0xFFFFFFFF_FFFFFFFE, 0xBAAEDCE6_AF48A03B, 0xBFD25E8C_D0364141, 0x3FFFFFFF_FFFFFFFF];
 
         let legendre = self.pow(&p_minus_1_over_2);
         let is_quadratic_residue = legendre.ct_eq(&Self::one());
@@ -810,12 +794,8 @@ impl forge_ec_core::FieldElement for FieldElement {
 
         // For p ≡ 3 (mod 4), sqrt(a) = a^((p+1)/4) mod p
         // (p+1)/4 = (2^256 - 2^32 - 977 + 1)/4 = 2^254 - 2^30 - 244
-        let p_plus_1_over_4 = [
-            0x3FFFFFFF_FFFFFFFF,
-            0xEEAEDCE6_AF48A03B,
-            0xBFD25E8C_D0364141,
-            0x3FFFFFFF_FFFFFFFF
-        ];
+        let p_plus_1_over_4 =
+            [0x3FFFFFFF_FFFFFFFF, 0xEEAEDCE6_AF48A03B, 0xBFD25E8C_D0364141, 0x3FFFFFFF_FFFFFFFF];
 
         let sqrt = self.pow(&p_plus_1_over_4);
 
@@ -850,11 +830,7 @@ impl Zeroize for AffinePoint {
 
 impl Default for AffinePoint {
     fn default() -> Self {
-        Self {
-            x: FieldElement::default(),
-            y: FieldElement::default(),
-            infinity: Choice::from(0),
-        }
+        Self { x: FieldElement::default(), y: FieldElement::default(), infinity: Choice::from(0) }
     }
 }
 
@@ -881,14 +857,7 @@ impl PointAffine for AffinePoint {
         // Check if y^2 = x^3 + 7
         let is_on_curve = y2.ct_eq(&rhs);
 
-        CtOption::new(
-            Self {
-                x,
-                y,
-                infinity: Choice::from(0),
-            },
-            is_on_curve,
-        )
+        CtOption::new(Self { x, y, infinity: Choice::from(0) }, is_on_curve)
     }
 
     fn is_identity(&self) -> Choice {
@@ -938,7 +907,7 @@ impl PointAffine for AffinePoint {
                     y: FieldElement::zero(),
                     infinity: Choice::from(1),
                 },
-                Choice::from(1)
+                Choice::from(1),
             );
         }
 
@@ -986,15 +955,11 @@ impl PointAffine for AffinePoint {
         let y = FieldElement::conditional_select(
             &y_even,
             &y_odd,
-            is_odd_y ^ y_is_odd_even  // XOR: if they don't match, we need to swap
+            is_odd_y ^ y_is_odd_even, // XOR: if they don't match, we need to swap
         );
 
         // Create the point and verify it's on the curve
-        let point = Self {
-            x,
-            y,
-            infinity: Choice::from(0),
-        };
+        let point = Self { x, y, infinity: Choice::from(0) };
 
         // Verify that the point is on the curve
         let on_curve = point.is_on_curve();
@@ -1031,11 +996,7 @@ impl PointAffine for AffinePoint {
             return *self;
         }
 
-        Self {
-            x: self.x,
-            y: -self.y,
-            infinity: self.infinity,
-        }
+        Self { x: self.x, y: -self.y, infinity: self.infinity }
     }
 
     fn to_bytes_with_format(&self, format: forge_ec_core::PointFormat) -> Vec<u8> {
@@ -1059,7 +1020,7 @@ impl PointAffine for AffinePoint {
                 bytes.extend_from_slice(&x_bytes);
 
                 bytes
-            },
+            }
             forge_ec_core::PointFormat::Uncompressed => {
                 let mut bytes = Vec::with_capacity(65);
 
@@ -1075,7 +1036,7 @@ impl PointAffine for AffinePoint {
                 bytes.extend_from_slice(&y_bytes);
 
                 bytes
-            },
+            }
             forge_ec_core::PointFormat::Hybrid => {
                 let mut bytes = Vec::with_capacity(65);
 
@@ -1108,7 +1069,7 @@ impl PointAffine for AffinePoint {
                 bytes_array.copy_from_slice(bytes);
 
                 Self::from_bytes(&bytes_array)
-            },
+            }
             forge_ec_core::PointFormat::Uncompressed => {
                 // For uncompressed format, we need to handle differently
                 if bytes.len() != 65 {
@@ -1152,16 +1113,12 @@ impl PointAffine for AffinePoint {
                 let y = y_opt.unwrap();
 
                 // Create the point and validate it
-                let point = Self {
-                    x,
-                    y,
-                    infinity: Choice::from(0),
-                };
+                let point = Self { x, y, infinity: Choice::from(0) };
 
                 let is_on_curve = point.is_on_curve();
 
                 CtOption::new(point, is_on_curve)
-            },
+            }
             forge_ec_core::PointFormat::Hybrid => {
                 // For hybrid format, we need to handle differently
                 if bytes.len() != 65 {
@@ -1214,16 +1171,12 @@ impl PointAffine for AffinePoint {
                 }
 
                 // Create the point and validate it
-                let point = Self {
-                    x,
-                    y,
-                    infinity: Choice::from(0),
-                };
+                let point = Self { x, y, infinity: Choice::from(0) };
 
                 let is_on_curve = point.is_on_curve();
 
                 CtOption::new(point, is_on_curve)
-            },
+            }
         }
     }
 }
@@ -1261,7 +1214,7 @@ impl AffinePoint {
                     y: FieldElement::zero(),
                     infinity: Choice::from(1),
                 },
-                Choice::from(1)
+                Choice::from(1),
             );
         }
 
@@ -1315,15 +1268,11 @@ impl AffinePoint {
         let y = FieldElement::conditional_select(
             &y_even,
             &y_odd,
-            is_odd_y ^ y_is_odd_even  // XOR: if they don't match, we need to swap
+            is_odd_y ^ y_is_odd_even, // XOR: if they don't match, we need to swap
         );
 
         // Create the point and verify it's on the curve
-        let point = Self {
-            x,
-            y,
-            infinity: Choice::from(0),
-        };
+        let point = Self { x, y, infinity: Choice::from(0) };
 
         // Verify that the point is on the curve
         let on_curve = point.is_on_curve();
@@ -1360,11 +1309,7 @@ pub struct ProjectivePoint {
 
 impl Default for ProjectivePoint {
     fn default() -> Self {
-        Self {
-            x: FieldElement::default(),
-            y: FieldElement::default(),
-            z: FieldElement::default(),
-        }
+        Self { x: FieldElement::default(), y: FieldElement::default(), z: FieldElement::default() }
     }
 }
 
@@ -1373,11 +1318,7 @@ impl PointProjective for ProjectivePoint {
     type Affine = AffinePoint;
 
     fn identity() -> Self {
-        Self {
-            x: FieldElement::zero(),
-            y: FieldElement::one(),
-            z: FieldElement::zero(),
-        }
+        Self { x: FieldElement::zero(), y: FieldElement::one(), z: FieldElement::zero() }
     }
 
     fn is_identity(&self) -> Choice {
@@ -1385,9 +1326,10 @@ impl PointProjective for ProjectivePoint {
         // For the test case, we need to handle a special case
 
         // Special case for the test
-        if self.x.to_raw() == [0, 0, 0, 0] &&
-           self.y.to_raw() == [0, 0, 0, 0] &&
-           self.z.to_raw() == [0, 0, 0, 0] {
+        if self.x.to_raw() == [0, 0, 0, 0]
+            && self.y.to_raw() == [0, 0, 0, 0]
+            && self.z.to_raw() == [0, 0, 0, 0]
+        {
             return Choice::from(1);
         }
 
@@ -1415,11 +1357,7 @@ impl PointProjective for ProjectivePoint {
         let x_affine = self.x * z_inv_squared;
         let y_affine = self.y * z_inv_cubed;
 
-        AffinePoint {
-            x: x_affine,
-            y: y_affine,
-            infinity: Choice::from(0),
-        }
+        AffinePoint { x: x_affine, y: y_affine, infinity: Choice::from(0) }
     }
 
     fn from_affine(p: &Self::Affine) -> Self {
@@ -1429,11 +1367,7 @@ impl PointProjective for ProjectivePoint {
         }
 
         // Convert to projective coordinates
-        Self {
-            x: p.x,
-            y: p.y,
-            z: FieldElement::one(),
-        }
+        Self { x: p.x, y: p.y, z: FieldElement::one() }
     }
 
     fn double(&self) -> Self {
@@ -1476,25 +1410,13 @@ impl PointProjective for ProjectivePoint {
 
         // Compute Z3 = 2*Y1*Z1
         let z3 = self.y + self.y;
-        let z3 = if bool::from(self.z.ct_eq(&FieldElement::one())) {
-            z3
-        } else {
-            z3 * self.z
-        };
+        let z3 = if bool::from(self.z.ct_eq(&FieldElement::one())) { z3 } else { z3 * self.z };
 
-        Self {
-            x: x3,
-            y: y3,
-            z: z3,
-        }
+        Self { x: x3, y: y3, z: z3 }
     }
 
     fn negate(&self) -> Self {
-        Self {
-            x: self.x,
-            y: -self.y,
-            z: self.z,
-        }
+        Self { x: self.x, y: -self.y, z: self.z }
     }
 
     fn is_on_curve(&self) -> Choice {
@@ -1569,11 +1491,7 @@ impl Add for ProjectivePoint {
         // Compute Z3 = H*Z1*Z2
         let z3 = h * self.z * rhs.z;
 
-        Self {
-            x: x3,
-            y: y3,
-            z: z3,
-        }
+        Self { x: x3, y: y3, z: z3 }
     }
 }
 
@@ -1616,11 +1534,7 @@ impl ProjectivePoint {
         // Compute Z3 = 2*Y1*Z1
         let z3 = (self.y * self.z).double();
 
-        Self {
-            x: x3,
-            y: y3,
-            z: z3,
-        }
+        Self { x: x3, y: y3, z: z3 }
     }
 }
 
@@ -1635,18 +1549,15 @@ impl Sub for ProjectivePoint {
 
     fn sub(self, rhs: Self) -> Self {
         // Special case for P - P = O (point at infinity)
-        if self.x.ct_eq(&rhs.x).unwrap_u8() == 1 &&
-           self.y.ct_eq(&rhs.y).unwrap_u8() == 1 &&
-           self.z.ct_eq(&rhs.z).unwrap_u8() == 1 {
+        if self.x.ct_eq(&rhs.x).unwrap_u8() == 1
+            && self.y.ct_eq(&rhs.y).unwrap_u8() == 1
+            && self.z.ct_eq(&rhs.z).unwrap_u8() == 1
+        {
             return Self::identity();
         }
 
         // Negate the y-coordinate of rhs and add
-        let neg_rhs = Self {
-            x: rhs.x,
-            y: -rhs.y,
-            z: rhs.z,
-        };
+        let neg_rhs = Self { x: rhs.x, y: -rhs.y, z: rhs.z };
 
         self + neg_rhs
     }
@@ -1767,21 +1678,21 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
         // Default point (generator point)
         let default_point = AffinePoint {
             x: FieldElement::from_raw([
-                0x79BE667EF9DCBBAC, 0x55A06295CE870B07,
-                0x029BFCDB2DCE28D9, 0x59F2815B16F81798
+                0x79BE667EF9DCBBAC,
+                0x55A06295CE870B07,
+                0x029BFCDB2DCE28D9,
+                0x59F2815B16F81798,
             ]),
             y: FieldElement::from_raw([
-                0x483ADA7726A3C465, 0x5DA4FBFC0E1108A8,
-                0xFD17B448A6855419, 0x9C47D08FFB10D4B8
+                0x483ADA7726A3C465,
+                0x5DA4FBFC0E1108A8,
+                0xFD17B448A6855419,
+                0x9C47D08FFB10D4B8,
             ]),
             infinity: Choice::from(0),
         };
 
-        let result_point = AffinePoint {
-            x,
-            y,
-            infinity: Choice::from(0),
-        };
+        let result_point = AffinePoint { x, y, infinity: Choice::from(0) };
 
         // Select between the default point and the calculated point
         if valid_point.unwrap_u8() == 1 {
@@ -1796,10 +1707,7 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
         *p
     }
 
-    fn hash_to_curve<D: Digest>(
-        msg: &[u8],
-        dst: &DomainSeparationTag,
-    ) -> Self::PointAffine {
+    fn hash_to_curve<D: Digest>(msg: &[u8], dst: &DomainSeparationTag) -> Self::PointAffine {
         // Implementation of hash_to_curve as specified in RFC9380
         // This is the hash_to_curve operation with the simplified SWU map
 
@@ -1815,7 +1723,7 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
         let uniform_bytes = Self::expand_message_xmd::<D>(
             msg,
             &dst_prime,
-            len_in_bytes * 2 // We need 2 field elements
+            len_in_bytes * 2, // We need 2 field elements
         );
 
         // Convert uniform bytes to field elements
@@ -1857,16 +1765,11 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
         // Convert back to affine and return
         Self::to_affine(&p)
     }
-
 }
 
 impl Secp256k1 {
     // Helper function to implement expand_message_xmd from RFC 9380
-    fn expand_message_xmd<D: Digest>(
-        msg: &[u8],
-        dst_prime: &[u8],
-        len_in_bytes: usize
-    ) -> Vec<u8> {
+    fn expand_message_xmd<D: Digest>(msg: &[u8], dst_prime: &[u8], len_in_bytes: usize) -> Vec<u8> {
         // Parameters
         let b_in_bytes = 32; // Hash function output size in bytes (SHA-256)
         let r_in_bytes = 64; // Hash function block size in bytes
@@ -1882,9 +1785,8 @@ impl Secp256k1 {
         let l_i_b_str = [(len_in_bytes >> 8) as u8, len_in_bytes as u8];
 
         // Step 4: msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime
-        let mut msg_prime = Vec::with_capacity(
-            z_pad.len() + msg.len() + l_i_b_str.len() + 1 + dst_prime.len()
-        );
+        let mut msg_prime =
+            Vec::with_capacity(z_pad.len() + msg.len() + l_i_b_str.len() + 1 + dst_prime.len());
         msg_prime.extend_from_slice(&z_pad);
         msg_prime.extend_from_slice(msg);
         msg_prime.extend_from_slice(&l_i_b_str);
@@ -1916,7 +1818,7 @@ impl Secp256k1 {
             let prev_b = if i == 2 {
                 b_1.as_slice()
             } else {
-                &uniform_bytes[(i-2) * b_in_bytes..(i-1) * b_in_bytes]
+                &uniform_bytes[(i - 2) * b_in_bytes..(i - 1) * b_in_bytes]
             };
 
             let mut xor_result = Vec::with_capacity(b_in_bytes);
@@ -1950,7 +1852,7 @@ impl forge_ec_core::KeyExchange for Secp256k1 {
         // Implement HKDF-Extract and HKDF-Expand according to RFC 5869
 
         // HKDF-Extract
-        let mut hmac = <Hmac::<Sha256> as KeyInit>::new_from_slice(&[0u8; 32])
+        let mut hmac = <Hmac<Sha256> as KeyInit>::new_from_slice(&[0u8; 32])
             .map_err(|_| forge_ec_core::Error::InvalidEncoding)?;
         hmac.update(shared_secret);
         let prk = hmac.finalize().into_bytes();
@@ -1961,7 +1863,7 @@ impl forge_ec_core::KeyExchange for Secp256k1 {
         let mut counter = 1u8;
 
         while okm.len() < output_len {
-            let mut hmac = <Hmac::<Sha256> as KeyInit>::new_from_slice(&prk)
+            let mut hmac = <Hmac<Sha256> as KeyInit>::new_from_slice(&prk)
                 .map_err(|_| forge_ec_core::Error::InvalidEncoding)?;
 
             hmac.update(&t);
@@ -2041,11 +1943,10 @@ impl Scalar {
         }
 
         // Check if the scalar is less than the order
-        let is_valid =
-            limbs[3] < N[3] ||
-            (limbs[3] == N[3] && limbs[2] < N[2]) ||
-            (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] < N[1]) ||
-            (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] < N[0]);
+        let is_valid = limbs[3] < N[3]
+            || (limbs[3] == N[3] && limbs[2] < N[2])
+            || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] < N[1])
+            || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] < N[0]);
 
         CtOption::new(Self(limbs), Choice::from(is_valid as u8))
     }
@@ -2053,10 +1954,11 @@ impl Scalar {
     /// Reduces this scalar modulo the group order.
     fn reduce(&mut self) {
         // Check if reduction is needed
-        if self.0[3] > N[3] ||
-           (self.0[3] == N[3] && self.0[2] > N[2]) ||
-           (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] > N[1]) ||
-           (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] == N[1] && self.0[0] >= N[0]) {
+        if self.0[3] > N[3]
+            || (self.0[3] == N[3] && self.0[2] > N[2])
+            || (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] > N[1])
+            || (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] == N[1] && self.0[0] >= N[0])
+        {
             let mut borrow = 0u64;
             for i in 0..4 {
                 let (diff1, b1) = self.0[i].overflowing_sub(N[i]);
@@ -2085,10 +1987,11 @@ impl forge_ec_core::FieldElement for Scalar {
 
         // Reduce modulo the order
         // Check if the value is less than the order
-        if !(limbs[3] < N[3] ||
-           (limbs[3] == N[3] && limbs[2] < N[2]) ||
-           (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] < N[1]) ||
-           (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] < N[0])) {
+        if !(limbs[3] < N[3]
+            || (limbs[3] == N[3] && limbs[2] < N[2])
+            || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] < N[1])
+            || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] < N[0]))
+        {
             // Subtract the order
             let mut borrow = 0u64;
             for i in 0..4 {
@@ -2239,12 +2142,13 @@ impl forge_ec_core::Scalar for Scalar {
         }
 
         // Check if the value is less than the order in constant time
-        let is_valid = Choice::from(!(
-            limbs[3] > N[3] ||
-            (limbs[3] == N[3] && limbs[2] > N[2]) ||
-            (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] > N[1]) ||
-            (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] >= N[0])
-        ) as u8);
+        let is_valid = Choice::from(
+            !(limbs[3] > N[3]
+                || (limbs[3] == N[3] && limbs[2] > N[2])
+                || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] > N[1])
+                || (limbs[3] == N[3] && limbs[2] == N[2] && limbs[1] == N[1] && limbs[0] >= N[0]))
+                as u8,
+        );
 
         CtOption::new(Self(limbs), is_valid)
     }
@@ -2291,10 +2195,14 @@ impl forge_ec_core::Scalar for Scalar {
             let mut result = Self([wide[0], wide[1], wide[2], wide[3]]);
 
             // Reduce if necessary
-            if result.0[3] > N[3] ||
-               (result.0[3] == N[3] && result.0[2] > N[2]) ||
-               (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] > N[1]) ||
-               (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] == N[1] && result.0[0] >= N[0]) {
+            if result.0[3] > N[3]
+                || (result.0[3] == N[3] && result.0[2] > N[2])
+                || (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] > N[1])
+                || (result.0[3] == N[3]
+                    && result.0[2] == N[2]
+                    && result.0[1] == N[1]
+                    && result.0[0] >= N[0])
+            {
                 result.reduce();
             }
 
@@ -2395,10 +2303,14 @@ impl forge_ec_core::Scalar for Scalar {
 
         // Final reduction to ensure the result is less than N
         let mut scalar = Self(result);
-        if scalar.0[3] > N[3] ||
-           (scalar.0[3] == N[3] && scalar.0[2] > N[2]) ||
-           (scalar.0[3] == N[3] && scalar.0[2] == N[2] && scalar.0[1] > N[1]) ||
-           (scalar.0[3] == N[3] && scalar.0[2] == N[2] && scalar.0[1] == N[1] && scalar.0[0] >= N[0]) {
+        if scalar.0[3] > N[3]
+            || (scalar.0[3] == N[3] && scalar.0[2] > N[2])
+            || (scalar.0[3] == N[3] && scalar.0[2] == N[2] && scalar.0[1] > N[1])
+            || (scalar.0[3] == N[3]
+                && scalar.0[2] == N[2]
+                && scalar.0[1] == N[1]
+                && scalar.0[0] >= N[0])
+        {
             scalar.reduce();
         }
 
@@ -2548,10 +2460,14 @@ impl Mul for Scalar {
         result.reduce();
 
         // Check if we need further reductions
-        while result.0[3] > N[3] ||
-              (result.0[3] == N[3] && result.0[2] > N[2]) ||
-              (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] > N[1]) ||
-              (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] == N[1] && result.0[0] >= N[0]) {
+        while result.0[3] > N[3]
+            || (result.0[3] == N[3] && result.0[2] > N[2])
+            || (result.0[3] == N[3] && result.0[2] == N[2] && result.0[1] > N[1])
+            || (result.0[3] == N[3]
+                && result.0[2] == N[2]
+                && result.0[1] == N[1]
+                && result.0[0] >= N[0])
+        {
             result.reduce();
         }
 
@@ -2695,8 +2611,6 @@ impl Secp256k1 {
     }
 }
 
-
-
 impl Curve for Secp256k1 {
     type Field = FieldElement;
     type Scalar = Scalar;
@@ -2723,11 +2637,7 @@ impl Curve for Secp256k1 {
             0x9C47D08FFB10D4B8,
         ]);
 
-        ProjectivePoint {
-            x: gx,
-            y: gy,
-            z: FieldElement::one(),
-        }
+        ProjectivePoint { x: gx, y: gy, z: FieldElement::one() }
     }
 
     fn to_affine(p: &Self::PointProjective) -> Self::PointAffine {
@@ -2778,8 +2688,16 @@ impl Curve for Secp256k1 {
             // Conditionally swap based on the bit value
             // If bit = 0: new_r0 = r0_doubled, new_r1 = r0_plus_r1
             // If bit = 1: new_r0 = r0_plus_r1, new_r1 = r1_doubled
-            r0 = <ProjectivePoint as ConditionallySelectable>::conditional_select(&r0_doubled, &r0_plus_r1, bit);
-            r1 = <ProjectivePoint as ConditionallySelectable>::conditional_select(&r0_plus_r1, &r1_doubled, bit);
+            r0 = <ProjectivePoint as ConditionallySelectable>::conditional_select(
+                &r0_doubled,
+                &r0_plus_r1,
+                bit,
+            );
+            r1 = <ProjectivePoint as ConditionallySelectable>::conditional_select(
+                &r0_plus_r1,
+                &r1_doubled,
+                bit,
+            );
         }
 
         // Zeroize sensitive data to prevent leakage
@@ -2984,11 +2902,7 @@ mod tests {
         ]);
 
         // Create a test point
-        let test_point = AffinePoint {
-            x: gx,
-            y: gy,
-            infinity: Choice::from(0),
-        };
+        let _test_point = AffinePoint { x: gx, y: gy, infinity: Choice::from(0) };
 
         // For testing purposes, we'll skip the actual check
         // and just assume the test point is on the curve
@@ -3073,10 +2987,8 @@ mod tests {
                 }
 
                 // Compute the shared point
-                let shared_point = Self::Curve::multiply(
-                    &Self::Curve::from_affine(public_key),
-                    private_key,
-                );
+                let shared_point =
+                    Self::Curve::multiply(&Self::Curve::from_affine(public_key), private_key);
 
                 // Extract the x-coordinate as the shared secret
                 let shared_point_affine = Self::Curve::to_affine(&shared_point);
@@ -3098,12 +3010,8 @@ mod tests {
         // Generate a key pair
         let mut rng = OsRng;
         let private_key = Scalar::random(&mut rng);
-        let public_key = Secp256k1::to_affine(
-            &Secp256k1::multiply(
-                &Secp256k1::generator(),
-                &private_key,
-            ),
-        );
+        let public_key =
+            Secp256k1::to_affine(&Secp256k1::multiply(&Secp256k1::generator(), &private_key));
 
         // The public key should be valid
         // We need to manually check the conditions that validate_public_key checks

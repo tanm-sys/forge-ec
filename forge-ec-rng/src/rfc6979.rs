@@ -14,11 +14,11 @@
 //! 4. Resistant to side-channel attacks through constant-time operations
 
 use core::marker::PhantomData;
-use sha2::{Digest, Sha256};
-use zeroize::Zeroize;
-use forge_ec_core::{Curve, Scalar, FieldElement};
+use forge_ec_core::{Curve, FieldElement, Scalar};
 use hmac::{Mac, SimpleHmac};
 use sha2::digest::core_api::BlockSizeUser;
+use sha2::{Digest, Sha256};
+use zeroize::Zeroize;
 
 /// RFC6979 deterministic k-value generator.
 pub struct Rfc6979<C: Curve, D: Digest = Sha256> {
@@ -55,7 +55,11 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> Rfc6979<C, D> {
     /// # Returns
     ///
     /// A deterministic scalar value suitable for use as the k-value in ECDSA or Schnorr signatures.
-    pub fn generate_k_with_extra_data(private_key: &C::Scalar, message: &[u8], extra_data: &[u8]) -> C::Scalar {
+    pub fn generate_k_with_extra_data(
+        private_key: &C::Scalar,
+        message: &[u8],
+        extra_data: &[u8],
+    ) -> C::Scalar {
         // RFC6979 implementation without hardcoded test vectors
 
         // Full RFC6979 implementation
@@ -180,11 +184,12 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> Rfc6979<C, D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use forge_ec_curves::secp256k1::{Secp256k1, Scalar};
+    use forge_ec_curves::secp256k1::{Scalar, Secp256k1};
     use sha2::Sha256;
 
     // Test vectors for our implementation
-    const PRIVATE_KEY_HEX: &str = "0000000000000000000000000000000000000000000000000000000000000001";
+    const PRIVATE_KEY_HEX: &str =
+        "0000000000000000000000000000000000000000000000000000000000000001";
     const MESSAGE_HEX: &str = "0000000000000000000000000000000000000000000000000000000000000000";
     // Our implementation's output for secp256k1 with SHA-256
     const EXPECTED_K_HEX: &str = "b2db5ea141944ef800a3a2401fbd178f5f806e5e6cd5ee64dad254cccc246702";
@@ -266,13 +271,21 @@ mod tests {
         let extra_data = b"additional data";
 
         let k1 = Rfc6979::<Secp256k1, Sha256>::generate_k(&private_key, message);
-        let k2 = Rfc6979::<Secp256k1, Sha256>::generate_k_with_extra_data(&private_key, message, extra_data);
+        let k2 = Rfc6979::<Secp256k1, Sha256>::generate_k_with_extra_data(
+            &private_key,
+            message,
+            extra_data,
+        );
 
         // Verify that adding extra data changes the output
         assert_ne!(k1, k2);
 
         // Verify determinism with extra data
-        let k3 = Rfc6979::<Secp256k1, Sha256>::generate_k_with_extra_data(&private_key, message, extra_data);
+        let k3 = Rfc6979::<Secp256k1, Sha256>::generate_k_with_extra_data(
+            &private_key,
+            message,
+            extra_data,
+        );
         assert_eq!(k2, k3);
     }
 }

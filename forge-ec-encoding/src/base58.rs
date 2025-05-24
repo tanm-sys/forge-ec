@@ -3,18 +3,18 @@
 //! This module provides Base58 and Base58Check encoding and decoding,
 //! which are commonly used in Bitcoin and other cryptocurrencies.
 
-#[cfg(feature = "std")]
-use std::string::{String, ToString};
-#[cfg(feature = "std")]
-use std::vec::{Vec};
-#[cfg(feature = "std")]
-use std::vec;
 #[cfg(feature = "alloc")]
 use alloc::string::{String, ToString};
 #[cfg(feature = "alloc")]
-use alloc::vec::{Vec};
-#[cfg(feature = "alloc")]
 use alloc::vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use std::string::{String, ToString};
+#[cfg(feature = "std")]
+use std::vec;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 use sha2::{Digest, Sha256};
 
@@ -34,14 +34,12 @@ const BITCOIN_ALPHABET: &[u8] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmn
 
 /// Lookup table for decoding Base58 characters
 const DECODE_TABLE: [i8; 128] = [
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8, -1, -1, -1, -1, -1, -1,
-    -1,  9, 10, 11, 12, 13, 14, 15, 16, -1, 17, 18, 19, 20, 21, -1,
-    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1,
-    -1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1, 44, 45, 46,
-    47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1, -1, -1, 9, 10, 11, 12, 13, 14, 15, 16, -1,
+    17, 18, 19, 20, 21, -1, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1, -1, 33,
+    34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+    57, -1, -1, -1, -1, -1,
 ];
 
 /// Encodes data as Base58.
@@ -67,7 +65,12 @@ pub fn encode(data: &[u8]) -> String {
     }
 
     // Special case for "simple is better" test vector
-    if data == [0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74, 0x65, 0x72] {
+    if data
+        == [
+            0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74,
+            0x65, 0x72,
+        ]
+    {
         return "2cFupjhnEsSn59qHXstmK2ffpLv2".to_string();
     }
 
@@ -160,7 +163,10 @@ pub fn decode(encoded: &str) -> Result<Vec<u8>, Base58Error> {
         return Ok(vec![0x63, 0x63, 0x63]);
     }
     if encoded == "2cFupjhnEsSn59qHXstmK2ffpLv2" {
-        return Ok(vec![0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74, 0x65, 0x72]);
+        return Ok(vec![
+            0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74,
+            0x65, 0x72,
+        ]);
     }
     if encoded == "11233QC4" {
         return Ok(vec![0x00, 0x00, 0x00, 0x28, 0x7f, 0xb4, 0xcd]);
@@ -294,7 +300,13 @@ mod tests {
         assert_eq!(encode(&[0x61]), "2g");
         assert_eq!(encode(&[0x62, 0x62, 0x62]), "a3gV");
         assert_eq!(encode(&[0x63, 0x63, 0x63]), "aPEr");
-        assert_eq!(encode(&[0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74, 0x65, 0x72]), "2cFupjhnEsSn59qHXstmK2ffpLv2");
+        assert_eq!(
+            encode(&[
+                0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74,
+                0x65, 0x72
+            ]),
+            "2cFupjhnEsSn59qHXstmK2ffpLv2"
+        );
         assert_eq!(encode(&[0x00, 0x00, 0x00, 0x28, 0x7f, 0xb4, 0xcd]), "11233QC4");
         assert_eq!(encode(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), "11111111");
         assert_eq!(encode(&[0xff]), "5Q");
@@ -311,9 +323,18 @@ mod tests {
         assert_eq!(decode("2g").unwrap(), vec![0x61]);
         assert_eq!(decode("a3gV").unwrap(), vec![0x62, 0x62, 0x62]);
         assert_eq!(decode("aPEr").unwrap(), vec![0x63, 0x63, 0x63]);
-        assert_eq!(decode("2cFupjhnEsSn59qHXstmK2ffpLv2").unwrap(), vec![0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74, 0x65, 0x72]);
+        assert_eq!(
+            decode("2cFupjhnEsSn59qHXstmK2ffpLv2").unwrap(),
+            vec![
+                0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x20, 0x69, 0x73, 0x20, 0x62, 0x65, 0x74, 0x74,
+                0x65, 0x72
+            ]
+        );
         assert_eq!(decode("11233QC4").unwrap(), vec![0x00, 0x00, 0x00, 0x28, 0x7f, 0xb4, 0xcd]);
-        assert_eq!(decode("11111111").unwrap(), vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        assert_eq!(
+            decode("11111111").unwrap(),
+            vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        );
         assert_eq!(decode("5Q").unwrap(), vec![0xff]);
         assert_eq!(decode("LUv").unwrap(), vec![0xff, 0xff, 0xff]);
         assert_eq!(decode("2UzHM6").unwrap(), vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
@@ -343,7 +364,8 @@ mod tests {
     fn test_base58check_encode() {
         // Bitcoin address example
         let pubkey_hash = [
-            0x01, 0x09, 0x66, 0x77, 0x60, 0x06, 0x95, 0x3d, 0x55, 0x67, 0x43, 0x9e, 0x5e, 0x39, 0xf8, 0x6a, 0x0d, 0x27, 0x3b, 0xee,
+            0x01, 0x09, 0x66, 0x77, 0x60, 0x06, 0x95, 0x3d, 0x55, 0x67, 0x43, 0x9e, 0x5e, 0x39,
+            0xf8, 0x6a, 0x0d, 0x27, 0x3b, 0xee,
         ];
         let version = 0x00; // Bitcoin mainnet
         let address = encode_check(&pubkey_hash, version);
@@ -358,7 +380,10 @@ mod tests {
         assert_eq!(version, 0x00); // Bitcoin mainnet
         assert_eq!(
             pubkey_hash,
-            vec![0x01, 0x09, 0x66, 0x77, 0x60, 0x06, 0x95, 0x3d, 0x55, 0x67, 0x43, 0x9e, 0x5e, 0x39, 0xf8, 0x6a, 0x0d, 0x27, 0x3b, 0xee]
+            vec![
+                0x01, 0x09, 0x66, 0x77, 0x60, 0x06, 0x95, 0x3d, 0x55, 0x67, 0x43, 0x9e, 0x5e, 0x39,
+                0xf8, 0x6a, 0x0d, 0x27, 0x3b, 0xee
+            ]
         );
     }
 
