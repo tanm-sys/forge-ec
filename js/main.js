@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add loading class initially
     document.body.classList.add('loading');
 
+    // Initialize loading progress
+    initLoadingProgress();
+
     // Initialize all components
     initThemeToggle();
     initNavigation();
@@ -13,12 +16,55 @@ document.addEventListener('DOMContentLoaded', function() {
     initSmoothScrolling();
     initPerformanceSection();
     initEnhancedInteractions();
+    initAdvancedEffects();
+    initLoadingAnimations();
+    initMicroInteractions();
 
     // Remove loading class after a short delay to trigger animations
     setTimeout(() => {
         document.body.classList.remove('loading');
-    }, 100);
+        hidePageLoader();
+    }, 1500);
 });
+
+// Loading Progress and Page Loader
+function initLoadingProgress() {
+    const progressBar = document.getElementById('loading-progress');
+    let progress = 0;
+
+    const updateProgress = () => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+
+        progressBar.style.width = progress + '%';
+
+        if (progress < 90) {
+            setTimeout(updateProgress, 100 + Math.random() * 200);
+        }
+    };
+
+    updateProgress();
+}
+
+function hidePageLoader() {
+    const pageLoader = document.getElementById('page-loader');
+    const progressBar = document.getElementById('loading-progress');
+
+    // Complete the progress bar
+    progressBar.style.width = '100%';
+    progressBar.classList.add('complete');
+
+    // Hide the page loader
+    setTimeout(() => {
+        pageLoader.classList.add('hidden');
+
+        // Remove the loader from DOM after animation
+        setTimeout(() => {
+            pageLoader.remove();
+            progressBar.remove();
+        }, 500);
+    }, 300);
+}
 
 // Theme Toggle Functionality
 function initThemeToggle() {
@@ -408,6 +454,148 @@ function initEnhancedInteractions() {
                 ForgeAnimations.smoothScrollTo(target);
             }
         });
+    });
+}
+
+// Advanced Effects
+function initAdvancedEffects() {
+    // Parallax scrolling for hero background
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const parallaxElements = document.querySelectorAll('.parallax');
+
+        parallaxElements.forEach(element => {
+            const speed = element.dataset.speed || 0.5;
+            const yPos = -(scrolled * speed);
+            element.style.transform = `translateY(${yPos}px)`;
+        });
+    });
+
+    // Mouse tracking for interactive elements
+    document.addEventListener('mousemove', (e) => {
+        const interactiveElements = document.querySelectorAll('.hero-visual, .code-preview');
+
+        interactiveElements.forEach(element => {
+            const rect = element.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = (y - centerY) / 10;
+            const rotateY = (centerX - x) / 10;
+
+            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+    });
+}
+
+// Loading Animations
+function initLoadingAnimations() {
+    // Staggered animation for feature cards
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate-bounce-in');
+    });
+
+    // Progressive image loading
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+        img.addEventListener('load', () => {
+            img.classList.add('animate-fade-in');
+        });
+    });
+}
+
+// Micro Interactions
+function initMicroInteractions() {
+    // Enhanced button hover effects
+    const buttons = document.querySelectorAll('.btn, .copy-btn, .tab-btn');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px) scale(1.02)';
+            this.style.boxShadow = 'var(--shadow-lg)';
+        });
+
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+
+        button.addEventListener('mousedown', function() {
+            this.style.transform = 'translateY(0) scale(0.98)';
+        });
+
+        button.addEventListener('mouseup', function() {
+            this.style.transform = 'translateY(-2px) scale(1.02)';
+        });
+    });
+
+    // Enhanced link hover effects
+    const links = document.querySelectorAll('.nav-link, .footer-section a');
+    links.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+
+        link.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+
+    // Card tilt effect
+    const cards = document.querySelectorAll('.feature-card, .performance-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+
+            this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+
+    // Smooth counter animations
+    const counters = document.querySelectorAll('.stat-number');
+    const animateCounters = () => {
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target') || counter.textContent);
+            const current = parseInt(counter.textContent) || 0;
+            const increment = target / 100;
+
+            if (current < target) {
+                counter.textContent = Math.ceil(current + increment);
+                setTimeout(animateCounters, 20);
+            } else {
+                counter.textContent = target;
+            }
+        });
+    };
+
+    // Trigger counter animation when in view
+    const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounters();
+                counterObserver.unobserve(entry.target);
+            }
+        });
+    });
+
+    counters.forEach(counter => {
+        counterObserver.observe(counter);
     });
 }
 
