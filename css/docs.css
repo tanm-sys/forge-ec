@@ -592,6 +592,87 @@
     line-height: 1.6;
 }
 
+/* Warning and Info Boxes */
+.warning-box, .info-box {
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid;
+    background: var(--bg-gradient-card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.warning-box {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+.info-box {
+    border-left-color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+}
+
+.warning-box h4, .info-box h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.warning-box p, .info-box p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.info-box ul {
+    margin: var(--spacing-sm) 0 0 0;
+    padding-left: var(--spacing-lg);
+    color: var(--text-secondary);
+}
+
+.info-box li {
+    margin-bottom: var(--spacing-xs);
+    line-height: 1.5;
+}
+
+.info-box li strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Dark theme adjustments for boxes */
+[data-theme="dark"] .warning-box {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+}
+
+[data-theme="dark"] .info-box {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0.08) 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .warning-box, .info-box {
+        padding: var(--spacing-md);
+        margin: var(--spacing-md) 0;
+    }
+
+    .code-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .docs-section pre {
+        padding: var(--spacing-md);
+        font-size: 0.8rem;
+    }
+
+    .copy-btn {
+        font-size: 0.7rem;
+        padding: var(--spacing-xs);
+    }
+}
+
 /* Print Styles */
 @media print {
     .docs-sidebar,
