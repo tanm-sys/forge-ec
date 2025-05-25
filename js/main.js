@@ -7,11 +7,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Add loading class initially
-    document.body.classList.add('loading');
+    // Remove loading class immediately to prevent stuck loading screen
+    document.body.classList.remove('loading');
 
-    // Initialize loading progress
-    initLoadingProgress();
+    // Hide page loader immediately
+    const pageLoader = document.getElementById('page-loader');
+    const progressBar = document.getElementById('loading-progress');
+
+    if (pageLoader) {
+        pageLoader.style.opacity = '0';
+        pageLoader.style.visibility = 'hidden';
+        setTimeout(() => {
+            pageLoader.remove();
+        }, 100);
+    }
+
+    if (progressBar) {
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+            progressBar.remove();
+        }, 100);
+    }
 
     // Initialize all components
     initThemeToggle();
@@ -29,14 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initFeedbackForm();
     initContributorAnimations();
     initPremiumAnimations();
-    initSmoothScrolling();
     initPerformanceOptimizations();
-
-    // Remove loading class after a short delay to trigger animations
-    setTimeout(() => {
-        document.body.classList.remove('loading');
-        hidePageLoader();
-    }, 1500);
 });
 
 // Loading Progress and Page Loader

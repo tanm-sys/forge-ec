@@ -50,6 +50,38 @@
         </div>
     </div>
 
+    <!-- Immediate fallback script to prevent stuck loading screen -->
+    <script>
+        (function() {
+            // Immediate fallback to remove loading screen
+            setTimeout(function() {
+                const pageLoader = document.getElementById('page-loader');
+                const progressBar = document.getElementById('loading-progress');
+
+                if (pageLoader) {
+                    pageLoader.style.opacity = '0';
+                    pageLoader.style.visibility = 'hidden';
+                    setTimeout(function() {
+                        if (pageLoader.parentNode) {
+                            pageLoader.parentNode.removeChild(pageLoader);
+                        }
+                    }, 200);
+                }
+
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    setTimeout(function() {
+                        if (progressBar.parentNode) {
+                            progressBar.parentNode.removeChild(progressBar);
+                        }
+                    }, 200);
+                }
+
+                document.body.classList.remove('loading');
+            }, 150);
+        })();
+    </script>
+
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
