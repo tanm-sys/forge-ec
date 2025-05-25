@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initContributorAnimations();
     initPremiumAnimations();
     initPerformanceOptimizations();
+
+    // Initialize new advanced features
+    initParticleSystem();
+    initFloatingShapes();
+    initCryptoSymbols();
+    initParallaxEffects();
+    initMagneticHover();
+    initRippleEffects();
+    initAdvancedScrollAnimations();
+    initAnimatedBackground();
 });
 
 // Loading Progress and Page Loader
@@ -1210,5 +1220,234 @@ if ('performance' in window) {
             const perfData = performance.getEntriesByType('navigation')[0];
             console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
         }, 0);
+    });
+}
+
+// Advanced Animation System
+function initParticleSystem() {
+    // Create particles container
+    const particlesContainer = document.createElement('div');
+    particlesContainer.className = 'particles-container';
+    document.body.appendChild(particlesContainer);
+
+    // Create particles
+    const particleCount = 50;
+    for (let i = 0; i < particleCount; i++) {
+        createParticle(particlesContainer, i);
+    }
+}
+
+function createParticle(container, index) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+
+    // Random positioning
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.animationDelay = Math.random() * 3 + 's';
+    particle.style.animationDuration = (3 + Math.random() * 2) + 's';
+
+    container.appendChild(particle);
+}
+
+function initFloatingShapes() {
+    // Create floating shapes container
+    const shapesContainer = document.createElement('div');
+    shapesContainer.className = 'floating-shapes';
+    document.body.appendChild(shapesContainer);
+
+    // Create different geometric shapes
+    const shapes = ['circle', 'square', 'triangle', 'hexagon'];
+    const shapeCount = 8;
+
+    for (let i = 0; i < shapeCount; i++) {
+        createFloatingShape(shapesContainer, shapes[i % shapes.length], i);
+    }
+}
+
+function createFloatingShape(container, shapeType, index) {
+    const shape = document.createElement('div');
+    shape.className = `floating-shape shape-${shapeType}`;
+
+    // Random positioning and sizing
+    const size = 20 + Math.random() * 40;
+    shape.style.width = size + 'px';
+    shape.style.height = size + 'px';
+    shape.style.left = Math.random() * 100 + '%';
+    shape.style.top = Math.random() * 100 + '%';
+    shape.style.animationDelay = Math.random() * 4 + 's';
+    shape.style.animationDuration = (4 + Math.random() * 2) + 's';
+
+    container.appendChild(shape);
+}
+
+function initCryptoSymbols() {
+    // Create crypto symbols container
+    const symbolsContainer = document.createElement('div');
+    symbolsContainer.className = 'crypto-symbols';
+    document.body.appendChild(symbolsContainer);
+
+    // Cryptographic symbols
+    const symbols = ['0', '1', 'A', 'B', 'C', 'D', 'E', 'F', '∑', '∏', '∆', '∇', '∞', '≈', '≡', '⊕', '⊗', '⊙'];
+    const symbolCount = 30;
+
+    for (let i = 0; i < symbolCount; i++) {
+        createCryptoSymbol(symbolsContainer, symbols[Math.floor(Math.random() * symbols.length)], i);
+    }
+}
+
+function createCryptoSymbol(container, symbol, index) {
+    const symbolElement = document.createElement('div');
+    symbolElement.className = 'crypto-symbol';
+    symbolElement.textContent = symbol;
+
+    // Random positioning
+    symbolElement.style.left = Math.random() * 100 + '%';
+    symbolElement.style.fontSize = (8 + Math.random() * 8) + 'px';
+    symbolElement.style.animationDelay = Math.random() * 3 + 's';
+    symbolElement.style.animationDuration = (3 + Math.random() * 2) + 's';
+
+    container.appendChild(symbolElement);
+}
+
+function initParallaxEffects() {
+    let scrollY = 0;
+
+    function updateParallax() {
+        scrollY = window.pageYOffset;
+
+        // Update CSS custom property for parallax
+        document.documentElement.style.setProperty('--scroll-y', scrollY + 'px');
+
+        // Apply parallax to specific elements
+        const parallaxElements = document.querySelectorAll('.parallax-layer');
+        parallaxElements.forEach((element, index) => {
+            const speed = 0.2 + (index * 0.1);
+            const yPos = -(scrollY * speed);
+            element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+        });
+    }
+
+    // Use requestAnimationFrame for smooth parallax
+    function parallaxLoop() {
+        updateParallax();
+        requestAnimationFrame(parallaxLoop);
+    }
+
+    // Start parallax loop
+    requestAnimationFrame(parallaxLoop);
+}
+
+function initMagneticHover() {
+    const magneticElements = document.querySelectorAll('.magnetic-hover');
+
+    magneticElements.forEach(element => {
+        element.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+
+            // Apply magnetic effect
+            const strength = 0.3;
+            this.style.transform = `translate(${x * strength}px, ${y * strength}px)`;
+        });
+
+        element.addEventListener('mouseleave', function() {
+            this.style.transform = 'translate(0, 0)';
+        });
+    });
+}
+
+function initRippleEffects() {
+    const rippleElements = document.querySelectorAll('.ripple-container');
+
+    rippleElements.forEach(element => {
+        element.addEventListener('click', function(e) {
+            createRipple(e, this);
+        });
+    });
+}
+
+function createRipple(event, element) {
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+
+    const rect = element.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
+
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+
+    element.appendChild(ripple);
+
+    // Remove ripple after animation
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+}
+
+function initAdvancedScrollAnimations() {
+    // Enhanced intersection observer for scroll animations
+    const observerOptions = {
+        threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+        rootMargin: '0px 0px -10% 0px'
+    };
+
+    const scrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const element = entry.target;
+            const ratio = entry.intersectionRatio;
+
+            if (entry.isIntersecting) {
+                element.classList.add('animated');
+
+                // Apply staggered animations to children
+                const children = element.querySelectorAll('.stagger-child');
+                children.forEach((child, index) => {
+                    child.style.animationDelay = (index * 0.1) + 's';
+                    child.classList.add('animate-slide-up');
+                });
+            }
+
+            // Parallax effect based on intersection ratio
+            if (element.classList.contains('parallax-element')) {
+                const translateY = (1 - ratio) * 50;
+                element.style.transform = `translateY(${translateY}px)`;
+            }
+        });
+    }, observerOptions);
+
+    // Observe elements with scroll animations
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    animatedElements.forEach(element => {
+        scrollObserver.observe(element);
+    });
+}
+
+function initAnimatedBackground() {
+    // Create animated background layers
+    const backgroundContainer = document.createElement('div');
+    backgroundContainer.className = 'animated-background';
+    document.body.appendChild(backgroundContainer);
+
+    // Create mesh gradient layer
+    const meshLayer = document.createElement('div');
+    meshLayer.className = 'bg-mesh-layer';
+    backgroundContainer.appendChild(meshLayer);
+
+    // Create gradient layer
+    const gradientLayer = document.createElement('div');
+    gradientLayer.className = 'bg-gradient-layer';
+    backgroundContainer.appendChild(gradientLayer);
+
+    // Add mouse movement effect
+    document.addEventListener('mousemove', function(e) {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+
+        meshLayer.style.transform = `translate(${x * 20}px, ${y * 20}px)`;
+        gradientLayer.style.transform = `translate(${x * -10}px, ${y * -10}px)`;
     });
 }
