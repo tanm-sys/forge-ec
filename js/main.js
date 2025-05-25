@@ -1,6 +1,12 @@
 // Main JavaScript for Forge EC Website
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if this is the documentation page - if so, don't initialize main.js functionality
+    if (window.location.pathname.includes('/docs/') || document.querySelector('.docs-layout')) {
+        console.log('Documentation page detected, skipping main.js initialization');
+        return;
+    }
+
     // Add loading class initially
     document.body.classList.add('loading');
 
@@ -294,6 +300,13 @@ function initPerformanceSection() {
 }
 
 function addPerformanceSection() {
+    // Only add performance section if we're on a page that has a footer
+    const footer = document.querySelector('.footer');
+    if (!footer) {
+        console.log('No footer found, skipping performance section');
+        return;
+    }
+
     const performanceHTML = `
         <section id="performance" class="performance">
             <div class="container">
@@ -358,7 +371,6 @@ function addPerformanceSection() {
     `;
 
     // Insert before footer
-    const footer = document.querySelector('.footer');
     footer.insertAdjacentHTML('beforebegin', performanceHTML);
 }
 
