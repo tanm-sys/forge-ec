@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Forge EC - A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust">
+    <meta name="keywords" content="cryptography, elliptic curves, rust, ecdsa, eddsa, schnorr, secp256k1, ed25519">
+    <meta name="author" content="Tanmay Patil">
+    <title>Forge EC - Pure Rust Elliptic Curve Cryptography</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/">
+    <meta property="og:title" content="Forge EC - Pure Rust Elliptic Curve Cryptography">
+    <meta property="og:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust">
+    <meta property="og:image" content="https://forge-ec.dev/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://forge-ec.dev/">
+    <meta property="twitter:title" content="Forge EC - Pure Rust Elliptic Curve Cryptography">
+    <meta property="twitter:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust">
+    <meta property="twitter:image" content="https://forge-ec.dev/assets/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/prism.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="assets/logo.svg" alt="Forge EC" class="nav-logo">
+                <span class="nav-title">Forge EC</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="docs/" class="nav-link">Documentation</a>
+                <a href="examples/" class="nav-link">Examples</a>
+                <a href="#performance" class="nav-link">Performance</a>
+                <a href="about/" class="nav-link">About</a>
+                <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank">GitHub</a>
+            </div>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="gradient-text">Forge EC</span>
+                    <br>Pure Rust Cryptography
+                </h1>
+                <p class="hero-subtitle">
+                    A comprehensive, production-grade Elliptic Curve Cryptography implementation 
+                    with constant-time operations and zero unsafe code.
+                </p>
+                
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">62/70</span>
+                        <span class="stat-label">Tests Passing</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">4</span>
+                        <span class="stat-label">Curve Types</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">3</span>
+                        <span class="stat-label">Signature Schemes</span>
+                    </div>
+                </div>
+                
+                <div class="hero-actions">
+                    <a href="#quick-start" class="btn btn-primary">Get Started</a>
+                    <a href="docs/" class="btn btn-secondary">Documentation</a>
+                    <a href="https://github.com/tanm-sys/forge-ec" class="btn btn-outline" target="_blank">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="code-preview">
+                    <div class="code-header">
+                        <div class="code-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span class="code-title">ecdsa_example.rs</span>
+                    </div>
+                    <pre class="code-content"><code class="language-rust">use forge_ec_core::{Curve, SignatureScheme};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_rng::os_rng::OsRng;
+use sha2::Sha256;
+
+// Generate a key pair
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(
+    &Secp256k1::generator(), 
+    &secret_key
+);
+
+// Sign a message
+let message = b"Hello, Cryptography!";
+let signature = Ecdsa::<Secp256k1, Sha256>::sign(
+    &secret_key, 
+    message
+);
+
+// Verify the signature
+let valid = Ecdsa::<Secp256k1, Sha256>::verify(
+    &public_key_affine, 
+    message, 
+    &signature
+);
+assert!(valid);</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose Forge EC?</h2>
+                <p class="section-subtitle">
+                    Built with security, performance, and developer experience in mind
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Pure Rust Security</h3>
+                    <p class="feature-description">
+                        Zero unsafe code in public API with constant-time operations 
+                        to prevent side-channel attacks.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">High Performance</h3>
+                    <p class="feature-description">
+                        Optimized implementations with optional SIMD acceleration 
+                        and efficient scalar multiplication algorithms.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🧰</div>
+                    <h3 class="feature-title">Comprehensive Support</h3>
+                    <p class="feature-description">
+                        Support for secp256k1, P-256, Ed25519, and Curve25519 
+                        with multiple signature schemes.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">Multiple Signatures</h3>
+                    <p class="feature-description">
+                        ECDSA, EdDSA, and Schnorr signatures with RFC compliance 
+                        and deterministic nonce generation.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔑</div>
+                    <h3 class="feature-title">Modern Standards</h3>
+                    <p class="feature-description">
+                        RFC9380 hash-to-curve support with flexible serialization 
+                        formats including DER and PEM.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3 class="feature-title">Extensively Tested</h3>
+                    <p class="feature-description">
+                        Comprehensive test coverage with fuzzing, property-based 
+                        testing, and standards compliance verification.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quick-start" class="quick-start">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Quick Start</h2>
+                <p class="section-subtitle">
+                    Get up and running with Forge EC in minutes
+                </p>
+            </div>
+            
+            <div class="quick-start-content">
+                <div class="installation">
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Cargo.toml</span>
+                            <button class="copy-btn" data-copy="[dependencies]
+forge-ec-core = &quot;0.1&quot;
+forge-ec-curves = &quot;0.1&quot;
+forge-ec-signature = &quot;0.1&quot;">
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code class="language-toml">[dependencies]
+forge-ec-core = "0.1"
+forge-ec-curves = "0.1"
+forge-ec-signature = "0.1"</code></pre>
+                    </div>
+                </div>
+                
+                <div class="examples-preview">
+                    <div class="example-tabs">
+                        <button class="tab-btn active" data-tab="ecdsa">ECDSA</button>
+                        <button class="tab-btn" data-tab="eddsa">EdDSA</button>
+                        <button class="tab-btn" data-tab="ecdh">ECDH</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="ecdsa-tab">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">ECDSA Example</span>
+                                <button class="copy-btn" data-copy="// ECDSA code here">Copy</button>
+                            </div>
+                            <pre><code class="language-rust">// Generate key pair and sign message
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+
+// Sign and verify
+let message = b"Hello, World!";
+let signature = Ecdsa::<Secp256k1, Sha256>::sign(&secret_key, message);
+let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="eddsa-tab">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">EdDSA Example</span>
+                                <button class="copy-btn" data-copy="// EdDSA code here">Copy</button>
+                            </div>
+                            <pre><code class="language-rust">// Ed25519 signature
+let private_key_bytes = [0u8; 32]; // Your private key
+let public_key_bytes = Ed25519Signature::derive_public_key(&private_key_bytes);
+
+let message = b"Hello, Ed25519!";
+let signature_bytes = Ed25519Signature::sign(&private_key_bytes, message);
+let valid = Ed25519Signature::verify(&public_key_bytes, message, &signature_bytes);</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="ecdh-tab">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">ECDH Example</span>
+                                <button class="copy-btn" data-copy="// ECDH code here">Copy</button>
+                            </div>
+                            <pre><code class="language-rust">// Key exchange between Alice and Bob
+let alice_sk = Secp256k1::random_scalar(&mut rng);
+let alice_pk = Secp256k1::multiply(&Secp256k1::generator(), &alice_sk);
+
+let bob_sk = Secp256k1::random_scalar(&mut rng);
+let bob_pk = Secp256k1::multiply(&Secp256k1::generator(), &bob_sk);
+
+// Compute shared secret
+let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Forge EC</h4>
+                    <p>Pure Rust Elliptic Curve Cryptography</p>
+                    <div class="social-links">
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank" aria-label="GitHub">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="docs/quick-start.html">Quick Start</a></li>
+                        <li><a href="docs/api.html">API Reference</a></li>
+                        <li><a href="docs/examples.html">Examples</a></li>
+                        <li><a href="docs/security.html">Security</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/issues">Issues</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/discussions">Discussions</a></li>
+                        <li><a href="docs/contributing.html">Contributing</a></li>
+                        <li><a href="docs/changelog.html">Changelog</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>About</h4>
+                    <ul>
+                        <li><a href="about/">About the Author</a></li>
+                        <li><a href="about/portfolio.html">Portfolio</a></li>
+                        <li><a href="about/contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Tanmay Patil. Licensed under Apache-2.0 OR MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/prism.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
