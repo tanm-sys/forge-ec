@@ -1,0 +1,87 @@
+name: Extended Checks
+
+on:
+  # Run manually
+  workflow_dispatch:
+  # Run weekly on Sundays
+  schedule:
+    - cron: '0 6 * * 0'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - uses: Swatinem/rust-cache@v2
+      - name: Run Miri tests
+        run: |
+          cargo miri setup
+          cargo miri test --workspace
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+
+  minimal-versions:
+    name: Minimal versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - name: Check minimal versions
+        run: |
+          cargo +nightly update -Z minimal-versions
+          cargo +nightly check --workspace --all-features
+
+  no-std:
+    name: no_std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: thumbv7m-none-eabi
+      - uses: Swatinem/rust-cache@v2
+      - name: Check no_std compatibility
+        run: cargo check --workspace --no-default-features --target thumbv7m-none-eabi
+
+  beta-nightly-tests:
+    name: Beta/Nightly Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - beta
+          - nightly
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        run: cargo test --workspace --all-features
