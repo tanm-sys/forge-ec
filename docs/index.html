@@ -5,17 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Forge EC Documentation - Complete API reference and guides">
     <title>Documentation - Forge EC</title>
-    
+
     <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/loading.css">
     <link rel="stylesheet" href="../css/prism.css">
     <link rel="stylesheet" href="../css/docs.css">
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Loading Progress Bar -->
+    <div class="loading-progress" id="loading-progress"></div>
+
+    <!-- Page Loader -->
+    <div class="page-loader" id="page-loader">
+        <div>
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Loading Documentation...</div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -23,7 +35,7 @@
                 <img src="../assets/logo.svg" alt="Forge EC" class="nav-logo">
                 <a href="../index.html" class="nav-title">Forge EC</a>
             </div>
-            
+
             <div class="nav-menu" id="nav-menu">
                 <a href="../index.html" class="nav-link">Home</a>
                 <a href="index.html" class="nav-link active">Documentation</a>
@@ -31,7 +43,7 @@
                 <a href="../about/" class="nav-link">About</a>
                 <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank">GitHub</a>
             </div>
-            
+
             <div class="nav-controls">
                 <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
                     <span class="theme-icon">🌙</span>
@@ -53,7 +65,7 @@
                     <input type="text" id="search-input" placeholder="Search documentation..." class="search-input">
                     <div class="search-results" id="search-results"></div>
                 </div>
-                
+
                 <nav class="sidebar-nav">
                     <div class="nav-section">
                         <h3 class="nav-section-title">Getting Started</h3>
@@ -64,7 +76,7 @@
                             <li><a href="#architecture" class="nav-item">Architecture</a></li>
                         </ul>
                     </div>
-                    
+
                     <div class="nav-section">
                         <h3 class="nav-section-title">API Reference</h3>
                         <ul class="nav-list">
@@ -76,7 +88,7 @@
                             <li><a href="#rng" class="nav-item">Random Number Generation</a></li>
                         </ul>
                     </div>
-                    
+
                     <div class="nav-section">
                         <h3 class="nav-section-title">Guides</h3>
                         <ul class="nav-list">
@@ -86,7 +98,7 @@
                             <li><a href="#testing" class="nav-item">Testing</a></li>
                         </ul>
                     </div>
-                    
+
                     <div class="nav-section">
                         <h3 class="nav-section-title">Examples</h3>
                         <ul class="nav-list">
@@ -109,25 +121,25 @@
                     <p class="docs-subtitle">
                         Complete guide to using Forge EC, a comprehensive elliptic curve cryptography library in pure Rust.
                     </p>
-                    
+
                     <div class="feature-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🔒</div>
+                        <div class="feature-card animate-on-scroll hover-lift magnetic-hover">
+                            <div class="feature-icon animate-float">🔒</div>
                             <h3>Security First</h3>
                             <p>Constant-time operations and zero unsafe code in public API</p>
                         </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">⚡</div>
+                        <div class="feature-card animate-on-scroll hover-lift magnetic-hover">
+                            <div class="feature-icon animate-float stagger-1">⚡</div>
                             <h3>High Performance</h3>
                             <p>Optimized implementations with optional SIMD acceleration</p>
                         </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🧰</div>
+                        <div class="feature-card animate-on-scroll hover-lift magnetic-hover">
+                            <div class="feature-icon animate-float stagger-2">🧰</div>
                             <h3>Comprehensive</h3>
                             <p>Support for multiple curves and signature schemes</p>
                         </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">📝</div>
+                        <div class="feature-card animate-on-scroll hover-lift magnetic-hover">
+                            <div class="feature-icon animate-float stagger-3">📝</div>
                             <h3>Standards Compliant</h3>
                             <p>RFC compliance and interoperability with other libraries</p>
                         </div>
@@ -138,7 +150,7 @@
                 <section id="installation" class="docs-section">
                     <h2>Installation</h2>
                     <p>Add Forge EC to your <code>Cargo.toml</code>:</p>
-                    
+
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-title">Cargo.toml</span>
@@ -158,10 +170,10 @@ forge-ec-encoding = "0.1"
 forge-ec-hash = "0.1"
 forge-ec-rng = "0.1"</code></pre>
                     </div>
-                    
+
                     <h3>Feature Flags</h3>
                     <p>Forge EC supports various feature flags for customization:</p>
-                    
+
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-title">Optional Features</span>
@@ -172,7 +184,7 @@ forge-ec-core = { version = "0.1", features = ["std", "simd"] }
 forge-ec-curves = { version = "0.1", features = ["secp256k1", "p256", "ed25519"] }
 forge-ec-signature = { version = "0.1", features = ["ecdsa", "eddsa", "schnorr"] }</code></pre>
                     </div>
-                    
+
                     <div class="info-box">
                         <h4>Available Features</h4>
                         <ul>
@@ -189,13 +201,13 @@ forge-ec-signature = { version = "0.1", features = ["ecdsa", "eddsa", "schnorr"]
                 <section id="quick-start" class="docs-section">
                     <h2>Quick Start</h2>
                     <p>Get started with Forge EC in just a few lines of code:</p>
-                    
+
                     <div class="example-tabs">
                         <button class="tab-btn active" data-tab="ecdsa">ECDSA</button>
                         <button class="tab-btn" data-tab="eddsa">EdDSA</button>
                         <button class="tab-btn" data-tab="ecdh">ECDH</button>
                     </div>
-                    
+
                     <div class="tab-content active" id="ecdsa-tab">
                         <div class="code-block">
                             <div class="code-header">
@@ -223,7 +235,7 @@ let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &sig
 assert!(valid);</code></pre>
                         </div>
                     </div>
-                    
+
                     <div class="tab-content" id="eddsa-tab">
                         <div class="code-block">
                             <div class="code-header">
@@ -245,7 +257,7 @@ let valid = Ed25519Signature::verify(&public_key, message, &signature);
 assert!(valid);</code></pre>
                         </div>
                     </div>
-                    
+
                     <div class="tab-content" id="ecdh-tab">
                         <div class="code-block">
                             <div class="code-header">
@@ -278,7 +290,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                 <section id="architecture" class="docs-section">
                     <h2>Architecture</h2>
                     <p>Forge EC is designed with modularity and security in mind. The library is split into several crates:</p>
-                    
+
                     <div class="architecture-grid">
                         <div class="arch-card">
                             <h3>forge-ec-core</h3>
@@ -290,7 +302,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>SignatureScheme trait</li>
                             </ul>
                         </div>
-                        
+
                         <div class="arch-card">
                             <h3>forge-ec-curves</h3>
                             <p>Implementations of specific elliptic curves with optimized field arithmetic.</p>
@@ -301,7 +313,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>Curve25519 (Montgomery)</li>
                             </ul>
                         </div>
-                        
+
                         <div class="arch-card">
                             <h3>forge-ec-signature</h3>
                             <p>Digital signature scheme implementations with constant-time operations.</p>
@@ -312,7 +324,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>Batch verification</li>
                             </ul>
                         </div>
-                        
+
                         <div class="arch-card">
                             <h3>forge-ec-encoding</h3>
                             <p>Serialization and encoding formats for interoperability.</p>
@@ -323,7 +335,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>Base58 encoding</li>
                             </ul>
                         </div>
-                        
+
                         <div class="arch-card">
                             <h3>forge-ec-hash</h3>
                             <p>Cryptographic hash functions and hash-to-curve operations.</p>
@@ -334,7 +346,7 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>RFC9380 hash-to-curve</li>
                             </ul>
                         </div>
-                        
+
                         <div class="arch-card">
                             <h3>forge-ec-rng</h3>
                             <p>Secure random number generation for cryptographic operations.</p>
@@ -344,6 +356,269 @@ assert_eq!(alice_shared, bob_shared);</code></pre>
                                 <li>Constant-time operations</li>
                                 <li>Entropy validation</li>
                             </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Core Traits Section -->
+                <section id="core-traits" class="docs-section">
+                    <h2>Core Traits</h2>
+                    <p>Forge EC is built around a set of core traits that define the API for elliptic curve operations. These traits provide a consistent interface across different curve implementations.</p>
+
+                    <h3>FieldElement Trait</h3>
+                    <p>The <code>FieldElement</code> trait defines operations for finite field arithmetic:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">FieldElement Trait</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">pub trait FieldElement:
+    Clone + Copy + Debug + Default + Eq + PartialEq +
+    Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
+{
+    /// The zero element of the field
+    const ZERO: Self;
+
+    /// The one element of the field
+    const ONE: Self;
+
+    /// Returns true if this element is zero
+    fn is_zero(&self) -> bool;
+
+    /// Returns true if this element is one
+    fn is_one(&self) -> bool;
+
+    /// Computes the multiplicative inverse
+    fn invert(&self) -> Option<Self>;
+
+    /// Computes self^exp using square-and-multiply
+    fn pow(&self, exp: &[u64]) -> Self;
+
+    /// Returns the square root if it exists
+    fn sqrt(&self) -> Option<Self>;
+}</code></pre>
+                    </div>
+
+                    <h3>Scalar Trait</h3>
+                    <p>The <code>Scalar</code> trait represents scalars for elliptic curve operations:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Scalar Trait</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">pub trait Scalar:
+    Clone + Copy + Debug + Default + Eq + PartialEq +
+    Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
+{
+    /// The zero scalar
+    const ZERO: Self;
+
+    /// The one scalar
+    const ONE: Self;
+
+    /// Generate a random scalar
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self;
+
+    /// Convert from bytes (little-endian)
+    fn from_bytes(bytes: &[u8]) -> Option<Self>;
+
+    /// Convert to bytes (little-endian)
+    fn to_bytes(&self) -> Vec<u8>;
+
+    /// Compute multiplicative inverse modulo the curve order
+    fn invert(&self) -> Option<Self>;
+}</code></pre>
+                    </div>
+
+                    <h3>Curve Trait</h3>
+                    <p>The <code>Curve</code> trait defines the main elliptic curve operations:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Curve Trait</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">pub trait Curve {
+    type FieldElement: FieldElement;
+    type Scalar: Scalar;
+    type AffinePoint: Clone + Copy + Debug + Eq + PartialEq;
+    type ProjectivePoint: Clone + Copy + Debug + Eq + PartialEq;
+
+    /// The generator point of the curve
+    fn generator() -> Self::ProjectivePoint;
+
+    /// The identity (point at infinity)
+    fn identity() -> Self::ProjectivePoint;
+
+    /// Point multiplication: point * scalar
+    fn multiply(point: &Self::ProjectivePoint, scalar: &Self::Scalar) -> Self::ProjectivePoint;
+
+    /// Point addition
+    fn add(a: &Self::ProjectivePoint, b: &Self::ProjectivePoint) -> Self::ProjectivePoint;
+
+    /// Point doubling
+    fn double(point: &Self::ProjectivePoint) -> Self::ProjectivePoint;
+
+    /// Convert projective to affine coordinates
+    fn to_affine(point: &Self::ProjectivePoint) -> Self::AffinePoint;
+
+    /// Convert affine to projective coordinates
+    fn to_projective(point: &Self::AffinePoint) -> Self::ProjectivePoint;
+
+    /// Check if a point is on the curve
+    fn is_on_curve(point: &Self::AffinePoint) -> bool;
+}</code></pre>
+                    </div>
+                </section>
+
+                <!-- Curves Section -->
+                <section id="curves" class="docs-section">
+                    <h2>Supported Curves</h2>
+                    <p>Forge EC supports several widely-used elliptic curves, each optimized for specific use cases and security requirements.</p>
+
+                    <div class="curve-grid">
+                        <div class="curve-card animate-on-scroll hover-lift">
+                            <h3>secp256k1</h3>
+                            <p>The curve used by Bitcoin and many other cryptocurrencies. Provides 128-bit security level.</p>
+                            <div class="curve-specs">
+                                <div class="spec-item">
+                                    <span class="spec-label">Field Size:</span>
+                                    <span class="spec-value">256 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Security Level:</span>
+                                    <span class="spec-value">128 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Standards:</span>
+                                    <span class="spec-value">SEC 2</span>
+                                </div>
+                            </div>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">secp256k1 Usage</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec_curves::secp256k1::Secp256k1;
+
+// Generate a random scalar
+let scalar = Secp256k1::random_scalar(&mut rng);
+
+// Get the generator point
+let generator = Secp256k1::generator();
+
+// Perform scalar multiplication
+let public_key = Secp256k1::multiply(&generator, &scalar);</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="curve-card animate-on-scroll hover-lift">
+                            <h3>P-256 (NIST)</h3>
+                            <p>NIST P-256 curve, widely used in government and enterprise applications. FIPS 186-4 approved.</p>
+                            <div class="curve-specs">
+                                <div class="spec-item">
+                                    <span class="spec-label">Field Size:</span>
+                                    <span class="spec-value">256 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Security Level:</span>
+                                    <span class="spec-value">128 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Standards:</span>
+                                    <span class="spec-value">FIPS 186-4, SEC 2</span>
+                                </div>
+                            </div>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">P-256 Usage</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec_curves::p256::P256;
+
+// Generate a key pair
+let private_key = P256::random_scalar(&mut rng);
+let public_key = P256::multiply(&P256::generator(), &private_key);
+
+// Convert to affine coordinates for serialization
+let public_key_affine = P256::to_affine(&public_key);</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="curve-card animate-on-scroll hover-lift">
+                            <h3>Ed25519</h3>
+                            <p>Edwards curve providing fast signature operations and built-in protection against side-channel attacks.</p>
+                            <div class="curve-specs">
+                                <div class="spec-item">
+                                    <span class="spec-label">Field Size:</span>
+                                    <span class="spec-value">255 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Security Level:</span>
+                                    <span class="spec-value">128 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Standards:</span>
+                                    <span class="spec-value">RFC 8032</span>
+                                </div>
+                            </div>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Ed25519 Usage</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec_curves::ed25519::Ed25519;
+
+// Ed25519 uses a different API optimized for signatures
+let private_key = [0u8; 32]; // Your 32-byte private key
+let public_key = Ed25519::derive_public_key(&private_key);
+
+// Sign a message
+let message = b"Hello, Ed25519!";
+let signature = Ed25519::sign(&private_key, message);</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="curve-card animate-on-scroll hover-lift">
+                            <h3>Curve25519</h3>
+                            <p>Montgomery curve optimized for Diffie-Hellman key exchange with excellent performance characteristics.</p>
+                            <div class="curve-specs">
+                                <div class="spec-item">
+                                    <span class="spec-label">Field Size:</span>
+                                    <span class="spec-value">255 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Security Level:</span>
+                                    <span class="spec-value">128 bits</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Standards:</span>
+                                    <span class="spec-value">RFC 7748</span>
+                                </div>
+                            </div>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Curve25519 Usage</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec_curves::curve25519::Curve25519;
+
+// Generate key pairs for ECDH
+let alice_private = Curve25519::random_scalar(&mut rng);
+let alice_public = Curve25519::scalar_mult_base(&alice_private);
+
+let bob_private = Curve25519::random_scalar(&mut rng);
+let bob_public = Curve25519::scalar_mult_base(&bob_private);
+
+// Compute shared secret
+let shared_secret = Curve25519::scalar_mult(&alice_private, &bob_public);</code></pre>
+                            </div>
                         </div>
                     </div>
                 </section>

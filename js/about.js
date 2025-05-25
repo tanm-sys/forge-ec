@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initProjectCards();
     initContactForm();
     initScrollAnimations();
+    initModernAnimations();
+    initMagneticHover();
+    initProfileImage();
+    initTypingAnimation();
+    initSmoothScrolling();
+    loadGitHubStats();
 });
 
 // Skill Bar Animations
@@ -331,13 +337,62 @@ function initSmoothScrolling() {
     });
 }
 
-// Initialize all functions
-document.addEventListener('DOMContentLoaded', function() {
-    initProfileImage();
-    initTypingAnimation();
-    initSmoothScrolling();
-    loadGitHubStats();
-});
+// Modern Animations
+function initModernAnimations() {
+    // Animate elements on scroll with modern effects
+    const animatedElements = document.querySelectorAll('.animate-on-scroll, .animate-slide-in-blur, .animate-bounce-in');
+
+    const animationObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0) scale(1)';
+                entry.target.classList.add('animated');
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+
+    animatedElements.forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(30px) scale(0.95)';
+        element.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        animationObserver.observe(element);
+    });
+
+    // Staggered animations
+    const staggeredElements = document.querySelectorAll('[class*="stagger-"]');
+    staggeredElements.forEach((element, index) => {
+        const staggerClass = Array.from(element.classList).find(cls => cls.startsWith('stagger-'));
+        const staggerIndex = staggerClass ? parseInt(staggerClass.split('-')[1]) : 0;
+        element.style.animationDelay = `${staggerIndex * 0.2}s`;
+        element.style.transitionDelay = `${staggerIndex * 0.2}s`;
+    });
+}
+
+// Magnetic Hover Effect
+function initMagneticHover() {
+    const magneticElements = document.querySelectorAll('.magnetic-hover');
+
+    magneticElements.forEach(element => {
+        element.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const deltaX = (e.clientX - centerX) * 0.1;
+            const deltaY = (e.clientY - centerY) * 0.1;
+
+            this.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.02)`;
+        });
+
+        element.addEventListener('mouseleave', function() {
+            this.style.transform = 'translate(0, 0) scale(1)';
+        });
+    });
+}
 
 // Add some interactive effects
 document.addEventListener('mousemove', function(e) {
