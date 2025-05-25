@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initEnhancedCodeBlocks();
     initFeedbackForm();
     initContributorAnimations();
+    initPremiumAnimations();
+    initSmoothScrolling();
+    initPerformanceOptimizations();
 
     // Remove loading class after a short delay to trigger animations
     setTimeout(() => {
@@ -685,6 +688,284 @@ function animateCounter(element, start, end, duration) {
 
     requestAnimationFrame(updateCounter);
 }
+
+// Premium Animations
+function initPremiumAnimations() {
+    // Enhanced button hover effects
+    const buttons = document.querySelectorAll('.btn');
+
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Create ripple effect
+            const ripple = document.createElement('div');
+            ripple.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                transform: translate(-50%, -50%);
+                animation: ripple 0.6s ease-out;
+                pointer-events: none;
+                z-index: 0;
+            `;
+
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+                if (ripple.parentNode) {
+                    ripple.parentNode.removeChild(ripple);
+                }
+            }, 600);
+        });
+
+        // Add magnetic effect for large buttons
+        if (button.classList.contains('btn-lg') || button.classList.contains('btn-xl')) {
+            button.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                const distance = Math.sqrt(x * x + y * y);
+                const maxDistance = 50;
+
+                if (distance < maxDistance) {
+                    const strength = (maxDistance - distance) / maxDistance;
+                    const moveX = x * strength * 0.1;
+                    const moveY = y * strength * 0.1;
+
+                    this.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.02)`;
+                }
+            });
+
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        }
+    });
+
+    // Enhanced card animations
+    const cards = document.querySelectorAll('.feature-card, .visual-card, .community-card');
+
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            // Add subtle glow effect
+            this.style.filter = 'brightness(1.02) saturate(1.05)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.filter = '';
+        });
+
+        // Parallax effect on mouse move
+        card.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = (y - centerY) / centerY * 2;
+            const rotateY = (centerX - x) / centerX * 2;
+
+            this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+}
+
+// Enhanced Smooth Scrolling
+function initSmoothScrolling() {
+    // Enhanced smooth scrolling with easing
+    const links = document.querySelectorAll('a[href^="#"]');
+
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+
+            if (targetElement) {
+                const headerHeight = document.querySelector('.navbar').offsetHeight;
+                const targetPosition = targetElement.offsetTop - headerHeight - 20;
+
+                // Custom easing function
+                const easeInOutCubic = (t) => {
+                    return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+                };
+
+                const startPosition = window.pageYOffset;
+                const distance = targetPosition - startPosition;
+                const duration = Math.min(Math.abs(distance) / 2, 1000);
+                let startTime = null;
+
+                function animation(currentTime) {
+                    if (startTime === null) startTime = currentTime;
+                    const timeElapsed = currentTime - startTime;
+                    const progress = Math.min(timeElapsed / duration, 1);
+                    const ease = easeInOutCubic(progress);
+
+                    window.scrollTo(0, startPosition + distance * ease);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animation);
+                    }
+                }
+
+                requestAnimationFrame(animation);
+            }
+        });
+    });
+}
+
+// Performance Optimizations
+function initPerformanceOptimizations() {
+    // Optimize animations for 60fps
+    let ticking = false;
+
+    function updateAnimations() {
+        // Batch DOM updates
+        requestAnimationFrame(() => {
+            // Update any ongoing animations
+            ticking = false;
+        });
+    }
+
+    // Throttle scroll events
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(updateAnimations);
+            ticking = true;
+        }
+
+        // Debounce scroll end
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            document.body.classList.add('scroll-ended');
+            setTimeout(() => {
+                document.body.classList.remove('scroll-ended');
+            }, 100);
+        }, 150);
+    }, { passive: true });
+
+    // Optimize images with Intersection Observer
+    const images = document.querySelectorAll('img[data-src]');
+
+    if (images.length > 0) {
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.add('loaded');
+                    imageObserver.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: '50px'
+        });
+
+        images.forEach(img => imageObserver.observe(img));
+    }
+
+    // Preload critical resources
+    const criticalResources = [
+        '/css/style.css',
+        '/js/main.js'
+    ];
+
+    criticalResources.forEach(resource => {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.href = resource;
+        link.as = resource.endsWith('.css') ? 'style' : 'script';
+        document.head.appendChild(link);
+    });
+
+    // Add loading states for better perceived performance
+    const forms = document.querySelectorAll('form');
+
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && !submitBtn.disabled) {
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+
+                // Re-enable after 3 seconds as fallback
+                setTimeout(() => {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                }, 3000);
+            }
+        });
+    });
+}
+
+// Add CSS for ripple animation
+const rippleCSS = `
+@keyframes ripple {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+    100% {
+        width: 200px;
+        height: 200px;
+        opacity: 0;
+    }
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.scroll-ended {
+    scroll-behavior: smooth;
+}
+
+img.loaded {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+img[data-src] {
+    opacity: 0;
+}
+`;
+
+// Inject CSS
+const style = document.createElement('style');
+style.textContent = rippleCSS;
+document.head.appendChild(style);
 
 // Error Handling
 window.addEventListener('error', function(e) {
