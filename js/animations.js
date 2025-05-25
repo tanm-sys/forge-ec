@@ -14,7 +14,7 @@ class AnimationController {
     this.setupHoverAnimations();
     this.setupClickAnimations();
     this.setupTypewriterEffects();
-    
+
     // Listen for reduced motion preference changes
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
       this.isReducedMotion = e.matches;
@@ -52,7 +52,7 @@ class AnimationController {
     if (this.isReducedMotion) return;
 
     const animationType = this.getAnimationType(element);
-    
+
     switch (animationType) {
       case 'fadeInUp':
         this.animateFadeInUp(element);
@@ -99,7 +99,7 @@ class AnimationController {
   animateStagger(element) {
     const parent = element.closest('.stagger-container') || element.parentElement;
     const items = parent.querySelectorAll('.stagger-item');
-    
+
     items.forEach((item, index) => {
       if (item.classList.contains('animated')) return;
 
@@ -142,13 +142,13 @@ class AnimationController {
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Easing function
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const currentValue = Math.floor(targetValue * easeOut);
-      
+
       element.textContent = this.formatCounterValue(currentValue, element.dataset.format);
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
@@ -177,7 +177,7 @@ class AnimationController {
 
     const text = element.textContent;
     const speed = parseInt(element.dataset.speed) || 50;
-    
+
     element.textContent = '';
     element.classList.add('typing');
 
@@ -185,7 +185,7 @@ class AnimationController {
     const typeInterval = setInterval(() => {
       element.textContent += text.charAt(i);
       i++;
-      
+
       if (i >= text.length) {
         clearInterval(typeInterval);
         element.classList.remove('typing');
@@ -196,7 +196,7 @@ class AnimationController {
 
   animateDefault(element) {
     if (element.classList.contains('animated')) return;
-    
+
     element.classList.add('animated');
   }
 
@@ -235,50 +235,203 @@ class AnimationController {
   }
 
   setupHoverAnimations() {
-    // Magnetic hover effects
+    // Enhanced Magnetic Interaction System
+    this.setupAdvancedMagneticEffects();
+
+    // Morphing Blob Button System
+    this.setupMorphingButtons();
+
+    // Tilt effects (existing)
+    this.setupTiltEffects();
+  }
+
+  setupAdvancedMagneticEffects() {
     const magneticElements = document.querySelectorAll('.magnetic');
-    
+    const magneticRadius = 100; // 100px magnetic field radius
+
     magneticElements.forEach(element => {
-      element.addEventListener('mouseenter', () => {
-        if (this.isReducedMotion) return;
-        element.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      });
+      // Add magnetic field indicator
+      element.style.position = 'relative';
+      element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
-      element.addEventListener('mousemove', (e) => {
+      // Enhanced magnetic interaction
+      const handleMouseMove = (e) => {
         if (this.isReducedMotion) return;
-        
+
         const rect = element.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        
-        const moveX = x * 0.1;
-        const moveY = y * 0.1;
-        
-        element.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const deltaX = e.clientX - centerX;
+        const deltaY = e.clientY - centerY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        if (distance < magneticRadius) {
+          // Calculate magnetic force (stronger when closer)
+          const force = Math.max(0, (magneticRadius - distance) / magneticRadius);
+          const magneticStrength = force * 0.3; // Adjust magnetic strength
+
+          const moveX = deltaX * magneticStrength;
+          const moveY = deltaY * magneticStrength;
+
+          // Apply magnetic distortion
+          element.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + force * 0.05})`;
+          element.style.filter = `brightness(${1 + force * 0.2})`;
+
+          // Add magnetic glow effect
+          element.style.boxShadow = `0 0 ${force * 20}px rgba(59, 130, 246, ${force * 0.3})`;
+
+          // Affect nearby elements
+          this.applyMagneticField(element, e.clientX, e.clientY, force);
+        }
+      };
+
+      const handleMouseLeave = () => {
+        // Spring-back animation with physics
+        element.style.transition = 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+        element.style.transform = 'translate(0, 0) scale(1)';
+        element.style.filter = 'brightness(1)';
+        element.style.boxShadow = '';
+
+        // Reset nearby elements
+        this.resetMagneticField(element);
+
+        // Restore normal transition after spring-back
+        setTimeout(() => {
+          element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        }, 300);
+      };
+
+      // Use global mouse tracking for better performance
+      document.addEventListener('mousemove', handleMouseMove);
+      element.addEventListener('mouseleave', handleMouseLeave);
+
+      // Store cleanup function
+      element._magneticCleanup = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        element.removeEventListener('mouseleave', handleMouseLeave);
+      };
+    });
+  }
+
+  applyMagneticField(sourceElement, mouseX, mouseY, force) {
+    const nearbyElements = document.querySelectorAll('.magnetic');
+    const fieldRadius = 150;
+
+    nearbyElements.forEach(element => {
+      if (element === sourceElement) return;
+
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const deltaX = mouseX - centerX;
+      const deltaY = mouseY - centerY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      if (distance < fieldRadius) {
+        const fieldForce = Math.max(0, (fieldRadius - distance) / fieldRadius) * force * 0.2;
+        const bendX = deltaX * fieldForce * 0.1;
+        const bendY = deltaY * fieldForce * 0.1;
+
+        element.style.transform = `translate(${bendX}px, ${bendY}px) rotate(${fieldForce * 2}deg)`;
+        element.style.filter = `hue-rotate(${fieldForce * 10}deg)`;
+      }
+    });
+  }
+
+  resetMagneticField(sourceElement) {
+    const nearbyElements = document.querySelectorAll('.magnetic');
+
+    nearbyElements.forEach(element => {
+      if (element === sourceElement) return;
+
+      element.style.transition = 'all 200ms ease-out';
+      element.style.transform = 'translate(0, 0) rotate(0deg)';
+      element.style.filter = '';
+    });
+  }
+
+  setupMorphingButtons() {
+    const morphButtons = document.querySelectorAll('.cta-button, .btn-primary');
+
+    morphButtons.forEach(button => {
+      // Add morphing capability
+      button.classList.add('morph-button');
+
+      button.addEventListener('mouseenter', () => {
+        if (this.isReducedMotion) return;
+
+        // Transform to blob shape
+        button.style.clipPath = 'polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)';
+        button.style.transition = 'clip-path 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       });
 
-      element.addEventListener('mouseleave', () => {
-        element.style.transform = 'translate(0, 0)';
+      button.addEventListener('mouseleave', () => {
+        // Return to rectangle
+        button.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+      });
+
+      button.addEventListener('click', (e) => {
+        if (this.isReducedMotion) return;
+
+        // Create ripple with blob deformation
+        this.createBlobRipple(button, e);
       });
     });
+  }
 
+  createBlobRipple(button, event) {
+    const rect = button.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Create ripple element
+    const ripple = document.createElement('div');
+    ripple.className = 'blob-ripple';
+    ripple.style.cssText = `
+      position: absolute;
+      left: ${x}px;
+      top: ${y}px;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: translate(-50%, -50%);
+      animation: blobRipple 600ms ease-out;
+      pointer-events: none;
+      z-index: 1;
+    `;
+
+    button.appendChild(ripple);
+
+    // Deform button during ripple
+    button.style.clipPath = 'polygon(10% 10%, 90% 5%, 95% 90%, 5% 95%)';
+
+    setTimeout(() => {
+      ripple.remove();
+      button.style.clipPath = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+    }, 600);
+  }
+
+  setupTiltEffects() {
     // Tilt effects
     const tiltElements = document.querySelectorAll('.tilt');
-    
+
     tiltElements.forEach(element => {
       element.addEventListener('mousemove', (e) => {
         if (this.isReducedMotion) return;
-        
+
         const rect = element.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        
+
         const rotateX = (y - centerY) / centerY * -10;
         const rotateY = (x - centerX) / centerX * 10;
-        
+
         element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
       });
 
@@ -291,15 +444,15 @@ class AnimationController {
   setupClickAnimations() {
     // Ripple effects
     const rippleElements = document.querySelectorAll('.ripple');
-    
+
     rippleElements.forEach(element => {
       element.addEventListener('click', (e) => {
         if (this.isReducedMotion) return;
-        
+
         const rect = element.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         const ripple = document.createElement('span');
         ripple.className = 'ripple-effect';
         ripple.style.cssText = `
@@ -314,9 +467,9 @@ class AnimationController {
           height: 20px;
           pointer-events: none;
         `;
-        
+
         element.appendChild(ripple);
-        
+
         setTimeout(() => {
           ripple.remove();
         }, 600);
@@ -325,7 +478,7 @@ class AnimationController {
 
     // Button press effects
     const buttons = document.querySelectorAll('button, .btn');
-    
+
     buttons.forEach(button => {
       button.addEventListener('mousedown', () => {
         if (this.isReducedMotion) return;
@@ -344,12 +497,12 @@ class AnimationController {
 
   setupTypewriterEffects() {
     const typewriterElements = document.querySelectorAll('.typewriter-auto');
-    
+
     typewriterElements.forEach(element => {
       const text = element.textContent;
       const speed = parseInt(element.dataset.speed) || 100;
       const delay = parseInt(element.dataset.delay) || 0;
-      
+
       setTimeout(() => {
         this.animateTypewriter(element);
       }, delay);
@@ -367,7 +520,7 @@ class AnimationController {
     };
 
     const animationOptions = { ...defaultOptions, ...options };
-    
+
     return element.animate(keyframes, animationOptions);
   }
 
@@ -384,7 +537,7 @@ class AnimationController {
               animationConfig.keyframes,
               animationConfig.options
             );
-            
+
             if (animation) {
               animation.addEventListener('finish', resolve);
             } else {
@@ -402,7 +555,7 @@ class AnimationController {
       // Disable all animations
       document.documentElement.style.setProperty('--animation-duration', '0.01ms');
       document.documentElement.style.setProperty('--transition-duration', '0.01ms');
-      
+
       // Remove animation classes
       const animatedElements = document.querySelectorAll('.animate-on-scroll, .stagger-item');
       animatedElements.forEach(element => {
@@ -433,19 +586,162 @@ class AnimationController {
   }
 }
 
-// CSS for ripple animation
-const rippleCSS = `
+// CSS for advanced animations
+const advancedAnimationsCSS = `
   @keyframes ripple-animation {
     to {
       transform: scale(4);
       opacity: 0;
     }
   }
+
+  @keyframes blobRipple {
+    0% {
+      width: 0;
+      height: 0;
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      width: 200px;
+      height: 200px;
+      opacity: 0;
+    }
+  }
+
+  /* Morphing button styles */
+  .morph-button {
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    transition: clip-path 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Enhanced magnetic effects */
+  .magnetic {
+    will-change: transform, filter, box-shadow;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  /* Volumetric shadow system */
+  .volumetric-shadow {
+    position: relative;
+  }
+
+  .volumetric-shadow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    filter: blur(10px);
+    opacity: 0.3;
+    z-index: -1;
+    transform: translateY(5px);
+    transition: all 200ms ease-out;
+  }
+
+  .volumetric-shadow:hover::before {
+    transform: translateY(10px) scale(1.05);
+    opacity: 0.5;
+  }
+
+  /* Advanced glassmorphism with light streaks */
+  .glass-enhanced {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-enhanced::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    transition: transform 600ms ease-out;
+    pointer-events: none;
+  }
+
+  .glass-enhanced:hover::before {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+
+  /* Holographic rainbow edge effects */
+  .holographic-border {
+    position: relative;
+    border-radius: inherit;
+  }
+
+  .holographic-border::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      #ff0080, #ff8c00, #40e0d0, #ff0080
+    );
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    animation: holographicShift 3s linear infinite;
+  }
+
+  .holographic-border:hover::after {
+    opacity: 0.6;
+  }
+
+  @keyframes holographicShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Performance optimizations */
+  .gpu-layer {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* Reduced motion fallbacks */
+  @media (prefers-reduced-motion: reduce) {
+    .morph-button {
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%) !important;
+    }
+
+    .magnetic {
+      transform: none !important;
+      filter: none !important;
+      box-shadow: none !important;
+    }
+
+    .glass-enhanced::before,
+    .holographic-border::after {
+      display: none;
+    }
+  }
 `;
 
 // Inject CSS
 const style = document.createElement('style');
-style.textContent = rippleCSS;
+style.textContent = advancedAnimationsCSS;
 document.head.appendChild(style);
 
 // Initialize animation controller
