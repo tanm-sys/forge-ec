@@ -5,21 +5,22 @@ document.addEventListener('DOMContentLoaded', function() {
     initExampleRunner();
     initPlayground();
     initExampleAnimations();
+    initSyntaxHighlighting();
 });
 
 // Category Filtering
 function initCategoryFiltering() {
     const categoryButtons = document.querySelectorAll('.category-btn');
     const exampleCards = document.querySelectorAll('.example-card');
-    
+
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
             const category = this.getAttribute('data-category');
-            
+
             // Update active button
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
-            
+
             // Filter examples
             filterExamples(category, exampleCards);
         });
@@ -30,7 +31,7 @@ function filterExamples(category, cards) {
     cards.forEach(card => {
         const cardCategory = card.getAttribute('data-category');
         const shouldShow = category === 'all' || cardCategory === category;
-        
+
         if (shouldShow) {
             card.classList.remove('filtering-out');
             card.classList.add('filtering-in');
@@ -50,7 +51,7 @@ function filterExamples(category, cards) {
 // Example Runner
 function initExampleRunner() {
     const runButtons = document.querySelectorAll('.run-example');
-    
+
     runButtons.forEach(button => {
         button.addEventListener('click', function() {
             const exampleType = this.getAttribute('data-example');
@@ -62,39 +63,39 @@ function initExampleRunner() {
 async function runExample(exampleType, button) {
     // Prevent multiple clicks
     if (button.classList.contains('running')) return;
-    
+
     // Update button state
     button.classList.add('running');
     const originalText = button.innerHTML;
     button.innerHTML = '<span class="loading-spinner"></span> Running...';
-    
+
     try {
         // Simulate running the example
         const result = await simulateExampleExecution(exampleType);
-        
+
         // Show success state
         button.classList.remove('running');
         button.classList.add('success');
         button.innerHTML = '<span class="btn-icon">✅</span> Success!';
-        
+
         // Show result in a modal or output area
         showExampleResult(exampleType, result);
-        
+
         // Reset button after delay
         setTimeout(() => {
             button.classList.remove('success');
             button.innerHTML = originalText;
         }, 3000);
-        
+
     } catch (error) {
         // Show error state
         button.classList.remove('running');
         button.classList.add('error');
         button.innerHTML = '<span class="btn-icon">❌</span> Error';
-        
+
         // Show error message
         showExampleError(exampleType, error.message);
-        
+
         // Reset button after delay
         setTimeout(() => {
             button.classList.remove('error');
@@ -106,7 +107,7 @@ async function runExample(exampleType, button) {
 async function simulateExampleExecution(exampleType) {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
+
     // Simulate different outcomes based on example type
     const outcomes = {
         'ecdsa': {
@@ -118,11 +119,11 @@ Created signature for message
 Signature verification: success
 
 DER-encoded signature:
-30 45 02 21 00 c6 04 7f 94 41 ed 7d 6d 3d 4e c7 
-39 0e 4a 94 da 2f dd 2a 32 69 be 1a 99 8b 61 31 
-bc 40 af 0d f3 02 20 4e 45 e1 69 32 b8 af 0e 17 
-8b a4 99 a7 56 2d 14 a2 33 13 49 2a 70 c2 b1 3b 
-7c 6d 5d 50 24 83 
+30 45 02 21 00 c6 04 7f 94 41 ed 7d 6d 3d 4e c7
+39 0e 4a 94 da 2f dd 2a 32 69 be 1a 99 8b 61 31
+bc 40 af 0d f3 02 20 4e 45 e1 69 32 b8 af 0e 17
+8b a4 99 a7 56 2d 14 a2 33 13 49 2a 70 c2 b1 3b
+7c 6d 5d 50 24 83
 
 Modified message verification: failed (expected)`
         },
@@ -181,7 +182,7 @@ This signature can be verified with OpenSSL using:
 openssl dgst -sha256 -verify pubkey.pem -signature sig.der message.txt`
         }
     };
-    
+
     const result = outcomes[exampleType];
     if (result && result.success) {
         return result.output;
@@ -194,7 +195,7 @@ function showExampleResult(exampleType, output) {
     // Create a modal or use existing output area
     const modal = createResultModal(exampleType, output, 'success');
     document.body.appendChild(modal);
-    
+
     // Auto-close after 10 seconds
     setTimeout(() => {
         if (modal.parentNode) {
@@ -206,7 +207,7 @@ function showExampleResult(exampleType, output) {
 function showExampleError(exampleType, error) {
     const modal = createResultModal(exampleType, error, 'error');
     document.body.appendChild(modal);
-    
+
     // Auto-close after 5 seconds
     setTimeout(() => {
         if (modal.parentNode) {
@@ -231,7 +232,7 @@ function createResultModal(title, content, type) {
             </div>
         </div>
     `;
-    
+
     // Add styles
     const style = document.createElement('style');
     style.textContent = `
@@ -246,7 +247,7 @@ function createResultModal(title, content, type) {
             align-items: center;
             justify-content: center;
         }
-        
+
         .modal-overlay {
             position: absolute;
             top: 0;
@@ -256,7 +257,7 @@ function createResultModal(title, content, type) {
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
         }
-        
+
         .modal-content {
             position: relative;
             background: var(--bg-card);
@@ -267,7 +268,7 @@ function createResultModal(title, content, type) {
             overflow: hidden;
             box-shadow: var(--shadow-xl);
         }
-        
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -276,7 +277,7 @@ function createResultModal(title, content, type) {
             border-bottom: 1px solid var(--border-primary);
             background: var(--bg-secondary);
         }
-        
+
         .modal-close {
             background: none;
             border: none;
@@ -284,13 +285,13 @@ function createResultModal(title, content, type) {
             cursor: pointer;
             color: var(--text-secondary);
         }
-        
+
         .modal-body {
             padding: var(--spacing-lg);
             max-height: 400px;
             overflow-y: auto;
         }
-        
+
         .modal-body pre {
             margin: 0;
             font-family: var(--font-family-mono);
@@ -300,17 +301,17 @@ function createResultModal(title, content, type) {
         }
     `;
     document.head.appendChild(style);
-    
+
     // Add close functionality
     const closeBtn = modal.querySelector('.modal-close');
     const overlay = modal.querySelector('.modal-overlay');
-    
+
     closeBtn.addEventListener('click', () => {
         if (modal.parentNode) {
             modal.parentNode.removeChild(modal);
         }
     });
-    
+
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
             if (modal.parentNode) {
@@ -318,7 +319,7 @@ function createResultModal(title, content, type) {
             }
         }
     });
-    
+
     return modal;
 }
 
@@ -329,41 +330,41 @@ function initPlayground() {
     const clearButton = document.getElementById('clear-code');
     const clearOutputButton = document.getElementById('clear-output');
     const outputContent = document.getElementById('output-content');
-    
+
     if (!codeEditor || !runButton) return;
-    
+
     runButton.addEventListener('click', async function() {
         const code = codeEditor.value.trim();
         if (!code) {
             showPlaygroundOutput('Error: No code to run', 'error');
             return;
         }
-        
+
         await runPlaygroundCode(code);
     });
-    
+
     clearButton.addEventListener('click', function() {
         codeEditor.value = '';
         codeEditor.focus();
     });
-    
+
     clearOutputButton.addEventListener('click', function() {
         outputContent.innerHTML = '<div class="output-placeholder">Run your code to see the output here...</div>';
     });
-    
+
     // Add syntax highlighting to editor
     codeEditor.addEventListener('input', function() {
         // Simple syntax highlighting could be added here
         // For now, we'll just handle tab indentation
     });
-    
+
     // Handle tab key for indentation
     codeEditor.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
             e.preventDefault();
             const start = this.selectionStart;
             const end = this.selectionEnd;
-            
+
             this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
             this.selectionStart = this.selectionEnd = start + 4;
         }
@@ -373,20 +374,20 @@ function initPlayground() {
 async function runPlaygroundCode(code) {
     const outputContent = document.getElementById('output-content');
     const runButton = document.getElementById('run-code');
-    
+
     // Show loading state
     runButton.disabled = true;
     runButton.innerHTML = '<span class="loading-spinner"></span> Running...';
     showPlaygroundOutput('Compiling and running...', 'info');
-    
+
     try {
         // Simulate compilation and execution
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         // Simple code analysis for demo purposes
         const output = analyzeAndRunCode(code);
         showPlaygroundOutput(output, 'success');
-        
+
     } catch (error) {
         showPlaygroundOutput(`Error: ${error.message}`, 'error');
     } finally {
@@ -407,7 +408,7 @@ function analyzeAndRunCode(code) {
             }).join('\n');
         }
     }
-    
+
     if (code.includes('Secp256k1')) {
         return `Compiled successfully!
 
@@ -418,7 +419,7 @@ All tests passed!
 
 Execution completed in 0.123s`;
     }
-    
+
     if (code.includes('Ed25519')) {
         return `Compiled successfully!
 
@@ -429,7 +430,7 @@ Verified signature: true
 
 Execution completed in 0.089s`;
     }
-    
+
     return `Compiled successfully!
 
 Running main function...
@@ -446,7 +447,7 @@ function showPlaygroundOutput(content, type) {
 // Example Animations
 function initExampleAnimations() {
     const cards = document.querySelectorAll('.example-card');
-    
+
     const observer = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -458,13 +459,13 @@ function initExampleAnimations() {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     });
-    
+
     cards.forEach((card, index) => {
         // Set initial state
         card.style.opacity = '0';
         card.style.transform = 'translateY(30px)';
         card.style.transition = `all 0.6s ease-out ${index * 0.1}s`;
-        
+
         observer.observe(card);
     });
 }
@@ -478,7 +479,7 @@ document.addEventListener('keydown', function(e) {
             runButton.click();
         }
     }
-    
+
     // Ctrl/Cmd + K to clear playground
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -488,3 +489,131 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Syntax Highlighting Initialization
+function initSyntaxHighlighting() {
+    // Ensure Prism is available
+    if (typeof Prism !== 'undefined') {
+        // Re-highlight all code blocks
+        Prism.highlightAll();
+
+        // Add copy functionality to code blocks
+        initCodeCopyButtons();
+
+        // Add line numbers if needed
+        addLineNumbers();
+    } else {
+        // Retry after a short delay if Prism isn't loaded yet
+        setTimeout(initSyntaxHighlighting, 100);
+    }
+}
+
+// Enhanced copy button functionality
+function initCodeCopyButtons() {
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const codeBlock = this.closest('.code-block').querySelector('code');
+            const text = codeBlock.textContent;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success feedback
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                this.classList.add('success');
+
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                // Fallback for older browsers
+                fallbackCopyTextToClipboard(text, this);
+            });
+        });
+    });
+}
+
+// Fallback copy function for older browsers
+function fallbackCopyTextToClipboard(text, button) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.add('success');
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('success');
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+    }
+
+    document.body.removeChild(textArea);
+}
+
+// Add line numbers to code blocks
+function addLineNumbers() {
+    const codeBlocks = document.querySelectorAll('pre[class*="language-"]');
+
+    codeBlocks.forEach(block => {
+        if (!block.classList.contains('line-numbers')) {
+            const lines = block.textContent.split('\n').length - 1;
+            if (lines > 5) { // Only add line numbers for longer code blocks
+                block.classList.add('line-numbers');
+
+                // Create line numbers container
+                const lineNumbers = document.createElement('span');
+                lineNumbers.className = 'line-numbers-rows';
+
+                for (let i = 0; i < lines; i++) {
+                    lineNumbers.appendChild(document.createElement('span'));
+                }
+
+                block.appendChild(lineNumbers);
+            }
+        }
+    });
+}
+
+// Fix any layout issues after syntax highlighting
+function fixLayoutIssues() {
+    // Ensure all code blocks have proper styling
+    const codeBlocks = document.querySelectorAll('.code-block');
+    codeBlocks.forEach(block => {
+        // Add proper classes if missing
+        if (!block.classList.contains('language-rust')) {
+            const codeElement = block.querySelector('code');
+            if (codeElement && !codeElement.classList.contains('language-rust')) {
+                codeElement.classList.add('language-rust');
+            }
+        }
+    });
+
+    // Re-trigger animations for any elements that might have been affected
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    animatedElements.forEach(element => {
+        if (element.style.opacity === '0') {
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }
+    });
+}
+
+// Call layout fixes after a short delay
+setTimeout(fixLayoutIssues, 500);
