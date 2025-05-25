@@ -144,11 +144,35 @@ function initNavigation() {
     const navMenu = document.getElementById('nav-menu');
     const navbar = document.getElementById('navbar');
 
-    // Mobile menu toggle
+    // Mobile menu toggle with accessibility
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function() {
+            const isExpanded = navMenu.classList.contains('active');
+
             navMenu.classList.toggle('active');
             navToggle.classList.toggle('active');
+
+            // Update ARIA attributes
+            navToggle.setAttribute('aria-expanded', !isExpanded);
+
+            // Focus management
+            if (!isExpanded) {
+                // Menu is opening - focus first link
+                const firstLink = navMenu.querySelector('.nav-link');
+                if (firstLink) {
+                    setTimeout(() => firstLink.focus(), 100);
+                }
+            }
+        });
+
+        // Handle escape key to close menu
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.focus();
+            }
         });
     }
 
@@ -157,8 +181,22 @@ function initNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', function() {
             if (navMenu) navMenu.classList.remove('active');
-            if (navToggle) navToggle.classList.remove('active');
+            if (navToggle) {
+                navToggle.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
         });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!navbar.contains(e.target) && navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+            if (navToggle) {
+                navToggle.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        }
     });
 
     // Navbar scroll effect
@@ -173,15 +211,17 @@ function initNavigation() {
                 navbar.classList.remove('scrolled');
             }
 
-            // Hide/show navbar on scroll
-            if (scrollTop > lastScrollTop && scrollTop > 200) {
-                navbar.style.transform = 'translateY(-100%)';
-            } else {
-                navbar.style.transform = 'translateY(0)';
+            // Hide/show navbar on scroll (only on desktop)
+            if (window.innerWidth > 768) {
+                if (scrollTop > lastScrollTop && scrollTop > 200) {
+                    navbar.style.transform = 'translateY(-100%)';
+                } else {
+                    navbar.style.transform = 'translateY(0)';
+                }
             }
 
             lastScrollTop = scrollTop;
-        });
+        }, { passive: true });
     }
 }
 

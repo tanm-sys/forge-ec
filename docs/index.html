@@ -7,7 +7,7 @@
     <title>Documentation - Forge EC</title>
     <!-- Cache busting comment: Updated to fix loading issue -->
 
-    <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/loading.css">
     <link rel="stylesheet" href="../css/prism.css">
@@ -29,30 +29,65 @@
         </div>
     </div>
 
+    <!-- Immediate fallback script to prevent stuck loading screen -->
+    <script>
+        (function() {
+            // Immediate fallback to remove loading screen
+            setTimeout(function() {
+                const pageLoader = document.getElementById('page-loader');
+                const progressBar = document.getElementById('loading-progress');
+
+                if (pageLoader) {
+                    pageLoader.style.opacity = '0';
+                    pageLoader.style.visibility = 'hidden';
+                    setTimeout(function() {
+                        if (pageLoader.parentNode) {
+                            pageLoader.parentNode.removeChild(pageLoader);
+                        }
+                    }, 200);
+                }
+
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    setTimeout(function() {
+                        if (progressBar.parentNode) {
+                            progressBar.parentNode.removeChild(progressBar);
+                        }
+                    }, 200);
+                }
+
+                document.body.classList.remove('loading');
+            }, 150);
+        })();
+    </script>
+
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
-    <nav class="navbar" id="navbar">
+    <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
             <div class="nav-brand">
-                <img src="../assets/logo.svg" alt="Forge EC" class="nav-logo">
-                <a href="../index.html" class="nav-title">Forge EC</a>
+                <img src="../assets/logo.svg" alt="Forge EC Logo" class="nav-logo">
+                <a href="../index.html" class="nav-title" aria-label="Forge EC - Home">Forge EC</a>
             </div>
 
-            <div class="nav-menu" id="nav-menu">
-                <a href="../index.html" class="nav-link">Home</a>
-                <a href="index.html" class="nav-link active">Documentation</a>
-                <a href="../examples/" class="nav-link">Examples</a>
-                <a href="../about/" class="nav-link">About</a>
-                <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank">GitHub</a>
+            <div class="nav-menu" id="nav-menu" role="menubar">
+                <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+                <a href="index.html" class="nav-link active" role="menuitem" aria-current="page">Documentation</a>
+                <a href="../examples/" class="nav-link" role="menuitem">Examples</a>
+                <a href="../about/" class="nav-link" role="menuitem">About</a>
+                <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank" role="menuitem" aria-label="GitHub repository (opens in new tab)">GitHub</a>
             </div>
 
             <div class="nav-controls">
-                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Switch between light and dark theme">
                     <span class="theme-icon">🌙</span>
                 </button>
-                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
         </div>
@@ -60,14 +95,15 @@
 
     <div class="docs-layout">
         <!-- Sidebar -->
-        <aside class="docs-sidebar" id="docs-sidebar">
+        <aside class="docs-sidebar" id="docs-sidebar" role="complementary" aria-label="Documentation navigation">
             <div class="sidebar-content">
                 <div class="search-box">
-                    <input type="text" id="search-input" placeholder="Search documentation..." class="search-input">
-                    <div class="search-results" id="search-results"></div>
+                    <label for="search-input" class="sr-only">Search documentation</label>
+                    <input type="text" id="search-input" placeholder="Search documentation..." class="search-input" aria-label="Search documentation" autocomplete="off">
+                    <div class="search-results" id="search-results" role="listbox" aria-label="Search results"></div>
                 </div>
 
-                <nav class="sidebar-nav">
+                <nav class="sidebar-nav" role="navigation" aria-label="Documentation sections">
                     <div class="nav-section">
                         <h3 class="nav-section-title">Getting Started</h3>
                         <ul class="nav-list">
@@ -114,7 +150,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="docs-main">
+        <main class="docs-main" id="main-content" role="main">
             <div class="docs-content">
                 <!-- Overview Section -->
                 <section id="overview" class="docs-section">
@@ -155,13 +191,13 @@
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-title">Cargo.toml</span>
-                            <button class="copy-btn" data-copy="[dependencies]
-forge-ec-core = &quot;0.1&quot;
-forge-ec-curves = &quot;0.1&quot;
-forge-ec-signature = &quot;0.1&quot;
-forge-ec-encoding = &quot;0.1&quot;
-forge-ec-hash = &quot;0.1&quot;
-forge-ec-rng = &quot;0.1&quot;">Copy</button>
+                            <button class="copy-btn" data-copy='[dependencies]
+forge-ec-core = "0.1"
+forge-ec-curves = "0.1"
+forge-ec-signature = "0.1"
+forge-ec-encoding = "0.1"
+forge-ec-hash = "0.1"
+forge-ec-rng = "0.1"' title="Copy to clipboard">Copy</button>
                         </div>
                         <pre><code class="language-toml">[dependencies]
 forge-ec-core = "0.1"

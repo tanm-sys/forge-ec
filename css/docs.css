@@ -1,5 +1,42 @@
 /* Documentation-specific styles */
 
+/* Fallback CSS variables for docs */
+:root {
+    --z-sticky: 100;
+    --z-dropdown: 200;
+    --z-modal: 1000;
+    --z-fixed: 1001;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-elastic: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Screen reader only class */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .docs-layout {
     display: flex;
     min-height: 100vh;
@@ -377,6 +414,8 @@
 @media (max-width: 1024px) {
     .docs-sidebar {
         transform: translateX(-100%);
+        z-index: var(--z-modal, 1000);
+        box-shadow: var(--shadow-xl);
     }
 
     .docs-sidebar.open {
@@ -397,6 +436,18 @@
 
     .architecture-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Overlay for mobile sidebar */
+    .docs-sidebar.open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
     }
 }
 
@@ -428,19 +479,36 @@
     position: fixed;
     top: 90px;
     left: var(--spacing-md);
-    z-index: var(--z-fixed);
+    z-index: var(--z-fixed, 1001);
     background: var(--color-primary);
-    color: var(--text-inverse);
+    color: var(--text-inverse, white);
     border: none;
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--spacing-sm, 8px);
     cursor: pointer;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+    font-size: 1.2rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background: var(--color-primary-dark, #1d4ed8);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg, 0 8px 15px rgba(0, 0, 0, 0.2));
+}
+
+.sidebar-toggle:active {
+    transform: translateY(0);
 }
 
 @media (max-width: 1024px) {
     .sidebar-toggle {
-        display: block;
+        display: flex;
     }
 }
 
