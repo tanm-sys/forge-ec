@@ -14,9 +14,6 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
 pub mod ecdsa;
 pub mod eddsa;
 pub mod schnorr;

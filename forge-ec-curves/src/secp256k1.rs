@@ -55,7 +55,7 @@ impl FieldElement {
             let already_decided = result != 0;
 
             // Compute the comparison for this limb
-            let limb_lt = (limbs[i] < P[i]) as i8 * -1; // -1 if limbs[i] < P[i], 0 otherwise
+            let limb_lt = -((limbs[i] < P[i]) as i8); // -1 if limbs[i] < P[i], 0 otherwise
             let limb_gt = (limbs[i] > P[i]) as i8; // 1 if limbs[i] > P[i], 0 otherwise
 
             // Only update result if we haven't already decided and this limb differs
@@ -222,8 +222,12 @@ impl FieldElement {
 
         // R^2 mod p for secp256k1
         // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
-        const R_SQUARED: [u64; 4] =
-            [0x1000_003D_1000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000, 0x0000_0000_0000_0000];
+        const R_SQUARED: [u64; 4] = [
+            0x1000_003D_1000_0000,
+            0x0000_0000_0000_0000,
+            0x0000_0000_0000_0000,
+            0x0000_0000_0000_0000,
+        ];
 
         // Multiply by R^2 mod p
         let r_squared = Self(R_SQUARED);
@@ -1300,17 +1304,11 @@ impl ConditionallySelectable for AffinePoint {
 // Zeroize is now derived automatically with #[derive(zeroize::Zeroize)]
 
 /// A point in projective coordinates on the secp256k1 curve.
-#[derive(Clone, Debug, Copy, zeroize::Zeroize)]
+#[derive(Clone, Debug, Copy, zeroize::Zeroize, Default)]
 pub struct ProjectivePoint {
     x: FieldElement,
     y: FieldElement,
     z: FieldElement,
-}
-
-impl Default for ProjectivePoint {
-    fn default() -> Self {
-        Self { x: FieldElement::default(), y: FieldElement::default(), z: FieldElement::default() }
-    }
 }
 
 impl PointProjective for ProjectivePoint {
@@ -1662,8 +1660,8 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
 
         // Ensure y has the same sign as u
         // For secp256k1, we'll use the least significant bit of u and y
-        let u_is_odd = Choice::from((effective_u.to_bytes()[31] & 1) as u8);
-        let y_is_odd = Choice::from((y_value.to_bytes()[31] & 1) as u8);
+        let u_is_odd = Choice::from(effective_u.to_bytes()[31] & 1);
+        let y_is_odd = Choice::from(y_value.to_bytes()[31] & 1);
 
         // If u and y have different parity, negate y
         let should_negate = u_is_odd ^ y_is_odd;
@@ -1713,7 +1711,7 @@ impl forge_ec_core::HashToCurve for Secp256k1 {
 
         // Step 1: u = hash_to_field(msg, 2)
         // Prepare DST_prime = DST || I2OSP(len(DST), 1)
-        let mut dst_prime = Vec::from(dst.as_bytes());
+        let mut dst_prime = dst.as_bytes();
         dst_prime.push(dst.as_bytes().len() as u8);
 
         // Parameters
@@ -1801,7 +1799,7 @@ impl Secp256k1 {
         // Step 6: b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
         let mut hasher = D::new();
         hasher.update(b_0.as_slice());
-        hasher.update(&[1u8]); // I2OSP(1, 1)
+        hasher.update([1u8]); // I2OSP(1, 1)
         hasher.update(dst_prime);
         let b_1 = hasher.finalize();
 
@@ -1827,7 +1825,7 @@ impl Secp256k1 {
             }
 
             hasher.update(&xor_result);
-            hasher.update(&[i as u8]); // I2OSP(i, 1)
+            hasher.update([i as u8]); // I2OSP(i, 1)
             hasher.update(dst_prime);
             let b_i = hasher.finalize();
 
@@ -2672,7 +2670,7 @@ impl Curve for Secp256k1 {
             // Get the current bit using constant-time operations
             let byte_idx = i / 8;
             let bit_idx = 7 - (i % 8); // MSB first
-            let bit = Choice::from(((scalar_bytes[byte_idx] >> bit_idx) & 1) as u8);
+            let bit = Choice::from((scalar_bytes[byte_idx] >> bit_idx) & 1);
 
             // Montgomery ladder step:
             // If bit = 0: R0 = 2*R0, R1 = R0 + R1

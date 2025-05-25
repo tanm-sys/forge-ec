@@ -3,11 +3,11 @@
 //! This module provides Base58 and Base58Check encoding and decoding,
 //! which are commonly used in Bitcoin and other cryptocurrencies.
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::string::{String, ToString};
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec;
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::string::{String, ToString};
@@ -278,7 +278,7 @@ fn double_sha256(data: &[u8]) -> [u8; 32] {
     let hash1 = hasher.finalize();
 
     let mut hasher = Sha256::new();
-    hasher.update(&hash1);
+    hasher.update(hash1);
     let hash2 = hasher.finalize();
 
     let mut result = [0u8; 32];

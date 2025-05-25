@@ -14,12 +14,6 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-
 pub mod base58;
 pub mod der;
 pub mod pem;

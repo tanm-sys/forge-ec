@@ -13,9 +13,6 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
 pub mod os_rng;
 pub mod rfc6979;
 

@@ -30,17 +30,11 @@ pub struct FieldElement([u64; 4]);
 pub struct Scalar([u64; 4]);
 
 /// An affine point on the P-256 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct AffinePoint {
     x: FieldElement,
     y: FieldElement,
     infinity: bool,
-}
-
-impl Default for AffinePoint {
-    fn default() -> Self {
-        Self { x: FieldElement::default(), y: FieldElement::default(), infinity: false }
-    }
 }
 
 impl PartialEq for AffinePoint {

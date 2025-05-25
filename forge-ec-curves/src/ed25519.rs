@@ -1371,23 +1371,12 @@ impl Zeroize for Scalar {
 }
 
 /// A point in extended coordinates on the Ed25519 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct ExtendedPoint {
     x: FieldElement,
     y: FieldElement,
     z: FieldElement,
     t: FieldElement,
-}
-
-impl Default for ExtendedPoint {
-    fn default() -> Self {
-        Self {
-            x: FieldElement::default(),
-            y: FieldElement::default(),
-            z: FieldElement::default(),
-            t: FieldElement::default(),
-        }
-    }
 }
 
 /// A point in affine coordinates on the Ed25519 curve.

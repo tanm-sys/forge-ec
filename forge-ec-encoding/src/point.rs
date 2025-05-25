@@ -3,7 +3,7 @@
 //! This module provides compressed and uncompressed point formats for elliptic curves.
 //! These formats are commonly used in cryptographic protocols.
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::vec::Vec;
