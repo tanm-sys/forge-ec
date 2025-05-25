@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initAdvancedEffects();
     initLoadingAnimations();
     initMicroInteractions();
+    initEnhancedCodeBlocks();
+    initFeedbackForm();
+    initContributorAnimations();
 
     // Remove loading class after a short delay to trigger animations
     setTimeout(() => {
@@ -418,6 +421,269 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// Enhanced Code Blocks
+function initEnhancedCodeBlocks() {
+    // Enhanced copy functionality
+    const enhancedCopyButtons = document.querySelectorAll('.enhanced-copy-btn');
+
+    enhancedCopyButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const textToCopy = this.getAttribute('data-copy') ||
+                              this.closest('.enhanced-code-block').querySelector('code').textContent;
+
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+
+                // Enhanced visual feedback
+                const copyIcon = this.querySelector('.copy-icon');
+                const checkIcon = this.querySelector('.check-icon');
+                const copyText = this.querySelector('.copy-text');
+
+                // Add copied class for styling
+                this.classList.add('copied');
+
+                // Update text
+                if (copyText) {
+                    copyText.textContent = 'Copied!';
+                }
+
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    this.classList.remove('copied');
+                    if (copyText) {
+                        copyText.textContent = 'Copy';
+                    }
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                // Visual feedback for fallback
+                this.classList.add('copied');
+                setTimeout(() => {
+                    this.classList.remove('copied');
+                }, 2000);
+            }
+        });
+    });
+
+    // Line numbers toggle
+    const lineNumbersToggle = document.querySelectorAll('.line-numbers-toggle');
+
+    lineNumbersToggle.forEach(button => {
+        button.addEventListener('click', function() {
+            const codeBlock = this.closest('.enhanced-code-block');
+            const preElement = codeBlock.querySelector('pre');
+
+            if (preElement.classList.contains('line-numbers')) {
+                preElement.classList.remove('line-numbers');
+                this.style.opacity = '0.5';
+            } else {
+                preElement.classList.add('line-numbers');
+                this.style.opacity = '1';
+            }
+        });
+    });
+}
+
+// Feedback Form
+function initFeedbackForm() {
+    const feedbackForm = document.getElementById('feedback-form');
+
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            const btnText = submitButton.querySelector('.btn-text');
+            const btnLoading = submitButton.querySelector('.btn-loading');
+
+            // Show loading state
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            submitButton.disabled = true;
+
+            // Get form data
+            const formData = new FormData(this);
+            const feedbackData = {
+                type: formData.get('type'),
+                message: formData.get('message'),
+                email: formData.get('email') || 'anonymous',
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            };
+
+            try {
+                // Simulate API call (replace with actual endpoint)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Show success message
+                showFeedbackMessage('Thank you for your feedback! We appreciate your input.', 'success');
+
+                // Reset form
+                this.reset();
+
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                showFeedbackMessage('Sorry, there was an error submitting your feedback. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                submitButton.disabled = false;
+            }
+        });
+    }
+}
+
+function showFeedbackMessage(message, type) {
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.className = `feedback-message feedback-message-${type}`;
+    messageEl.textContent = message;
+
+    // Style the message
+    messageEl.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        ${type === 'success' ? 'background: #10b981;' : 'background: #ef4444;'}
+    `;
+
+    document.body.appendChild(messageEl);
+
+    // Animate in
+    setTimeout(() => {
+        messageEl.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        messageEl.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(messageEl);
+        }, 300);
+    }, 5000);
+}
+
+// Contributor Animations
+function initContributorAnimations() {
+    // Animate contributor stats on scroll
+    const contributorStats = document.querySelectorAll('.contributor-stats .counter');
+
+    if (contributorStats.length > 0) {
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = parseInt(entry.target.getAttribute('data-target'));
+                    animateCounter(entry.target, 0, target, 2000);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        contributorStats.forEach(stat => {
+            observer.observe(stat);
+        });
+    }
+
+    // Add hover effects to contributor cards
+    const contributorCards = document.querySelectorAll('.contributor-card');
+
+    contributorCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            const avatar = this.querySelector('.avatar-img');
+            if (avatar) {
+                avatar.style.transform = 'scale(1.1) rotate(5deg)';
+            }
+        });
+
+        card.addEventListener('mouseleave', function() {
+            const avatar = this.querySelector('.avatar-img');
+            if (avatar) {
+                avatar.style.transform = '';
+            }
+        });
+    });
+
+    // Animate visual aids on scroll
+    const visualCards = document.querySelectorAll('.visual-card');
+
+    if (visualCards.length > 0) {
+        const visualObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+
+                    // Animate SVG elements
+                    const svgElements = entry.target.querySelectorAll('.curve-path, .point-p, .point-q, .point-r');
+                    svgElements.forEach((el, index) => {
+                        setTimeout(() => {
+                            el.style.opacity = '1';
+                            el.style.transform = 'scale(1)';
+                        }, index * 200);
+                    });
+                }
+            });
+        }, { threshold: 0.3 });
+
+        visualCards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'all 0.6s ease';
+
+            // Hide SVG elements initially
+            const svgElements = card.querySelectorAll('.curve-path, .point-p, .point-q, .point-r');
+            svgElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.8)';
+                el.style.transition = 'all 0.4s ease';
+            });
+
+            visualObserver.observe(card);
+        });
+    }
+}
+
+function animateCounter(element, start, end, duration) {
+    const startTime = performance.now();
+
+    function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const current = Math.floor(start + (end - start) * easeOutQuart);
+
+        element.textContent = current;
+
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        } else {
+            element.textContent = end;
+        }
+    }
+
+    requestAnimationFrame(updateCounter);
 }
 
 // Error Handling

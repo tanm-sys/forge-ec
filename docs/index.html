@@ -2622,6 +2622,452 @@ jobs:
                         </ul>
                     </div>
                 </section>
+
+                <!-- ECDSA Example Section -->
+                <section id="ecdsa-example" class="docs-section">
+                    <h2>ECDSA Signature Examples</h2>
+                    <p>Complete working examples of ECDSA signatures with secp256k1 and P-256 curves, including error handling and real-world integration patterns.</p>
+
+                    <h3>secp256k1 ECDSA (Bitcoin-style)</h3>
+                    <p>ECDSA with secp256k1 curve, commonly used in Bitcoin and other cryptocurrencies:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Complete secp256k1 ECDSA Example</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::Sha256;
+use forge_ec_rng::os_rng::OsRng;
+use forge_ec_encoding::hex::ToHex;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize secure random number generator
+    let mut rng = OsRng::new();
+
+    // Generate a private key (32 random bytes)
+    let private_key = Secp256k1::random_scalar(&mut rng);
+    println!("Private key: {}", private_key.to_hex());
+
+    // Derive the corresponding public key
+    let public_key_point = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
+    let public_key = Secp256k1::to_affine(&public_key_point);
+    println!("Public key: ({}, {})", public_key.x.to_hex(), public_key.y.to_hex());
+
+    // Message to sign (in practice, this would be a transaction hash)
+    let message = b"Bitcoin transaction: Alice sends 0.5 BTC to Bob";
+    println!("Message: {}", String::from_utf8_lossy(message));
+
+    // Sign the message
+    let signature = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, message)?;
+    println!("Signature r: {}", signature.r.to_hex());
+    println!("Signature s: {}", signature.s.to_hex());
+
+    // Verify the signature
+    let is_valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key, message, &signature);
+    println!("Signature valid: {}", is_valid);
+
+    // Demonstrate signature determinism (RFC 6979)
+    let signature2 = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, message)?;
+    assert_eq!(signature, signature2, "Signatures should be deterministic");
+    println!("✓ Deterministic signature generation verified");
+
+    // Test with different message
+    let different_message = b"Different transaction: Bob sends 0.3 BTC to Charlie";
+    let different_signature = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, different_message)?;
+
+    // Verify wrong signature fails
+    let wrong_verification = Ecdsa::<Secp256k1, Sha256>::verify(
+        &public_key,
+        message,
+        &different_signature
+    );
+    assert!(!wrong_verification, "Wrong signature should fail verification");
+    println!("✓ Invalid signature correctly rejected");
+
+    // Serialize signature for storage/transmission
+    let signature_der = signature.to_der();
+    println!("DER-encoded signature: {}", signature_der.to_hex());
+
+    // Parse signature from DER
+    let parsed_signature = EcdsaSignature::from_der(&signature_der)?;
+    assert_eq!(signature, parsed_signature, "DER roundtrip should preserve signature");
+    println!("✓ DER encoding/decoding verified");
+
+    Ok(())
+}
+
+// Bitcoin address generation example
+fn generate_bitcoin_address(public_key: &AffinePoint) -> Result<String, Box<dyn std::error::Error>> {
+    use forge_ec_hash::{sha2::Sha256, ripemd::Ripemd160};
+    use forge_ec_encoding::base58::Base58Check;
+
+    // Compress public key (33 bytes instead of 65)
+    let compressed_pubkey = public_key.to_compressed_bytes();
+
+    // Hash with SHA-256 then RIPEMD-160
+    let sha256_hash = Sha256::hash(&compressed_pubkey);
+    let ripemd160_hash = Ripemd160::hash(&sha256_hash);
+
+    // Add version byte (0x00 for mainnet P2PKH)
+    let address = Base58Check::encode_with_version(&ripemd160_hash, 0x00);
+
+    Ok(address)
+}</code></pre>
+                    </div>
+
+                    <h3>P-256 ECDSA (NIST Standard)</h3>
+                    <p>ECDSA with NIST P-256 curve for government and enterprise applications:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">P-256 ECDSA Example</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">use forge_ec_curves::p256::P256;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_hash::sha2::{Sha256, Sha384};
+use forge_ec_encoding::der::DerEncoding;
+
+fn p256_ecdsa_example() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rng = OsRng::new();
+
+    // Generate P-256 key pair
+    let private_key = P256::random_scalar(&mut rng);
+    let public_key_point = P256::multiply(&P256::generator(), &private_key);
+    let public_key = P256::to_affine(&public_key_point);
+
+    println!("P-256 Key Pair Generated");
+    println!("Private key size: {} bits", private_key.bit_length());
+    println!("Public key size: {} bits", public_key.x.bit_length());
+
+    // Sign with different hash functions
+    let message = b"NIST P-256 digital signature test";
+
+    // SHA-256 signature
+    let sig_sha256 = Ecdsa::<P256, Sha256>::sign(&private_key, message)?;
+    let valid_sha256 = Ecdsa::<P256, Sha256>::verify(&public_key, message, &sig_sha256);
+    println!("SHA-256 signature valid: {}", valid_sha256);
+
+    // SHA-384 signature (stronger hash)
+    let sig_sha384 = Ecdsa::<P256, Sha384>::sign(&private_key, message)?;
+    let valid_sha384 = Ecdsa::<P256, Sha384>::verify(&public_key, message, &sig_sha384);
+    println!("SHA-384 signature valid: {}", valid_sha384);
+
+    // Export keys in standard formats
+    let private_key_der = private_key.to_pkcs8_der()?;
+    let public_key_der = public_key.to_spki_der()?;
+
+    println!("Private key DER size: {} bytes", private_key_der.len());
+    println!("Public key DER size: {} bytes", public_key_der.len());
+
+    // Import keys from DER
+    let imported_private = P256Scalar::from_pkcs8_der(&private_key_der)?;
+    let imported_public = P256AffinePoint::from_spki_der(&public_key_der)?;
+
+    // Verify imported keys work
+    let test_signature = Ecdsa::<P256, Sha256>::sign(&imported_private, message)?;
+    let test_valid = Ecdsa::<P256, Sha256>::verify(&imported_public, message, &test_signature);
+    assert!(test_valid, "Imported keys should work correctly");
+    println!("✓ Key import/export verified");
+
+    Ok(())
+}
+
+// TLS integration example
+fn tls_certificate_signing() -> Result<(), Box<dyn std::error::Error>> {
+    use forge_ec_interop::x509::{CertificateBuilder, Extensions};
+
+    let mut rng = OsRng::new();
+    let ca_private_key = P256::random_scalar(&mut rng);
+    let ca_public_key = P256::to_affine(&P256::multiply(&P256::generator(), &ca_private_key));
+
+    // Create a certificate signing request
+    let subject_private_key = P256::random_scalar(&mut rng);
+    let subject_public_key = P256::to_affine(&P256::multiply(&P256::generator(), &subject_private_key));
+
+    let certificate = CertificateBuilder::new()
+        .subject("CN=example.com,O=Example Corp,C=US")
+        .issuer("CN=Example CA,O=Example Corp,C=US")
+        .public_key(&subject_public_key)
+        .validity_days(365)
+        .add_extension(Extensions::SubjectAltName(vec!["example.com", "www.example.com"]))
+        .sign_with_ecdsa::<P256, Sha256>(&ca_private_key)?;
+
+    println!("Certificate generated with {} bytes", certificate.to_der().len());
+
+    Ok(())
+}</code></pre>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ ECDSA Security Considerations</h4>
+                        <ul>
+                            <li><strong>Never reuse nonces</strong>: Always use RFC 6979 deterministic nonces</li>
+                            <li><strong>Validate public keys</strong>: Ensure points are on the curve</li>
+                            <li><strong>Check signature malleability</strong>: Use canonical s values</li>
+                            <li><strong>Secure key storage</strong>: Protect private keys from disclosure</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- EdDSA Example Section -->
+                <section id="eddsa-example" class="docs-section">
+                    <h2>EdDSA Signature Examples</h2>
+                    <p>Ed25519 implementation examples with proper key derivation, message signing, and batch verification optimizations.</p>
+
+                    <h3>Basic Ed25519 Operations</h3>
+                    <p>Fundamental Ed25519 signature operations with error handling:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Ed25519 Basic Example</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">use forge_ec_signature::eddsa::Ed25519;
+use forge_ec_rng::os_rng::OsRng;
+use forge_ec_encoding::hex::{ToHex, FromHex};
+
+fn ed25519_basic_example() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rng = OsRng::new();
+
+    // Generate a 32-byte private key
+    let mut private_key = [0u8; 32];
+    rng.fill_bytes(&mut private_key);
+
+    println!("Ed25519 Private key: {}", private_key.to_hex());
+
+    // Derive the public key (32 bytes)
+    let public_key = Ed25519::derive_public_key(&private_key);
+    println!("Ed25519 Public key: {}", public_key.to_hex());
+
+    // Sign a message
+    let message = b"Ed25519 signature test message";
+    let signature = Ed25519::sign(&private_key, message);
+
+    println!("Message: {}", String::from_utf8_lossy(message));
+    println!("Signature: {}", signature.to_hex());
+    println!("Signature length: {} bytes", signature.len());
+
+    // Verify the signature
+    let is_valid = Ed25519::verify(&public_key, message, &signature);
+    println!("Signature valid: {}", is_valid);
+    assert!(is_valid, "Signature should be valid");
+
+    // Test with wrong message
+    let wrong_message = b"Different message";
+    let wrong_valid = Ed25519::verify(&public_key, wrong_message, &signature);
+    assert!(!wrong_valid, "Wrong message should fail verification");
+    println!("✓ Invalid message correctly rejected");
+
+    // Test with corrupted signature
+    let mut corrupted_signature = signature;
+    corrupted_signature[0] ^= 0x01; // Flip one bit
+    let corrupted_valid = Ed25519::verify(&public_key, message, &corrupted_signature);
+    assert!(!corrupted_valid, "Corrupted signature should fail verification");
+    println!("✓ Corrupted signature correctly rejected");
+
+    Ok(())
+}
+
+// Key derivation from seed
+fn ed25519_key_derivation() -> Result<(), Box<dyn std::error::Error>> {
+    use forge_ec_hash::sha2::Sha512;
+    use forge_ec_rng::pbkdf2::Pbkdf2;
+
+    // Derive key from password and salt (for wallet applications)
+    let password = b"user_password_123";
+    let salt = b"application_salt";
+
+    let mut derived_key = [0u8; 32];
+    Pbkdf2::<Sha512>::derive(password, salt, 100_000, &mut derived_key)?;
+
+    let public_key = Ed25519::derive_public_key(&derived_key);
+
+    println!("Derived private key: {}", derived_key.to_hex());
+    println!("Derived public key: {}", public_key.to_hex());
+
+    // Test deterministic derivation
+    let mut derived_key2 = [0u8; 32];
+    Pbkdf2::<Sha512>::derive(password, salt, 100_000, &mut derived_key2)?;
+    assert_eq!(derived_key, derived_key2, "Key derivation should be deterministic");
+    println!("✓ Deterministic key derivation verified");
+
+    Ok(())
+}</code></pre>
+                    </div>
+
+                    <h3>Batch Verification</h3>
+                    <p>Efficient batch verification for multiple Ed25519 signatures:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Ed25519 Batch Verification</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">use forge_ec_signature::eddsa::{Ed25519, BatchVerifier};
+use std::time::Instant;
+
+fn ed25519_batch_verification() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rng = OsRng::new();
+
+    // Generate multiple key pairs and signatures
+    const NUM_SIGNATURES: usize = 100;
+    let mut signatures = Vec::with_capacity(NUM_SIGNATURES);
+    let mut public_keys = Vec::with_capacity(NUM_SIGNATURES);
+    let mut messages = Vec::with_capacity(NUM_SIGNATURES);
+
+    println!("Generating {} signatures for batch verification...", NUM_SIGNATURES);
+
+    for i in 0..NUM_SIGNATURES {
+        let mut private_key = [0u8; 32];
+        rng.fill_bytes(&mut private_key);
+
+        let public_key = Ed25519::derive_public_key(&private_key);
+        let message = format!("Message number {}", i).into_bytes();
+        let signature = Ed25519::sign(&private_key, &message);
+
+        public_keys.push(public_key);
+        messages.push(message);
+        signatures.push(signature);
+    }
+
+    // Individual verification (baseline)
+    let start_individual = Instant::now();
+    let mut individual_results = Vec::new();
+    for i in 0..NUM_SIGNATURES {
+        let valid = Ed25519::verify(&public_keys[i], &messages[i], &signatures[i]);
+        individual_results.push(valid);
+    }
+    let individual_time = start_individual.elapsed();
+
+    let all_individual_valid = individual_results.iter().all(|&v| v);
+    println!("Individual verification: {} valid, took {:?}",
+             individual_results.iter().filter(|&&v| v).count(),
+             individual_time);
+
+    // Batch verification (optimized)
+    let start_batch = Instant::now();
+    let batch_valid = Ed25519::batch_verify(&public_keys, &messages, &signatures);
+    let batch_time = start_batch.elapsed();
+
+    println!("Batch verification: {} valid, took {:?}",
+             if batch_valid { NUM_SIGNATURES } else { 0 },
+             batch_time);
+
+    assert_eq!(all_individual_valid, batch_valid, "Batch and individual results should match");
+
+    let speedup = individual_time.as_nanos() as f64 / batch_time.as_nanos() as f64;
+    println!("Batch verification speedup: {:.2}x", speedup);
+
+    // Test with one invalid signature
+    let mut corrupted_signatures = signatures.clone();
+    corrupted_signatures[50][0] ^= 0x01; // Corrupt one signature
+
+    let batch_invalid = Ed25519::batch_verify(&public_keys, &messages, &corrupted_signatures);
+    assert!(!batch_invalid, "Batch verification should fail with invalid signature");
+    println!("✓ Batch verification correctly rejects invalid signatures");
+
+    Ok(())
+}</code></pre>
+                    </div>
+
+                    <h3>SSH Integration</h3>
+                    <p>Ed25519 integration with SSH for secure authentication:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">SSH Ed25519 Integration</span>
+                            <button class="copy-btn hover-glow">Copy</button>
+                        </div>
+                        <pre><code class="language-rust">use forge_ec_interop::ssh::{SshKeyFormat, SshSignature};
+use forge_ec_encoding::base64::Base64;
+
+fn ssh_ed25519_example() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rng = OsRng::new();
+
+    // Generate SSH Ed25519 key pair
+    let mut private_key = [0u8; 32];
+    rng.fill_bytes(&mut private_key);
+    let public_key = Ed25519::derive_public_key(&private_key);
+
+    // Format as SSH public key
+    let ssh_public_key = SshKeyFormat::ed25519_public_key(&public_key, "user@example.com")?;
+    println!("SSH public key:\n{}", ssh_public_key);
+
+    // SSH authentication challenge
+    let challenge_data = b"SSH authentication challenge";
+    let signature = Ed25519::sign(&private_key, challenge_data);
+
+    // Format as SSH signature
+    let ssh_signature = SshSignature::new("ssh-ed25519", &signature);
+    let ssh_sig_blob = ssh_signature.to_wire_format()?;
+
+    println!("SSH signature blob: {}", Base64::encode(&ssh_sig_blob));
+
+    // Verify SSH signature
+    let parsed_signature = SshSignature::from_wire_format(&ssh_sig_blob)?;
+    let is_valid = Ed25519::verify(&public_key, challenge_data, &parsed_signature.signature);
+
+    assert!(is_valid, "SSH signature should be valid");
+    println!("✓ SSH Ed25519 authentication verified");
+
+    // Generate SSH private key file format
+    let ssh_private_key = SshKeyFormat::ed25519_private_key(&private_key, "user@example.com")?;
+    println!("SSH private key format generated ({} bytes)", ssh_private_key.len());
+
+    Ok(())
+}
+
+// Certificate signing with Ed25519
+fn ed25519_certificate_example() -> Result<(), Box<dyn std::error::Error>> {
+    use forge_ec_interop::x509::{CertificateBuilder, SignatureAlgorithm};
+
+    let mut rng = OsRng::new();
+
+    // CA key pair
+    let mut ca_private_key = [0u8; 32];
+    rng.fill_bytes(&mut ca_private_key);
+    let ca_public_key = Ed25519::derive_public_key(&ca_private_key);
+
+    // Subject key pair
+    let mut subject_private_key = [0u8; 32];
+    rng.fill_bytes(&mut subject_private_key);
+    let subject_public_key = Ed25519::derive_public_key(&subject_private_key);
+
+    // Create certificate with Ed25519 signature
+    let certificate = CertificateBuilder::new()
+        .subject("CN=ed25519.example.com,O=Example Corp")
+        .issuer("CN=Ed25519 CA,O=Example Corp")
+        .public_key_ed25519(&subject_public_key)
+        .validity_days(90)
+        .signature_algorithm(SignatureAlgorithm::Ed25519)
+        .sign_ed25519(&ca_private_key)?;
+
+    println!("Ed25519 certificate generated");
+    println!("Certificate size: {} bytes", certificate.to_der().len());
+
+    // Verify certificate signature
+    let cert_valid = certificate.verify_signature_ed25519(&ca_public_key)?;
+    assert!(cert_valid, "Certificate signature should be valid");
+    println!("✓ Ed25519 certificate signature verified");
+
+    Ok(())
+}</code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🚀 Ed25519 Advantages</h4>
+                        <ul>
+                            <li><strong>High Performance</strong>: Faster than ECDSA for both signing and verification</li>
+                            <li><strong>Small Signatures</strong>: Only 64 bytes per signature</li>
+                            <li><strong>Deterministic</strong>: No nonce generation required</li>
+                            <li><strong>Side-Channel Resistant</strong>: Built-in protection against timing attacks</li>
+                            <li><strong>Batch Verification</strong>: Efficient verification of multiple signatures</li>
+                        </ul>
+                    </div>
+                </section>
             </div>
         </main>
     </div>

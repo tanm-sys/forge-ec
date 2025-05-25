@@ -61,9 +61,12 @@
             <div class="nav-menu" id="nav-menu">
                 <a href="#home" class="nav-link">Home</a>
                 <a href="#features" class="nav-link">Features</a>
+                <a href="#visual-aids" class="nav-link">Visual Guide</a>
                 <a href="docs/" class="nav-link">Documentation</a>
                 <a href="examples/" class="nav-link">Examples</a>
                 <a href="#performance" class="nav-link">Performance</a>
+                <a href="#contributors" class="nav-link">Contributors</a>
+                <a href="#community" class="nav-link">Community</a>
                 <a href="about/" class="nav-link">About</a>
                 <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank">GitHub</a>
             </div>
@@ -232,6 +235,170 @@ assert!(valid);</code></pre>
         </div>
     </section>
 
+    <!-- Visual Aids Section -->
+    <section id="visual-aids" class="visual-aids">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Understanding Elliptic Curves</h2>
+                <p class="section-subtitle">
+                    Visual explanations of key cryptographic concepts and operations
+                </p>
+            </div>
+
+            <div class="visual-aids-grid">
+                <div class="visual-card animate-on-scroll hover-lift">
+                    <div class="visual-header">
+                        <div class="visual-icon">📊</div>
+                        <h3>Elliptic Curve Visualization</h3>
+                    </div>
+                    <div class="visual-content">
+                        <div class="curve-diagram">
+                            <svg viewBox="0 0 400 300" class="curve-svg">
+                                <!-- Coordinate system -->
+                                <defs>
+                                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+
+                                <!-- Grid -->
+                                <g class="grid" stroke="#e5e7eb" stroke-width="0.5" opacity="0.5">
+                                    <line x1="0" y1="150" x2="400" y2="150"/>
+                                    <line x1="200" y1="0" x2="200" y2="300"/>
+                                    <circle cx="200" cy="150" r="2" fill="#6b7280"/>
+                                </g>
+
+                                <!-- Elliptic curve -->
+                                <path d="M 50 100 Q 100 50 150 80 Q 200 110 250 80 Q 300 50 350 100 Q 350 150 350 200 Q 300 250 250 220 Q 200 190 150 220 Q 100 250 50 200 Q 50 150 50 100"
+                                      stroke="url(#curveGradient)" stroke-width="3" fill="none" class="curve-path"/>
+
+                                <!-- Points on curve -->
+                                <circle cx="150" cy="80" r="4" fill="#ef4444" class="point-p animate-pulse"/>
+                                <circle cx="250" cy="80" r="4" fill="#10b981" class="point-q animate-pulse"/>
+                                <circle cx="200" cy="220" r="4" fill="#f59e0b" class="point-r animate-pulse"/>
+
+                                <!-- Labels -->
+                                <text x="150" y="70" text-anchor="middle" class="point-label" fill="#ef4444">P</text>
+                                <text x="250" y="70" text-anchor="middle" class="point-label" fill="#10b981">Q</text>
+                                <text x="200" y="240" text-anchor="middle" class="point-label" fill="#f59e0b">P+Q</text>
+
+                                <!-- Line through P and Q -->
+                                <line x1="120" y1="90" x2="280" y2="70" stroke="#6b7280" stroke-width="1" stroke-dasharray="5,5" opacity="0.7"/>
+                            </svg>
+                        </div>
+                        <p class="visual-description">
+                            Elliptic curve point addition: P + Q = R, where R is the reflection of the intersection point.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="visual-card animate-on-scroll hover-lift">
+                    <div class="visual-header">
+                        <div class="visual-icon">🔐</div>
+                        <h3>Signature Process</h3>
+                    </div>
+                    <div class="visual-content">
+                        <div class="signature-flow">
+                            <div class="flow-step">
+                                <div class="step-icon">📝</div>
+                                <div class="step-content">
+                                    <h4>Message</h4>
+                                    <p>Original data to sign</p>
+                                </div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="step-icon">🔨</div>
+                                <div class="step-content">
+                                    <h4>Hash</h4>
+                                    <p>SHA-256/SHA-3</p>
+                                </div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="step-icon">🔑</div>
+                                <div class="step-content">
+                                    <h4>Sign</h4>
+                                    <p>Private key + nonce</p>
+                                </div>
+                            </div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-step">
+                                <div class="step-icon">✅</div>
+                                <div class="step-content">
+                                    <h4>Signature</h4>
+                                    <p>(r, s) pair</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="visual-description">
+                            Digital signature generation process using elliptic curve cryptography.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="visual-card animate-on-scroll hover-lift">
+                    <div class="visual-header">
+                        <div class="visual-icon">🛡️</div>
+                        <h3>Supported Curves</h3>
+                    </div>
+                    <div class="visual-content">
+                        <div class="curves-grid">
+                            <div class="curve-item">
+                                <div class="curve-badge secp256k1">
+                                    <span class="curve-name">secp256k1</span>
+                                    <span class="curve-desc">Bitcoin Standard</span>
+                                </div>
+                                <div class="curve-stats">
+                                    <span class="stat">256-bit</span>
+                                    <span class="stat">ECDSA</span>
+                                    <span class="stat">Schnorr</span>
+                                </div>
+                            </div>
+                            <div class="curve-item">
+                                <div class="curve-badge p256">
+                                    <span class="curve-name">P-256</span>
+                                    <span class="curve-desc">NIST Standard</span>
+                                </div>
+                                <div class="curve-stats">
+                                    <span class="stat">256-bit</span>
+                                    <span class="stat">ECDSA</span>
+                                    <span class="stat">ECDH</span>
+                                </div>
+                            </div>
+                            <div class="curve-item">
+                                <div class="curve-badge ed25519">
+                                    <span class="curve-name">Ed25519</span>
+                                    <span class="curve-desc">Modern Standard</span>
+                                </div>
+                                <div class="curve-stats">
+                                    <span class="stat">255-bit</span>
+                                    <span class="stat">EdDSA</span>
+                                    <span class="stat">Fast</span>
+                                </div>
+                            </div>
+                            <div class="curve-item">
+                                <div class="curve-badge curve25519">
+                                    <span class="curve-name">Curve25519</span>
+                                    <span class="curve-desc">Key Exchange</span>
+                                </div>
+                                <div class="curve-stats">
+                                    <span class="stat">255-bit</span>
+                                    <span class="stat">ECDH</span>
+                                    <span class="stat">Secure</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="visual-description">
+                            Comprehensive support for industry-standard elliptic curves with optimized implementations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Quick Start Section -->
     <section id="quick-start" class="quick-start">
         <div class="container">
@@ -245,17 +412,36 @@ assert!(valid);</code></pre>
             <div class="quick-start-content">
                 <div class="installation">
                     <h3>Installation</h3>
-                    <div class="code-block">
+                    <div class="code-block enhanced-code-block">
                         <div class="code-header">
-                            <span class="code-title">Cargo.toml</span>
-                            <button class="copy-btn" data-copy="[dependencies]
+                            <div class="code-title-section">
+                                <span class="code-title">Cargo.toml</span>
+                                <div class="code-badges">
+                                    <span class="code-badge">TOML</span>
+                                    <span class="code-badge success">Latest</span>
+                                </div>
+                            </div>
+                            <div class="code-actions">
+                                <button class="code-action-btn line-numbers-toggle" title="Toggle line numbers">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/>
+                                    </svg>
+                                </button>
+                                <button class="copy-btn enhanced-copy-btn" data-copy="[dependencies]
 forge-ec-core = &quot;0.1&quot;
 forge-ec-curves = &quot;0.1&quot;
-forge-ec-signature = &quot;0.1&quot;">
-                                Copy
-                            </button>
+forge-ec-signature = &quot;0.1&quot;" title="Copy to clipboard">
+                                    <svg class="copy-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                    </svg>
+                                    <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                    </svg>
+                                    <span class="copy-text">Copy</span>
+                                </button>
+                            </div>
                         </div>
-                        <pre><code class="language-toml">[dependencies]
+                        <pre class="line-numbers"><code class="language-toml">[dependencies]
 forge-ec-core = "0.1"
 forge-ec-curves = "0.1"
 forge-ec-signature = "0.1"</code></pre>
@@ -270,12 +456,42 @@ forge-ec-signature = "0.1"</code></pre>
                     </div>
 
                     <div class="tab-content active" id="ecdsa-tab">
-                        <div class="code-block">
+                        <div class="code-block enhanced-code-block">
                             <div class="code-header">
-                                <span class="code-title">ECDSA Example</span>
-                                <button class="copy-btn" data-copy="// ECDSA code here">Copy</button>
+                                <div class="code-title-section">
+                                    <span class="code-title">ECDSA Example</span>
+                                    <div class="code-badges">
+                                        <span class="code-badge">Rust</span>
+                                        <span class="code-badge primary">secp256k1</span>
+                                        <span class="code-badge warning">⚠️ Secure</span>
+                                    </div>
+                                </div>
+                                <div class="code-actions">
+                                    <button class="code-action-btn line-numbers-toggle" title="Toggle line numbers">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="copy-btn enhanced-copy-btn" data-copy="// Generate key pair and sign message
+let mut rng = OsRng::new();
+let secret_key = Secp256k1::random_scalar(&mut rng);
+let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+
+// Sign and verify
+let message = b&quot;Hello, World!&quot;;
+let signature = Ecdsa::&lt;Secp256k1, Sha256&gt;::sign(&secret_key, message);
+let valid = Ecdsa::&lt;Secp256k1, Sha256&gt;::verify(&public_key_affine, message, &signature);" title="Copy to clipboard">
+                                        <svg class="copy-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                        </svg>
+                                        <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                        <span class="copy-text">Copy</span>
+                                    </button>
+                                </div>
                             </div>
-                            <pre><code class="language-rust">// Generate key pair and sign message
+                            <pre class="line-numbers"><code class="language-rust">// Generate key pair and sign message
 let mut rng = OsRng::new();
 let secret_key = Secp256k1::random_scalar(&mut rng);
 let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
@@ -320,6 +536,228 @@ let bob_pk = Secp256k1::multiply(&Secp256k1::generator(), &bob_sk);
 let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contributors Section -->
+    <section id="contributors" class="contributors">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Hall of Fame</h2>
+                <p class="section-subtitle">
+                    Recognizing the amazing contributors who make Forge EC possible
+                </p>
+            </div>
+
+            <div class="contributors-content">
+                <div class="contributor-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-number counter" data-target="1">1</div>
+                        <div class="stat-label">Core Contributors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔧</div>
+                        <div class="stat-number counter" data-target="62">62</div>
+                        <div class="stat-label">Commits</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🐛</div>
+                        <div class="stat-number counter" data-target="0">0</div>
+                        <div class="stat-label">Issues Resolved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-number counter" data-target="0">0</div>
+                        <div class="stat-label">GitHub Stars</div>
+                    </div>
+                </div>
+
+                <div class="contributors-grid">
+                    <div class="contributor-card featured animate-on-scroll hover-lift">
+                        <div class="contributor-avatar">
+                            <img src="https://github.com/tanm-sys.png" alt="Tanmay Patil" class="avatar-img">
+                            <div class="contributor-badge">
+                                <span class="badge-icon">👑</span>
+                                <span class="badge-text">Creator</span>
+                            </div>
+                        </div>
+                        <div class="contributor-info">
+                            <h3 class="contributor-name">Tanmay Patil</h3>
+                            <p class="contributor-role">Creator & Lead Developer</p>
+                            <p class="contributor-bio">
+                                Cryptography enthusiast and Rust developer. Creator of Forge EC and passionate about
+                                building secure, high-performance cryptographic systems.
+                            </p>
+                            <div class="contributor-stats">
+                                <div class="contrib-stat">
+                                    <span class="stat-value">62</span>
+                                    <span class="stat-name">Commits</span>
+                                </div>
+                                <div class="contrib-stat">
+                                    <span class="stat-value">6</span>
+                                    <span class="stat-name">Crates</span>
+                                </div>
+                                <div class="contrib-stat">
+                                    <span class="stat-value">3+</span>
+                                    <span class="stat-name">Years</span>
+                                </div>
+                            </div>
+                            <div class="contributor-links">
+                                <a href="https://github.com/tanm-sys" class="contrib-link" target="_blank" title="GitHub">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                                <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" class="contrib-link" target="_blank" title="LinkedIn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                    </svg>
+                                </a>
+                                <a href="mailto:tanmayspatil2006@gmail.com" class="contrib-link" title="Email">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="contribution-call-to-action animate-on-scroll">
+                        <div class="cta-content">
+                            <h3>Want to Contribute?</h3>
+                            <p>
+                                Forge EC is an open-source project and we welcome contributions from the community.
+                                Whether you're fixing bugs, adding features, improving documentation, or helping with testing,
+                                your contributions are valuable!
+                            </p>
+                            <div class="contribution-types">
+                                <div class="contrib-type">
+                                    <div class="type-icon">🐛</div>
+                                    <div class="type-info">
+                                        <h4>Bug Reports</h4>
+                                        <p>Help us identify and fix issues</p>
+                                    </div>
+                                </div>
+                                <div class="contrib-type">
+                                    <div class="type-icon">✨</div>
+                                    <div class="type-info">
+                                        <h4>Feature Requests</h4>
+                                        <p>Suggest new functionality</p>
+                                    </div>
+                                </div>
+                                <div class="contrib-type">
+                                    <div class="type-icon">📚</div>
+                                    <div class="type-info">
+                                        <h4>Documentation</h4>
+                                        <p>Improve guides and examples</p>
+                                    </div>
+                                </div>
+                                <div class="contrib-type">
+                                    <div class="type-icon">🔧</div>
+                                    <div class="type-info">
+                                        <h4>Code Contributions</h4>
+                                        <p>Submit pull requests</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cta-actions">
+                                <a href="https://github.com/tanm-sys/forge-ec/blob/main/CONTRIBUTING.md" class="btn btn-primary" target="_blank">
+                                    Contribution Guidelines
+                                </a>
+                                <a href="https://github.com/tanm-sys/forge-ec/issues" class="btn btn-outline" target="_blank">
+                                    View Issues
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community & Feedback Section -->
+    <section id="community" class="community">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Community & Feedback</h2>
+                <p class="section-subtitle">
+                    Connect with the community and help us improve Forge EC
+                </p>
+            </div>
+
+            <div class="community-grid">
+                <div class="community-card animate-on-scroll hover-lift">
+                    <div class="community-header">
+                        <div class="community-icon">💬</div>
+                        <h3>Discussions</h3>
+                    </div>
+                    <p class="community-description">
+                        Join our GitHub Discussions to ask questions, share ideas, and connect with other developers.
+                    </p>
+                    <a href="https://github.com/tanm-sys/forge-ec/discussions" class="community-link" target="_blank">
+                        Join Discussions →
+                    </a>
+                </div>
+
+                <div class="community-card animate-on-scroll hover-lift">
+                    <div class="community-header">
+                        <div class="community-icon">🐛</div>
+                        <h3>Issue Tracker</h3>
+                    </div>
+                    <p class="community-description">
+                        Report bugs, request features, or browse existing issues to see what we're working on.
+                    </p>
+                    <a href="https://github.com/tanm-sys/forge-ec/issues" class="community-link" target="_blank">
+                        View Issues →
+                    </a>
+                </div>
+
+                <div class="community-card animate-on-scroll hover-lift">
+                    <div class="community-header">
+                        <div class="community-icon">📧</div>
+                        <h3>Direct Contact</h3>
+                    </div>
+                    <p class="community-description">
+                        Have a specific question or need support? Reach out directly via email.
+                    </p>
+                    <a href="mailto:tanmayspatil2006@gmail.com" class="community-link">
+                        Send Email →
+                    </a>
+                </div>
+
+                <div class="feedback-form-card animate-on-scroll">
+                    <div class="form-header">
+                        <div class="form-icon">📝</div>
+                        <h3>Quick Feedback</h3>
+                        <p>Help us improve by sharing your thoughts</p>
+                    </div>
+                    <form class="feedback-form" id="feedback-form">
+                        <div class="form-group">
+                            <label for="feedback-type">Feedback Type</label>
+                            <select id="feedback-type" name="type" required>
+                                <option value="">Select type...</option>
+                                <option value="bug">Bug Report</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="documentation">Documentation</option>
+                                <option value="general">General Feedback</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="feedback-message">Message</label>
+                            <textarea id="feedback-message" name="message" rows="4" placeholder="Tell us what you think..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="feedback-email">Email (optional)</label>
+                            <input type="email" id="feedback-email" name="email" placeholder="your@email.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Send Feedback</span>
+                            <span class="btn-loading" style="display: none;">Sending...</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
