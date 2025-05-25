@@ -1,6 +1,9 @@
 // Main JavaScript for Forge EC Website
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Add loading class initially
+    document.body.classList.add('loading');
+
     // Initialize all components
     initThemeToggle();
     initNavigation();
@@ -9,33 +12,49 @@ document.addEventListener('DOMContentLoaded', function() {
     initScrollAnimations();
     initSmoothScrolling();
     initPerformanceSection();
+    initEnhancedInteractions();
+
+    // Remove loading class after a short delay to trigger animations
+    setTimeout(() => {
+        document.body.classList.remove('loading');
+    }, 100);
 });
 
 // Theme Toggle Functionality
 function initThemeToggle() {
     const themeToggle = document.getElementById('theme-toggle');
     const themeIcon = themeToggle.querySelector('.theme-icon');
-    
+
     // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
-    
-    themeToggle.addEventListener('click', function() {
+
+    themeToggle.addEventListener('click', function(e) {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
+
+        // Add switching animation class
+        themeToggle.classList.add('switching');
+
+        // Add ripple effect if ForgeAnimations is available
+        if (window.ForgeAnimations) {
+            ForgeAnimations.addRippleEffect(themeToggle, e);
+        }
+
+        // Smooth theme transition
+        document.documentElement.style.transition = 'all 0.3s ease';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
-        
-        // Add a subtle animation
-        themeIcon.style.transform = 'scale(0.8)';
+
+        // Remove transition and switching class after animation
         setTimeout(() => {
-            themeIcon.style.transform = 'scale(1)';
-        }, 150);
+            document.documentElement.style.transition = '';
+            themeToggle.classList.remove('switching');
+        }, 600);
     });
-    
+
     function updateThemeIcon(theme) {
         themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
@@ -46,7 +65,7 @@ function initNavigation() {
     const navToggle = document.getElementById('nav-toggle');
     const navMenu = document.getElementById('nav-menu');
     const navbar = document.getElementById('navbar');
-    
+
     // Mobile menu toggle
     if (navToggle) {
         navToggle.addEventListener('click', function() {
@@ -54,7 +73,7 @@ function initNavigation() {
             navToggle.classList.toggle('active');
         });
     }
-    
+
     // Close mobile menu when clicking on a link
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
@@ -63,25 +82,25 @@ function initNavigation() {
             navToggle.classList.remove('active');
         });
     });
-    
+
     // Navbar scroll effect
     let lastScrollTop = 0;
     window.addEventListener('scroll', function() {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
+
         if (scrollTop > 100) {
             navbar.classList.add('scrolled');
         } else {
             navbar.classList.remove('scrolled');
         }
-        
+
         // Hide/show navbar on scroll
         if (scrollTop > lastScrollTop && scrollTop > 200) {
             navbar.style.transform = 'translateY(-100%)';
         } else {
             navbar.style.transform = 'translateY(0)';
         }
-        
+
         lastScrollTop = scrollTop;
     });
 }
@@ -90,15 +109,15 @@ function initNavigation() {
 function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
-    
+
     tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             const targetTab = this.getAttribute('data-tab');
-            
+
             // Remove active class from all buttons and contents
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
-            
+
             // Add active class to clicked button and corresponding content
             this.classList.add('active');
             const targetContent = document.getElementById(targetTab + '-tab');
@@ -112,28 +131,28 @@ function initTabs() {
 // Copy Button Functionality
 function initCopyButtons() {
     const copyButtons = document.querySelectorAll('.copy-btn');
-    
+
     copyButtons.forEach(button => {
         button.addEventListener('click', async function() {
-            const textToCopy = this.getAttribute('data-copy') || 
+            const textToCopy = this.getAttribute('data-copy') ||
                               this.closest('.code-block').querySelector('code').textContent;
-            
+
             try {
                 await navigator.clipboard.writeText(textToCopy);
-                
+
                 // Visual feedback
                 const originalText = this.textContent;
                 this.textContent = 'Copied!';
                 this.classList.add('copied');
-                
+
                 setTimeout(() => {
                     this.textContent = originalText;
                     this.classList.remove('copied');
                 }, 2000);
-                
+
             } catch (err) {
                 console.error('Failed to copy text: ', err);
-                
+
                 // Fallback for older browsers
                 const textArea = document.createElement('textarea');
                 textArea.value = textToCopy;
@@ -141,12 +160,12 @@ function initCopyButtons() {
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
+
                 // Visual feedback
                 const originalText = this.textContent;
                 this.textContent = 'Copied!';
                 this.classList.add('copied');
-                
+
                 setTimeout(() => {
                     this.textContent = originalText;
                     this.classList.remove('copied');
@@ -162,7 +181,7 @@ function initScrollAnimations() {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     };
-    
+
     const observer = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -170,7 +189,7 @@ function initScrollAnimations() {
             }
         });
     }, observerOptions);
-    
+
     // Observe elements that should animate on scroll
     const animatedElements = document.querySelectorAll('.scroll-reveal, .feature-card, .performance-card');
     animatedElements.forEach(el => {
@@ -182,18 +201,18 @@ function initScrollAnimations() {
 // Smooth Scrolling for Anchor Links
 function initSmoothScrolling() {
     const anchorLinks = document.querySelectorAll('a[href^="#"]');
-    
+
     anchorLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
             const targetElement = document.querySelector(targetId);
-            
+
             if (targetElement) {
                 e.preventDefault();
-                
+
                 const navbarHeight = document.getElementById('navbar').offsetHeight;
                 const targetPosition = targetElement.offsetTop - navbarHeight - 20;
-                
+
                 window.scrollTo({
                     top: targetPosition,
                     behavior: 'smooth'
@@ -209,12 +228,12 @@ function initPerformanceSection() {
     if (!document.getElementById('performance')) {
         addPerformanceSection();
     }
-    
+
     // Animate performance metrics
     const performanceCards = document.querySelectorAll('.performance-card');
     performanceCards.forEach(card => {
         const metrics = card.querySelectorAll('.metric-value');
-        
+
         const observer = new IntersectionObserver(function(entries) {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -223,7 +242,7 @@ function initPerformanceSection() {
                 }
             });
         });
-        
+
         observer.observe(card);
     });
 }
@@ -238,7 +257,7 @@ function addPerformanceSection() {
                         Optimized implementations with constant-time operations
                     </p>
                 </div>
-                
+
                 <div class="performance-grid">
                     <div class="performance-card">
                         <h3 class="performance-title">ECDSA secp256k1</h3>
@@ -255,7 +274,7 @@ function addPerformanceSection() {
                             <span class="metric-value" data-value="50000">50,000 ops/sec</span>
                         </div>
                     </div>
-                    
+
                     <div class="performance-card">
                         <h3 class="performance-title">Ed25519</h3>
                         <div class="performance-metric">
@@ -271,7 +290,7 @@ function addPerformanceSection() {
                             <span class="metric-value" data-value="80000">80,000 ops/sec</span>
                         </div>
                     </div>
-                    
+
                     <div class="performance-card">
                         <h3 class="performance-title">X25519 ECDH</h3>
                         <div class="performance-metric">
@@ -291,7 +310,7 @@ function addPerformanceSection() {
             </div>
         </section>
     `;
-    
+
     // Insert before footer
     const footer = document.querySelector('.footer');
     footer.insertAdjacentHTML('beforebegin', performanceHTML);
@@ -309,24 +328,24 @@ function animateMetrics(metrics) {
 function animateNumber(element, start, end, duration) {
     const startTime = performance.now();
     const originalText = element.textContent;
-    
+
     function updateNumber(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         // Easing function
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         const current = Math.floor(start + (end - start) * easeOutQuart);
-        
+
         element.textContent = current.toLocaleString() + ' ops/sec';
-        
+
         if (progress < 1) {
             requestAnimationFrame(updateNumber);
         } else {
             element.textContent = originalText;
         }
     }
-    
+
     requestAnimationFrame(updateNumber);
 }
 
@@ -347,6 +366,50 @@ function debounce(func, wait) {
 window.addEventListener('error', function(e) {
     console.error('JavaScript error:', e.error);
 });
+
+// Enhanced Interactions
+function initEnhancedInteractions() {
+    // Add ripple effect to all buttons
+    const buttons = document.querySelectorAll('.btn, .theme-toggle, .copy-btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (window.ForgeAnimations) {
+                ForgeAnimations.addRippleEffect(this, e);
+            }
+        });
+    });
+
+    // Add floating animation to feature cards
+    if (window.ForgeAnimations) {
+        ForgeAnimations.addFloatingAnimation('.feature-card');
+    }
+
+    // Enhanced hover effects for cards
+    const cards = document.querySelectorAll('.feature-card, .performance-card, .project-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+            this.style.boxShadow = 'var(--shadow-2xl)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
+
+    // Smooth scroll for navigation links
+    const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('href');
+            if (window.ForgeAnimations) {
+                ForgeAnimations.smoothScrollTo(target);
+            }
+        });
+    });
+}
 
 // Performance Monitoring
 if ('performance' in window) {
