@@ -8,6 +8,7 @@
 
     <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/loading.css">
     <link rel="stylesheet" href="../css/prism.css">
     <link rel="stylesheet" href="../css/examples.css">
 
@@ -16,6 +17,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Loading Progress Bar -->
+    <div class="loading-progress" id="loading-progress"></div>
+
+    <!-- Page Loader -->
+    <div class="page-loader" id="page-loader">
+        <div>
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Loading Examples...</div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -49,19 +61,19 @@
     <section class="examples-hero">
         <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title fade-in">
-                    <span class="gradient-text">Code Examples</span>
+                <h1 class="hero-title fade-in animate-slide-in-blur">
+                    <span class="gradient-text shimmer-text">Code Examples</span>
                 </h1>
-                <p class="hero-subtitle fade-in stagger-1">
+                <p class="hero-subtitle fade-in stagger-1 animate-bounce-in">
                     Interactive examples and tutorials to get you started with Forge EC cryptography
                 </p>
 
                 <div class="example-categories slide-up stagger-2">
-                    <button class="category-btn active" data-category="all">All Examples</button>
-                    <button class="category-btn" data-category="signatures">Signatures</button>
-                    <button class="category-btn" data-category="key-exchange">Key Exchange</button>
-                    <button class="category-btn" data-category="encoding">Encoding</button>
-                    <button class="category-btn" data-category="advanced">Advanced</button>
+                    <button class="category-btn active hover-lift" data-category="all">All Examples</button>
+                    <button class="category-btn hover-lift" data-category="signatures">Signatures</button>
+                    <button class="category-btn hover-lift" data-category="key-exchange">Key Exchange</button>
+                    <button class="category-btn hover-lift" data-category="encoding">Encoding</button>
+                    <button class="category-btn hover-lift" data-category="advanced">Advanced</button>
                 </div>
             </div>
         </div>
@@ -72,11 +84,11 @@
         <div class="container">
             <div class="examples-grid" id="examples-grid">
                 <!-- ECDSA Example -->
-                <div class="example-card animate-on-scroll" data-category="signatures" data-difficulty="beginner">
+                <div class="example-card animate-on-scroll hover-lift magnetic-hover" data-category="signatures" data-difficulty="beginner">
                     <div class="example-header">
                         <h3 class="example-title">ECDSA Signatures</h3>
                         <div class="example-badges">
-                            <span class="badge difficulty-beginner">Beginner</span>
+                            <span class="badge difficulty-beginner animate-pulse">Beginner</span>
                             <span class="badge">secp256k1</span>
                             <span class="badge">ECDSA</span>
                         </div>
@@ -122,11 +134,11 @@ assert!(valid);</code></pre>
                         </div>
                     </div>
                     <div class="example-actions">
-                        <button class="btn btn-primary run-example" data-example="ecdsa">
+                        <button class="btn btn-primary run-example hover-glow" data-example="ecdsa">
                             <span class="btn-icon">▶️</span>
                             Run Example
                         </button>
-                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/examples/ecdsa.rs" class="btn btn-outline" target="_blank">
+                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/examples/ecdsa.rs" class="btn btn-outline hover-rotate" target="_blank">
                             <span class="btn-icon">📁</span>
                             View Full Code
                         </a>
@@ -134,11 +146,11 @@ assert!(valid);</code></pre>
                 </div>
 
                 <!-- EdDSA Example -->
-                <div class="example-card animate-on-scroll" data-category="signatures" data-difficulty="beginner">
+                <div class="example-card animate-on-scroll hover-lift magnetic-hover" data-category="signatures" data-difficulty="beginner">
                     <div class="example-header">
                         <h3 class="example-title">EdDSA Signatures</h3>
                         <div class="example-badges">
-                            <span class="badge difficulty-beginner">Beginner</span>
+                            <span class="badge difficulty-beginner animate-pulse">Beginner</span>
                             <span class="badge">Ed25519</span>
                             <span class="badge">EdDSA</span>
                         </div>
