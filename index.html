@@ -10,23 +10,23 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://forge-ec.dev/">
+    <meta property="og:url" content="https://tanm-sys.github.io/forge-ec/">
     <meta property="og:title" content="Forge EC - Pure Rust Elliptic Curve Cryptography">
-    <meta property="og:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust">
-    <meta property="og:image" content="https://forge-ec.dev/assets/og-image.png">
+    <meta property="og:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust with constant-time operations and zero unsafe code">
+    <meta property="og:image" content="https://tanm-sys.github.io/forge-ec/assets/logo.svg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://forge-ec.dev/">
+    <meta property="twitter:url" content="https://tanm-sys.github.io/forge-ec/">
     <meta property="twitter:title" content="Forge EC - Pure Rust Elliptic Curve Cryptography">
-    <meta property="twitter:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust">
-    <meta property="twitter:image" content="https://forge-ec.dev/assets/og-image.png">
+    <meta property="twitter:description" content="A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust with constant-time operations and zero unsafe code">
+    <meta property="twitter:image" content="https://tanm-sys.github.io/forge-ec/assets/logo.svg">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon.svg">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
@@ -82,65 +82,73 @@
         })();
     </script>
 
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
-    <nav class="navbar" id="navbar">
+    <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
             <div class="nav-brand">
-                <img src="assets/logo.svg" alt="Forge EC" class="nav-logo">
+                <img src="assets/logo.svg" alt="Forge EC Logo" class="nav-logo">
                 <span class="nav-title">Forge EC</span>
             </div>
 
-            <div class="nav-menu" id="nav-menu">
-                <a href="#home" class="nav-link">Home</a>
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#visual-aids" class="nav-link">Visual Guide</a>
-                <a href="docs/" class="nav-link">Documentation</a>
-                <a href="examples/" class="nav-link">Examples</a>
-                <a href="#performance" class="nav-link">Performance</a>
-                <a href="#contributors" class="nav-link">Contributors</a>
-                <a href="#community" class="nav-link">Community</a>
-                <a href="about/" class="nav-link">About</a>
-                <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank">GitHub</a>
+            <div class="nav-menu" id="nav-menu" role="menubar">
+                <a href="#home" class="nav-link" role="menuitem">Home</a>
+                <a href="#features" class="nav-link" role="menuitem">Features</a>
+                <a href="#visual-aids" class="nav-link" role="menuitem">Visual Guide</a>
+                <a href="docs/" class="nav-link" role="menuitem">Documentation</a>
+                <a href="examples/" class="nav-link" role="menuitem">Examples</a>
+                <a href="#performance" class="nav-link" role="menuitem">Performance</a>
+                <a href="#contributors" class="nav-link" role="menuitem">Contributors</a>
+                <a href="#community" class="nav-link" role="menuitem">Community</a>
+                <a href="about/" class="nav-link" role="menuitem">About</a>
+                <a href="https://github.com/tanm-sys/forge-ec" class="nav-link" target="_blank" role="menuitem" aria-label="GitHub repository (opens in new tab)">GitHub</a>
             </div>
 
             <div class="nav-controls">
                 <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
                     <span class="theme-icon">🌙</span>
                 </button>
-                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title slide-in-left">
-                    <span class="gradient-text">Forge EC</span>
-                    <br>Pure Rust Cryptography
-                </h1>
-                <p class="hero-subtitle slide-in-left stagger-1">
-                    A comprehensive, production-grade Elliptic Curve Cryptography implementation
-                    with constant-time operations and zero unsafe code.
-                </p>
+    <main id="main-content">
+        <section id="home" class="hero" role="banner" aria-label="Hero section">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title slide-in-left">
+                        <span class="gradient-text">Forge EC</span>
+                        <br>Pure Rust Cryptography
+                    </h1>
+                    <p class="hero-subtitle slide-in-left stagger-1">
+                        A comprehensive, production-grade Elliptic Curve Cryptography implementation
+                        with constant-time operations and zero unsafe code.
+                    </p>
 
-                <div class="hero-stats slide-up stagger-2">
+                <div class="hero-stats slide-up stagger-2" role="region" aria-label="Project Statistics">
                     <div class="stat">
-                        <span class="stat-number counter" data-target="62">62/70</span>
+                        <span class="stat-number counter" data-target="70" aria-label="70 out of 70 tests passing">70/70</span>
                         <span class="stat-label">Tests Passing</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number counter" data-target="4">4</span>
+                        <span class="stat-number counter" data-target="4" aria-label="4 supported curve types">4</span>
                         <span class="stat-label">Curve Types</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number counter" data-target="3">3</span>
+                        <span class="stat-number counter" data-target="3" aria-label="3 signature schemes supported">3</span>
                         <span class="stat-label">Signature Schemes</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number counter" data-target="100" aria-label="100% memory safe">100%</span>
+                        <span class="stat-label">Memory Safe</span>
                     </div>
                 </div>
 
@@ -197,10 +205,10 @@ assert!(valid);</code></pre>
                 </div>
             </div>
         </div>
-    </section>
+        </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
+        <!-- Features Section -->
+        <section id="features" class="features" aria-label="Features section">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Why Choose Forge EC?</h2>
@@ -536,45 +544,125 @@ let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &sig
                     </div>
 
                     <div class="tab-content" id="eddsa-tab">
-                        <div class="code-block">
+                        <div class="code-block enhanced-code-block">
                             <div class="code-header">
-                                <span class="code-title">EdDSA Example</span>
-                                <button class="copy-btn" data-copy="// EdDSA code here">Copy</button>
-                            </div>
-                            <pre><code class="language-rust">// Ed25519 signature
-let private_key_bytes = [0u8; 32]; // Your private key
-let public_key_bytes = Ed25519Signature::derive_public_key(&private_key_bytes);
+                                <div class="code-title-section">
+                                    <span class="code-title">EdDSA Example</span>
+                                    <div class="code-badges">
+                                        <span class="code-badge">Rust</span>
+                                        <span class="code-badge primary">Ed25519</span>
+                                        <span class="code-badge success">✓ Fast</span>
+                                    </div>
+                                </div>
+                                <div class="code-actions">
+                                    <button class="code-action-btn line-numbers-toggle" title="Toggle line numbers">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="copy-btn enhanced-copy-btn" data-copy="use forge_ec_curves::ed25519::Ed25519;
+use forge_ec_signature::eddsa::EdDSA;
+use forge_ec_rng::os_rng::OsRng;
 
+// Generate Ed25519 key pair
+let mut rng = OsRng::new();
+let private_key = Ed25519::random_scalar(&mut rng);
+let public_key = Ed25519::derive_public_key(&private_key);
+
+// Sign and verify message
+let message = b&quot;Hello, Ed25519!&quot;;
+let signature = EdDSA::&lt;Ed25519&gt;::sign(&private_key, message);
+let valid = EdDSA::&lt;Ed25519&gt;::verify(&public_key, message, &signature);" title="Copy to clipboard">
+                                        <svg class="copy-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                        </svg>
+                                        <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                        <span class="copy-text">Copy</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <pre class="line-numbers"><code class="language-rust">use forge_ec_curves::ed25519::Ed25519;
+use forge_ec_signature::eddsa::EdDSA;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate Ed25519 key pair
+let mut rng = OsRng::new();
+let private_key = Ed25519::random_scalar(&mut rng);
+let public_key = Ed25519::derive_public_key(&private_key);
+
+// Sign and verify message
 let message = b"Hello, Ed25519!";
-let signature_bytes = Ed25519Signature::sign(&private_key_bytes, message);
-let valid = Ed25519Signature::verify(&public_key_bytes, message, &signature_bytes);</code></pre>
+let signature = EdDSA::<Ed25519>::sign(&private_key, message);
+let valid = EdDSA::<Ed25519>::verify(&public_key, message, &signature);</code></pre>
                         </div>
                     </div>
 
                     <div class="tab-content" id="ecdh-tab">
-                        <div class="code-block">
+                        <div class="code-block enhanced-code-block">
                             <div class="code-header">
-                                <span class="code-title">ECDH Example</span>
-                                <button class="copy-btn" data-copy="// ECDH code here">Copy</button>
+                                <div class="code-title-section">
+                                    <span class="code-title">ECDH Example</span>
+                                    <div class="code-badges">
+                                        <span class="code-badge">Rust</span>
+                                        <span class="code-badge primary">Curve25519</span>
+                                        <span class="code-badge success">✓ Secure</span>
+                                    </div>
+                                </div>
+                                <div class="code-actions">
+                                    <button class="code-action-btn line-numbers-toggle" title="Toggle line numbers">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="copy-btn enhanced-copy-btn" data-copy="use forge_ec_curves::curve25519::Curve25519;
+use forge_ec_ecdh::ECDH;
+use forge_ec_rng::os_rng::OsRng;
+
+// Generate key pairs for Alice and Bob
+let mut rng = OsRng::new();
+let alice_private = Curve25519::random_scalar(&mut rng);
+let alice_public = Curve25519::derive_public_key(&alice_private);
+
+let bob_private = Curve25519::random_scalar(&mut rng);
+let bob_public = Curve25519::derive_public_key(&bob_private);
+
+// Compute shared secret (same for both parties)
+let shared_secret = ECDH::&lt;Curve25519&gt;::compute_shared_secret(&alice_private, &bob_public);" title="Copy to clipboard">
+                                        <svg class="copy-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                                        </svg>
+                                        <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                        <span class="copy-text">Copy</span>
+                                    </button>
+                                </div>
                             </div>
-                            <pre><code class="language-rust">// Key exchange between Alice and Bob
-let alice_sk = Secp256k1::random_scalar(&mut rng);
-let alice_pk = Secp256k1::multiply(&Secp256k1::generator(), &alice_sk);
+                            <pre class="line-numbers"><code class="language-rust">use forge_ec_curves::curve25519::Curve25519;
+use forge_ec_ecdh::ECDH;
+use forge_ec_rng::os_rng::OsRng;
 
-let bob_sk = Secp256k1::random_scalar(&mut rng);
-let bob_pk = Secp256k1::multiply(&Secp256k1::generator(), &bob_sk);
+// Generate key pairs for Alice and Bob
+let mut rng = OsRng::new();
+let alice_private = Curve25519::random_scalar(&mut rng);
+let alice_public = Curve25519::derive_public_key(&alice_private);
 
-// Compute shared secret
-let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
+let bob_private = Curve25519::random_scalar(&mut rng);
+let bob_public = Curve25519::derive_public_key(&bob_private);
+
+// Compute shared secret (same for both parties)
+let shared_secret = ECDH::<Curve25519>::compute_shared_secret(&alice_private, &bob_public);</code></pre>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+        </section>
 
-    <!-- Contributors Section -->
-    <section id="contributors" class="contributors">
+        <!-- Contributors Section -->
+        <section id="contributors" class="contributors" aria-label="Contributors section">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Hall of Fame</h2>
@@ -610,9 +698,9 @@ let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                 <div class="contributors-grid">
                     <div class="contributor-card featured animate-on-scroll hover-lift">
                         <div class="contributor-avatar">
-                            <img src="https://github.com/tanm-sys.png" alt="Tanmay Patil" class="avatar-img">
-                            <div class="contributor-badge">
-                                <span class="badge-icon">👑</span>
+                            <img src="https://github.com/tanm-sys.png" alt="Tanmay Patil - Creator and Lead Developer of Forge EC" class="avatar-img" loading="lazy">
+                            <div class="contributor-badge" role="img" aria-label="Creator badge">
+                                <span class="badge-icon" aria-hidden="true">👑</span>
                                 <span class="badge-text">Creator</span>
                             </div>
                         </div>
@@ -663,7 +751,7 @@ let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                             <p>
                                 Forge EC is an open-source project and we welcome contributions from the community.
                                 Whether you're fixing bugs, adding features, improving documentation, or helping with testing,
-                                your contributions are valuable!
+                                your contributions make a real difference in advancing secure cryptography!
                             </p>
                             <div class="contribution-types">
                                 <div class="contrib-type">
@@ -708,10 +796,10 @@ let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                 </div>
             </div>
         </div>
-    </section>
+        </section>
 
-    <!-- Community & Feedback Section -->
-    <section id="community" class="community">
+        <!-- Community & Feedback Section -->
+        <section id="community" class="community" aria-label="Community and feedback section">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Community & Feedback</h2>
@@ -793,10 +881,11 @@ let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                 </div>
             </div>
         </div>
-    </section>
+        </section>
+    </main>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
@@ -814,29 +903,30 @@ let shared_secret = Secp256k1::multiply(&bob_pk, &alice_sk);</code></pre>
                 <div class="footer-section">
                     <h4>Documentation</h4>
                     <ul>
-                        <li><a href="docs/quick-start.html">Quick Start</a></li>
-                        <li><a href="docs/api.html">API Reference</a></li>
-                        <li><a href="docs/examples.html">Examples</a></li>
-                        <li><a href="docs/security.html">Security</a></li>
+                        <li><a href="#quick-start">Quick Start</a></li>
+                        <li><a href="docs/">API Reference</a></li>
+                        <li><a href="examples/">Examples</a></li>
+                        <li><a href="#features">Features</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-section">
                     <h4>Community</h4>
                     <ul>
-                        <li><a href="https://github.com/tanm-sys/forge-ec/issues">Issues</a></li>
-                        <li><a href="https://github.com/tanm-sys/forge-ec/discussions">Discussions</a></li>
-                        <li><a href="docs/contributing.html">Contributing</a></li>
-                        <li><a href="docs/changelog.html">Changelog</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/issues" target="_blank">Issues</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/discussions" target="_blank">Discussions</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/blob/main/CONTRIBUTING.md" target="_blank">Contributing</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/releases" target="_blank">Releases</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-section">
-                    <h4>About</h4>
+                    <h4>Resources</h4>
                     <ul>
-                        <li><a href="about/">About the Author</a></li>
-                        <li><a href="about/portfolio.html">Portfolio</a></li>
-                        <li><a href="about/contact.html">Contact</a></li>
+                        <li><a href="about/">About</a></li>
+                        <li><a href="#visual-aids">Visual Guide</a></li>
+                        <li><a href="#contributors">Contributors</a></li>
+                        <li><a href="mailto:tanmayspatil2006@gmail.com">Contact</a></li>
                     </ul>
                 </div>
             </div>
