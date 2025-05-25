@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Forge EC - Modern Rust library for secure, high-performance elliptic curve cryptography">
+    <meta name="keywords" content="elliptic curve, cryptography, rust, security, ECDSA, EdDSA, secp256k1">
+    <meta name="author" content="Tanmay Patil">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tanm-sys.github.io/forge-ec/">
+    <meta property="og:title" content="Forge EC - Advanced Elliptic Curve Cryptography">
+    <meta property="og:description" content="Modern Rust library for secure, high-performance elliptic curve cryptography">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tanm-sys.github.io/forge-ec/">
+    <meta property="twitter:title" content="Forge EC - Advanced Elliptic Curve Cryptography">
+    <meta property="twitter:description" content="Modern Rust library for secure, high-performance elliptic curve cryptography">
+
+    <title>Forge EC - Advanced Elliptic Curve Cryptography</title>
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="js/main.js" as="script">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="forge-logo-container">
+                <svg class="forge-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <path class="logo-path" d="M20,50 Q50,20 80,50 Q50,80 20,50" stroke="url(#logoGradient)" stroke-width="3" fill="none"/>
+                    <circle class="logo-dot" cx="50" cy="50" r="3" fill="url(#logoGradient)"/>
+                </svg>
+            </div>
+            <div class="loading-text">
+                <span class="loading-letter">F</span>
+                <span class="loading-letter">o</span>
+                <span class="loading-letter">r</span>
+                <span class="loading-letter">g</span>
+                <span class="loading-letter">e</span>
+                <span class="loading-space"></span>
+                <span class="loading-letter">E</span>
+                <span class="loading-letter">C</span>
+            </div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+                <span class="brand-text">Forge EC</span>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link active" data-section="home">Home</a>
+                <a href="#features" class="nav-link" data-section="features">Features</a>
+                <a href="#docs" class="nav-link" data-section="docs">Documentation</a>
+                <a href="#examples" class="nav-link" data-section="examples">Examples</a>
+                <a href="#community" class="nav-link" data-section="community">Community</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+
+                <a href="https://github.com/tanm-sys/forge-ec" class="github-btn" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span class="github-stats" id="github-stats">
+                        <span class="stars-count" id="stars-count">⭐ --</span>
+                        <span class="forks-count" id="forks-count">🍴 --</span>
+                    </span>
+                </a>
+
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <canvas id="hero-canvas" class="hero-canvas"></canvas>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="title-line">Forge</span>
+                        <span class="title-line gradient-text">EC</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Modern Rust library for secure, high-performance
+                        <span class="highlight">elliptic curve cryptography</span>
+                    </p>
+                    <div class="hero-features">
+                        <div class="feature-badge">
+                            <span class="badge-icon">🦀</span>
+                            <span>Zero-Unsafe Rust</span>
+                        </div>
+                        <div class="feature-badge">
+                            <span class="badge-icon">⚡</span>
+                            <span>SIMD Accelerated</span>
+                        </div>
+                        <div class="feature-badge">
+                            <span class="badge-icon">🔒</span>
+                            <span>Constant-Time</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-actions">
+                    <button class="cta-button primary" id="get-started-btn">
+                        <span class="btn-text">Get Started</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    <button class="cta-button secondary" id="live-demo-btn">
+                        <span class="btn-text">Live Demo</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="5,3 19,12 5,21"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="installation-preview">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Cargo.toml</span>
+                            <button class="copy-btn" data-copy="[dependencies]&#10;forge-ec = &quot;0.1.0&quot;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <pre class="code-content"><code>[dependencies]
+forge-ec = "0.1.0"</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-indicator">
+                <div class="scroll-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M7 13l3 3 7-7M7 6l3 3 7-7"/>
+                    </svg>
+                </div>
+                <span class="scroll-text">Scroll to explore</span>
+            </div>
+        </section>
+
+        <!-- GitHub Stats Section -->
+        <section class="github-stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card animate-on-scroll" id="stars-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value counter-animate" data-target="42" id="repo-stars">--</div>
+                        <div class="stat-label">GitHub Stars</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-1" id="forks-card">
+                        <div class="stat-icon">🍴</div>
+                        <div class="stat-value counter-animate" data-target="8" id="repo-forks">--</div>
+                        <div class="stat-label">Forks</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-2" id="commits-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value counter-animate" data-target="156" id="repo-commits">--</div>
+                        <div class="stat-label">Commits</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-3" id="contributors-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value counter-animate" data-target="3" id="repo-contributors">--</div>
+                        <div class="stat-label">Contributors</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Advanced Features</h2>
+                    <p class="section-subtitle">
+                        Forge EC provides cutting-edge elliptic curve cryptography with uncompromising security and performance
+                    </p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Zero-Unsafe Rust</h3>
+                        <p class="feature-description">
+                            Built entirely in safe Rust with no unsafe blocks, ensuring memory safety and preventing common security vulnerabilities.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">Memory Safe</span>
+                            <span class="tag">No Unsafe</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">SIMD Acceleration</h3>
+                        <p class="feature-description">
+                            Leverages modern CPU SIMD instructions for blazing-fast cryptographic operations with hardware-optimized performance.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">AVX2</span>
+                            <span class="tag">High Performance</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Constant-Time Operations</h3>
+                        <p class="feature-description">
+                            All cryptographic operations execute in constant time, preventing timing attacks and ensuring side-channel resistance.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">Timing Safe</span>
+                            <span class="tag">Side-Channel Resistant</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Multiple Curves</h3>
+                        <p class="feature-description">
+                            Support for secp256k1, P-256, Ed25519, X25519, and other popular elliptic curves with unified API design.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">secp256k1</span>
+                            <span class="tag">Ed25519</span>
+                            <span class="tag">P-256</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">RFC Compliance</h3>
+                        <p class="feature-description">
+                            Fully compliant with RFC 6979, RFC 8032, RFC 9380, and other cryptographic standards for interoperability.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">RFC 6979</span>
+                            <span class="tag">RFC 8032</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M9 12l2 2 4-4"/>
+                                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
+                                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+                                <path d="M13 12h3a2 2 0 0 1 2 2v1"/>
+                                <path d="M11 12H8a2 2 0 0 0-2 2v1"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Advanced Signatures</h3>
+                        <p class="feature-description">
+                            Support for ECDSA, EdDSA, Schnorr signatures, batch verification, and threshold cryptography schemes.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">ECDSA</span>
+                            <span class="tag">EdDSA</span>
+                            <span class="tag">Schnorr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Section -->
+        <section class="installation-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Quick Installation</h2>
+                    <p class="section-subtitle">
+                        Get started with Forge EC in seconds using Cargo
+                    </p>
+                </div>
+
+                <div class="installation-steps">
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Add to Cargo.toml</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14,2 14,8 20,8"/>
+                                        </svg>
+                                        Cargo.toml
+                                    </span>
+                                    <button class="copy-btn" data-copy="[dependencies]&#10;forge-ec = &quot;0.1.0&quot;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>[dependencies]
+forge-ec = "0.1.0"</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Import and Use</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14,2 14,8 20,8"/>
+                                        </svg>
+                                        main.rs
+                                    </span>
+                                    <button class="copy-btn" data-copy="use forge_ec::*;&#10;&#10;fn main() {&#10;    let private_key = PrivateKey::new();&#10;    let message = b&quot;Hello, Forge EC!&quot;;&#10;    let signature = private_key.sign(message);&#10;    &#10;    assert!(verify(&signature, message, &private_key.public_key()));&#10;}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>use forge_ec::*;
+
+fn main() {
+    let private_key = PrivateKey::new();
+    let message = b"Hello, Forge EC!";
+    let signature = private_key.sign(message);
+
+    assert!(verify(&signature, message, &private_key.public_key()));
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Run and Test</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="9" cy="9" r="2"/>
+                                            <path d="M21 15.5c-.3-1.4-1.4-2.5-2.8-2.8"/>
+                                        </svg>
+                                        Terminal
+                                    </span>
+                                    <button class="copy-btn" data-copy="cargo run">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>$ cargo run
+   Compiling forge-ec v0.1.0
+    Finished dev [unoptimized + debuginfo] target(s) in 2.34s
+     Running `target/debug/main`
+✅ Signature verified successfully!</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section id="docs" class="docs-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Documentation</h2>
+                    <p class="section-subtitle">
+                        Comprehensive guides and API reference for Forge EC
+                    </p>
+                </div>
+
+                <div class="docs-grid">
+                    <div class="doc-card animate-on-scroll stagger-item glass-hover">
+                        <div class="doc-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="doc-title">Getting Started</h3>
+                        <p class="doc-description">
+                            Learn the basics of elliptic curve cryptography and how to use Forge EC in your projects.
+                        </p>
+                        <a href="#" class="doc-link">
+                            Read Guide
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="doc-card animate-on-scroll stagger-item glass-hover">
+                        <div class="doc-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                        </div>
+                        <h3 class="doc-title">API Reference</h3>
+                        <p class="doc-description">
+                            Complete API documentation with examples for all modules, structs, and functions.
+                        </p>
+                        <a href="#" class="doc-link">
+                            Browse API
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="doc-card animate-on-scroll stagger-item glass-hover">
+                        <div class="doc-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <h3 class="doc-title">Security Guide</h3>
+                        <p class="doc-description">
+                            Best practices for secure implementation and common pitfalls to avoid.
+                        </p>
+                        <a href="#" class="doc-link">
+                            Security Tips
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="doc-card animate-on-scroll stagger-item glass-hover">
+                        <div class="doc-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        <h3 class="doc-title">Performance</h3>
+                        <p class="doc-description">
+                            Benchmarks, optimization techniques, and performance tuning guidelines.
+                        </p>
+                        <a href="#" class="doc-link">
+                            View Benchmarks
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section id="examples" class="examples-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Live Examples</h2>
+                    <p class="section-subtitle">
+                        Interactive code examples demonstrating Forge EC capabilities
+                    </p>
+                </div>
+
+                <div class="examples-container">
+                    <div class="example-tabs">
+                        <button class="tab-button active" data-tab="ecdsa">ECDSA Signing</button>
+                        <button class="tab-button" data-tab="eddsa">EdDSA Signing</button>
+                        <button class="tab-button" data-tab="ecdh">ECDH Key Exchange</button>
+                        <button class="tab-button" data-tab="schnorr">Schnorr Signatures</button>
+                    </div>
+
+                    <div class="example-content">
+                        <div class="tab-panel active" id="ecdsa-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="ecdsa-demo-btn">
+                                        <span class="btn-text">Run ECDSA Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="ecdsa-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="ecdsa-output">
+                                    <div class="output-placeholder">Click "Run ECDSA Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            ECDSA Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::ecdsa::*;&#10;use forge_ec::curves::secp256k1::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate a new private key&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC ECDSA!&quot;;&#10;    &#10;    // Sign the message&#10;    let signature = private_key.sign(message)?;&#10;    &#10;    // Verify the signature&#10;    let is_valid = public_key.verify(message, &signature)?;&#10;    &#10;    println!(&quot;Signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::ecdsa::*;
+use forge_ec::curves::secp256k1::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate a new private key
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC ECDSA!";
+
+    // Sign the message
+    let signature = private_key.sign(message)?;
+
+    // Verify the signature
+    let is_valid = public_key.verify(message, &signature)?;
+
+    println!("Signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="eddsa-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="eddsa-demo-btn">
+                                        <span class="btn-text">Run EdDSA Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="eddsa-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="eddsa-output">
+                                    <div class="output-placeholder">Click "Run EdDSA Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            EdDSA Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::eddsa::*;&#10;use forge_ec::curves::ed25519::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate Ed25519 keypair&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC EdDSA!&quot;;&#10;    &#10;    // Sign with Ed25519&#10;    let signature = private_key.sign(message)?;&#10;    &#10;    // Verify signature&#10;    let is_valid = public_key.verify(message, &signature)?;&#10;    &#10;    println!(&quot;Ed25519 signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::eddsa::*;
+use forge_ec::curves::ed25519::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate Ed25519 keypair
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC EdDSA!";
+
+    // Sign with Ed25519
+    let signature = private_key.sign(message)?;
+
+    // Verify signature
+    let is_valid = public_key.verify(message, &signature)?;
+
+    println!("Ed25519 signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="ecdh-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="ecdh-demo-btn">
+                                        <span class="btn-text">Run ECDH Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="ecdh-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="ecdh-output">
+                                    <div class="output-placeholder">Click "Run ECDH Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            ECDH Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::ecdh::*;&#10;use forge_ec::curves::x25519::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Alice generates her keypair&#10;    let alice_private = PrivateKey::new();&#10;    let alice_public = alice_private.public_key();&#10;    &#10;    // Bob generates his keypair&#10;    let bob_private = PrivateKey::new();&#10;    let bob_public = bob_private.public_key();&#10;    &#10;    // Both parties compute the shared secret&#10;    let alice_shared = alice_private.diffie_hellman(&bob_public)?;&#10;    let bob_shared = bob_private.diffie_hellman(&alice_public)?;&#10;    &#10;    // Verify they computed the same secret&#10;    assert_eq!(alice_shared, bob_shared);&#10;    println!(&quot;Shared secret established!&quot;);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::ecdh::*;
+use forge_ec::curves::x25519::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Alice generates her keypair
+    let alice_private = PrivateKey::new();
+    let alice_public = alice_private.public_key();
+
+    // Bob generates his keypair
+    let bob_private = PrivateKey::new();
+    let bob_public = bob_private.public_key();
+
+    // Both parties compute the shared secret
+    let alice_shared = alice_private.diffie_hellman(&bob_public)?;
+    let bob_shared = bob_private.diffie_hellman(&alice_public)?;
+
+    // Verify they computed the same secret
+    assert_eq!(alice_shared, bob_shared);
+    println!("Shared secret established!");
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="schnorr-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="schnorr-demo-btn">
+                                        <span class="btn-text">Run Schnorr Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="schnorr-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="schnorr-output">
+                                    <div class="output-placeholder">Click "Run Schnorr Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            Schnorr Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::schnorr::*;&#10;use forge_ec::curves::secp256k1::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate Schnorr keypair&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC Schnorr!&quot;;&#10;    &#10;    // Create Schnorr signature&#10;    let signature = private_key.sign_schnorr(message)?;&#10;    &#10;    // Verify Schnorr signature&#10;    let is_valid = public_key.verify_schnorr(message, &signature)?;&#10;    &#10;    println!(&quot;Schnorr signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::schnorr::*;
+use forge_ec::curves::secp256k1::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate Schnorr keypair
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC Schnorr!";
+
+    // Create Schnorr signature
+    let signature = private_key.sign_schnorr(message)?;
+
+    // Verify Schnorr signature
+    let is_valid = public_key.verify_schnorr(message, &signature)?;
+
+    println!("Schnorr signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Section -->
+        <section id="community" class="community-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Join the Community</h2>
+                    <p class="section-subtitle">
+                        Connect with developers, contribute to the project, and help shape the future of cryptography
+                    </p>
+                </div>
+
+                <div class="community-grid">
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">GitHub</h3>
+                        <p class="community-description">
+                            Star the repository, report issues, and contribute code to help improve Forge EC.
+                        </p>
+                        <a href="https://github.com/tanm-sys/forge-ec" class="community-link" target="_blank" rel="noopener">
+                            <span>Visit Repository</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">Contact</h3>
+                        <p class="community-description">
+                            Have questions or suggestions? Reach out to the maintainer directly.
+                        </p>
+                        <a href="mailto:tanmayspatil2006@gmail.com" class="community-link">
+                            <span>Send Email</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                <rect x="2" y="9" width="4" height="12"/>
+                                <circle cx="4" cy="4" r="2"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">LinkedIn</h3>
+                        <p class="community-description">
+                            Connect professionally and stay updated on cryptography research and developments.
+                        </p>
+                        <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" class="community-link" target="_blank" rel="noopener">
+                            <span>Connect</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">Documentation</h3>
+                        <p class="community-description">
+                            Help improve documentation, write tutorials, and create educational content.
+                        </p>
+                        <a href="#docs" class="community-link">
+                            <span>Contribute Docs</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="contributors-section animate-on-scroll">
+                    <h3 class="contributors-title">Hall of Fame</h3>
+                    <p class="contributors-subtitle">Thanks to all the amazing contributors who make Forge EC possible</p>
+                    <div class="contributors-list" id="contributors-list">
+                        <!-- Contributors will be loaded dynamically -->
+                        <div class="contributor-placeholder">
+                            <div class="contributor-avatar-placeholder"></div>
+                            <div class="contributor-info-placeholder">
+                                <div class="contributor-name-placeholder"></div>
+                                <div class="contributor-contributions-placeholder"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <svg class="footer-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                        </svg>
+                        <span class="footer-brand-text">Forge EC</span>
+                    </div>
+                    <p class="footer-description">
+                        Modern Rust library for secure, high-performance elliptic curve cryptography.
+                        Built with safety, security, and performance in mind.
+                    </p>
+                    <div class="footer-social">
+                        <a href="https://github.com/tanm-sys/forge-ec" class="social-link" target="_blank" rel="noopener" aria-label="GitHub">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" class="social-link" target="_blank" rel="noopener" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                <rect x="2" y="9" width="4" height="12"/>
+                                <circle cx="4" cy="4" r="2"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:tanmayspatil2006@gmail.com" class="social-link" aria-label="Email">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Getting Started</a></li>
+                        <li><a href="#" class="footer-link">API Reference</a></li>
+                        <li><a href="#" class="footer-link">Security Guide</a></li>
+                        <li><a href="#" class="footer-link">Performance</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Examples</h4>
+                    <ul class="footer-links">
+                        <li><a href="#examples" class="footer-link">ECDSA Signing</a></li>
+                        <li><a href="#examples" class="footer-link">EdDSA Signing</a></li>
+                        <li><a href="#examples" class="footer-link">ECDH Key Exchange</a></li>
+                        <li><a href="#examples" class="footer-link">Schnorr Signatures</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/tanm-sys/forge-ec" class="footer-link" target="_blank" rel="noopener">GitHub Repository</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/issues" class="footer-link" target="_blank" rel="noopener">Report Issues</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/blob/main/CONTRIBUTING.md" class="footer-link" target="_blank" rel="noopener">Contributing</a></li>
+                        <li><a href="mailto:tanmayspatil2006@gmail.com" class="footer-link">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p class="footer-copyright">
+                        © 2024 Forge EC. Licensed under
+                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/LICENSE-APACHE" target="_blank" rel="noopener">Apache 2.0</a>
+                        and
+                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/LICENSE-MIT" target="_blank" rel="noopener">MIT</a>.
+                    </p>
+                    <div class="footer-badges">
+                        <span class="badge badge-primary">Rust</span>
+                        <span class="badge badge-success">Zero-Unsafe</span>
+                        <span class="badge badge-warning">Constant-Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js" defer></script>
+    <script src="js/animations.js" defer></script>
+    <script src="js/github-api.js" defer></script>
+    <script src="js/hero-canvas.js" defer></script>
+    <script src="js/examples.js" defer></script>
+</body>
+</html>
