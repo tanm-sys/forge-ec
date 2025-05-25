@@ -1393,17 +1393,11 @@ impl Zeroize for AffinePoint {
 }
 
 /// A point in projective coordinates on the P-256 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct ProjectivePoint {
     x: FieldElement,
     y: FieldElement,
     z: FieldElement,
-}
-
-impl Default for ProjectivePoint {
-    fn default() -> Self {
-        Self { x: FieldElement::default(), y: FieldElement::default(), z: FieldElement::default() }
-    }
 }
 
 impl PointProjective for ProjectivePoint {

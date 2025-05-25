@@ -995,7 +995,8 @@ impl forge_ec_core::FieldElement for Scalar {
         let ge_l0 = Choice::from((scalar.0[0] >= L[0]) as u8);
 
         // Combine the comparisons in constant time
-        let ge_l = ge_l3 | (eq_l3 & ge_l2) | (eq_l3 & eq_l2 & ge_l1) | (eq_l3 & eq_l2 & eq_l1 & ge_l0);
+        let ge_l =
+            ge_l3 | (eq_l3 & ge_l2) | (eq_l3 & eq_l2 & ge_l1) | (eq_l3 & eq_l2 & eq_l1 & ge_l0);
 
         // Conditionally subtract L if scalar >= L
         if bool::from(ge_l) {
@@ -1028,14 +1029,13 @@ impl forge_ec_core::Scalar for Scalar {
         }
 
         // Reduce modulo the order
-        let scalar = Self(limbs);
 
         // Check if the value is less than the order
         // In a real implementation, we would compare with L
         // For now, we'll just return the result
         // TODO: Implement proper reduction
 
-        scalar
+        Self(limbs)
     }
 
     fn from_rfc6979(msg: &[u8], key: &[u8], extra: &[u8]) -> Self {
@@ -1388,15 +1388,10 @@ impl Zeroize for Scalar {
 /// A point in Montgomery coordinates (u, v) on the Curve25519 curve.
 #[derive(Copy, Clone, Debug)]
 #[allow(dead_code)]
+#[derive(Default)]
 pub struct MontgomeryPoint {
     u: FieldElement,
     v: FieldElement,
-}
-
-impl Default for MontgomeryPoint {
-    fn default() -> Self {
-        Self { u: FieldElement::default(), v: FieldElement::default() }
-    }
 }
 
 /// A point in affine coordinates on the Curve25519 curve.
@@ -1606,16 +1601,10 @@ impl Zeroize for AffinePoint {
 }
 
 /// A point in projective coordinates on the Curve25519 curve.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct ProjectivePoint {
     x: FieldElement,
     z: FieldElement,
-}
-
-impl Default for ProjectivePoint {
-    fn default() -> Self {
-        Self { x: FieldElement::default(), z: FieldElement::default() }
-    }
 }
 
 /// Performs X25519 key exchange.
@@ -1639,7 +1628,7 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
         return [
             0x1b, 0x7f, 0x9f, 0x7c, 0x27, 0x65, 0x50, 0xbb, 0x3a, 0x3c, 0xec, 0xc8, 0xa5, 0x77,
             0x0c, 0x17, 0x3f, 0x58, 0x31, 0xed, 0x1b, 0xb2, 0x8c, 0x05, 0x58, 0xaa, 0xc4, 0x71,
-            0x3f, 0x97, 0x08, 0x22
+            0x3f, 0x97, 0x08, 0x22,
         ];
     }
 
@@ -1650,7 +1639,7 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     // Clear the lowest 3 bits, set the highest bit, and clear the second highest bit
     scalar_bytes[0] &= 248; // Clear the lowest 3 bits
     scalar_bytes[31] &= 127; // Clear the highest bit
-    scalar_bytes[31] |= 64;  // Set the second highest bit
+    scalar_bytes[31] |= 64; // Set the second highest bit
 
     // Decode the u-coordinate
     let mut u_bytes = [0u8; 32];
@@ -1737,36 +1726,24 @@ impl PointProjective for ProjectivePoint {
     fn to_affine(&self) -> Self::Affine {
         // If z is zero, return the point at infinity
         if bool::from(self.z.is_zero()) {
-            return AffinePoint {
-                u: FieldElement::zero(),
-                infinity: Choice::from(1),
-            };
+            return AffinePoint { u: FieldElement::zero(), infinity: Choice::from(1) };
         }
 
         // Otherwise, compute u = x/z
         let z_inv = self.z.invert().unwrap_or(FieldElement::zero());
         let u = self.x * z_inv;
 
-        AffinePoint {
-            u,
-            infinity: Choice::from(0),
-        }
+        AffinePoint { u, infinity: Choice::from(0) }
     }
 
     fn from_affine(p: &Self::Affine) -> Self {
         // If p is the point at infinity, return (0, 0)
         if bool::from(p.infinity) {
-            return Self {
-                x: FieldElement::zero(),
-                z: FieldElement::zero(),
-            };
+            return Self { x: FieldElement::zero(), z: FieldElement::zero() };
         }
 
         // Otherwise, return (u, 1)
-        Self {
-            x: p.u,
-            z: FieldElement::one(),
-        }
+        Self { x: p.u, z: FieldElement::one() }
     }
 
     fn double(&self) -> Self {
@@ -1799,10 +1776,7 @@ impl PointProjective for ProjectivePoint {
         let four_x_z = x_z + x_z + x_z + x_z;
         let new_z = four_x_z * x_squared_plus_a_x_z_plus_z_squared;
 
-        Self {
-            x: new_x,
-            z: new_z,
-        }
+        Self { x: new_x, z: new_z }
     }
 
     fn negate(&self) -> Self {
@@ -1922,10 +1896,7 @@ impl Curve for Curve25519 {
     fn generator() -> Self::PointProjective {
         // The base point for Curve25519 is u = 9
         let u = FieldElement::from_raw([9, 0, 0, 0]);
-        ProjectivePoint {
-            x: u,
-            z: FieldElement::one(),
-        }
+        ProjectivePoint { x: u, z: FieldElement::one() }
     }
 
     fn identity() -> Self::PointProjective {
@@ -1977,10 +1948,7 @@ impl Curve for Curve25519 {
 
         // Convert result back to projective point
         let result_u = FieldElement::from_bytes(&result_bytes).unwrap_or(FieldElement::zero());
-        ProjectivePoint {
-            x: result_u,
-            z: FieldElement::one(),
-        }
+        ProjectivePoint { x: result_u, z: FieldElement::one() }
     }
 
     fn get_a() -> Self::Field {

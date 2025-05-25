@@ -314,7 +314,7 @@ impl EcPublicKey {
     }
 
     /// Decodes a DER-encoded public key.
-    pub fn from_der<'a>(bytes: &'a [u8]) -> Result<Self, Error> {
+    pub fn from_der(bytes: &[u8]) -> Result<Self, Error> {
         // Check minimum length for a valid DER EC public key
         if bytes.len() < 8 {
             return Err(Error::from(ErrorKind::Length { tag: Tag::Sequence }));
@@ -367,19 +367,17 @@ impl EcPublicKey {
         let mut parameters = None;
         let mut offset = 6 + alg_oid_len;
 
-        if offset < 4 + alg_seq_len {
-            if bytes[offset] == 0x06 {
-                let params_oid_len = bytes[offset + 1] as usize;
-                if offset + 2 + params_oid_len > bytes.len() {
-                    return Err(Error::from(ErrorKind::Length { tag: Tag::ObjectIdentifier }));
-                }
-
-                // For simplicity, we'll use a hardcoded OID for the curve
-                // In a real implementation, we would parse the OID value
-                parameters = Some(ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID")); // secp256k1
-
-                offset += 2 + params_oid_len;
+        if offset < 4 + alg_seq_len && bytes[offset] == 0x06 {
+            let params_oid_len = bytes[offset + 1] as usize;
+            if offset + 2 + params_oid_len > bytes.len() {
+                return Err(Error::from(ErrorKind::Length { tag: Tag::ObjectIdentifier }));
             }
+
+            // For simplicity, we'll use a hardcoded OID for the curve
+            // In a real implementation, we would parse the OID value
+            parameters = Some(ObjectIdentifier::new("1.3.132.0.10").expect("Invalid OID")); // secp256k1
+
+            offset += 2 + params_oid_len;
         }
 
         // Parse public key BIT STRING

@@ -12,7 +12,7 @@ use forge_ec_curves::ed25519::Ed25519;
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::vec::Vec;
@@ -67,7 +67,7 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
 
         // Hash the private key to derive the nonce and public key components
         let mut h = D::new();
-        h.update(&sk_bytes);
+        h.update(sk_bytes);
         let h = h.finalize();
 
         // Use the first half of the hash for the nonce
@@ -132,8 +132,8 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
 
         // Hash R, A, and the message to derive k
         let mut h = D::new();
-        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&r_point_affine));
-        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&public_key_affine));
+        h.update(<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&r_point_affine));
+        h.update(<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&public_key_affine));
         h.update(msg);
         let h = h.finalize();
 
@@ -177,8 +177,8 @@ impl<C: Curve, D: Digest> SignatureScheme for EdDsa<C, D> {
 
         // Hash R, A, and the message to derive k
         let mut h = D::new();
-        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r));
-        h.update(&<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(pk));
+        h.update(<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r));
+        h.update(<C::PointAffine as forge_ec_core::PointAffine>::to_bytes(pk));
         h.update(msg);
         let h = h.finalize();
 
@@ -332,8 +332,8 @@ impl Ed25519Signature {
 
         // Hash R, A, and the message to derive k
         let mut h = sha2::Sha512::new();
-        h.update(&r_bytes);
-        h.update(&public_key_bytes);
+        h.update(r_bytes);
+        h.update(public_key_bytes);
         h.update(msg);
         let h = h.finalize();
 
@@ -417,7 +417,7 @@ impl Ed25519Signature {
 
         // Hash R, A, and the message to derive k
         let mut h = sha2::Sha512::new();
-        h.update(&r_bytes);
+        h.update(r_bytes);
         h.update(public_key);
         h.update(msg);
         let h = h.finalize();

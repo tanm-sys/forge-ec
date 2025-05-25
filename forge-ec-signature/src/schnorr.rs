@@ -65,8 +65,8 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
 
         // Calculate the challenge e = H(R || P || msg)
         let mut hasher = D::new();
-        hasher.update(&r_point_affine.to_bytes());
-        hasher.update(&public_key_affine.to_bytes());
+        hasher.update(r_point_affine.to_bytes());
+        hasher.update(public_key_affine.to_bytes());
         hasher.update(msg);
         let e_bytes = hasher.finalize();
 
@@ -106,8 +106,8 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
 
         // Calculate the challenge e = H(R || P || msg)
         let mut hasher = D::new();
-        hasher.update(&sig.r.to_bytes());
-        hasher.update(&pk.to_bytes());
+        hasher.update(sig.r.to_bytes());
+        hasher.update(pk.to_bytes());
         hasher.update(msg);
         let e_bytes = hasher.finalize();
 
@@ -239,8 +239,8 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     for i in 0..n {
         // Compute the challenge e = H(R || P || m)
         let mut hasher = D::new();
-        hasher.update(&signatures[i].r.to_bytes());
-        hasher.update(&public_keys[i].to_bytes());
+        hasher.update(signatures[i].r.to_bytes());
+        hasher.update(public_keys[i].to_bytes());
         hasher.update(messages[i]);
         let e_bytes = hasher.finalize();
 
@@ -268,7 +268,7 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
         // Left side: s_i * a_i * G
         let s_a = signatures[i].s * a[i];
         let s_a_g = C::multiply(&C::generator(), &s_a);
-        s_g = s_g + s_a_g;
+        s_g += s_a_g;
 
         // Right side: a_i * (R_i + e_i * P_i)
         // First compute e_i * P_i
@@ -279,7 +279,7 @@ pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
 
         // Finally multiply by a_i and add to the running sum
         let a_r_e_p = C::multiply(&r_plus_e_p, &a[i]);
-        r_e_p = r_e_p + a_r_e_p;
+        r_e_p += a_r_e_p;
     }
 
     // Check if s*G == R + e*P
@@ -349,7 +349,7 @@ impl BipSchnorr {
 
         // Compute the nonce k = SHA256(d || msg)
         let mut hasher = Sha256::new();
-        hasher.update(&d.to_bytes());
+        hasher.update(d.to_bytes());
         hasher.update(msg);
         let k_bytes = hasher.finalize();
 
@@ -385,8 +385,8 @@ impl BipSchnorr {
 
         // Compute the challenge e = SHA256(r_x || p_x || msg)
         let mut hasher = Sha256::new();
-        hasher.update(&r_x_bytes);
-        hasher.update(&p_x_bytes);
+        hasher.update(r_x_bytes);
+        hasher.update(p_x_bytes);
         hasher.update(msg);
         let e_bytes = hasher.finalize();
 
@@ -495,7 +495,7 @@ impl BipSchnorr {
 
         // Compute the challenge e = SHA256(r_x || p_x || msg)
         let mut hasher = Sha256::new();
-        hasher.update(&r_x_bytes);
+        hasher.update(r_x_bytes);
         hasher.update(public_key);
         hasher.update(msg);
         let e_bytes = hasher.finalize();
@@ -669,7 +669,7 @@ impl BipSchnorr {
             // Compute the challenge e = SHA256(r_x || p_x || msg)
             // This is the BIP-340 tag-hash construction
             let mut hasher = Sha256::new();
-            hasher.update(&r_x_bytes);
+            hasher.update(r_x_bytes);
             hasher.update(public_keys[i]);
             hasher.update(messages[i]);
             let e_bytes = hasher.finalize();
@@ -683,13 +683,13 @@ impl BipSchnorr {
             // Left side: s_i * a_i * G
             let s_a = s * a[i];
             let s_a_g = Secp256k1::multiply(&Secp256k1::generator(), &s_a);
-            s_g = s_g + s_a_g;
+            s_g += s_a_g;
 
             // Right side: a_i * (R_i + e_i * P_i)
             let e_p = Secp256k1::multiply(&Secp256k1::from_affine(&p), &e_opt);
             let r_plus_e_p = Secp256k1::from_affine(&r) + e_p;
             let a_r_e_p = Secp256k1::multiply(&r_plus_e_p, &a[i]);
-            r_e_p = r_e_p + a_r_e_p;
+            r_e_p += a_r_e_p;
         }
 
         // Check if s*G == R + e*P
@@ -748,9 +748,9 @@ mod tests {
         let sig = Schnorr::<Secp256k1, Sha256>::sign(&sk, msg);
 
         // Set up batch verification with a single signature
-        let public_keys = vec![pk_affine];
-        let messages = vec![msg as &[u8]];
-        let signatures = vec![sig];
+        let public_keys = [pk_affine];
+        let messages = [msg as &[u8]];
+        let signatures = [sig];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works
@@ -760,7 +760,7 @@ mod tests {
 
         // Modify the message and verify again (should fail)
         let modified_msg = b"different message";
-        let modified_messages = vec![modified_msg as &[u8]];
+        let modified_messages = [modified_msg as &[u8]];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works
@@ -791,9 +791,9 @@ mod tests {
         assert!(valid);
 
         // Test batch verification
-        let public_keys = vec![&expected_public_key_array];
+        let public_keys = [&expected_public_key_array];
         let messages: Vec<&[u8]> = vec![msg as &[u8]];
-        let signatures = vec![&signature];
+        let signatures = [&signature];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works
