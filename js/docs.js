@@ -1,6 +1,61 @@
 // Documentation-specific JavaScript
 
+// Loading Progress and Page Loader Functions
+function initLoadingProgress() {
+    const progressBar = document.getElementById('loading-progress');
+    if (!progressBar) return;
+
+    let progress = 0;
+
+    const updateProgress = () => {
+        progress += Math.random() * 20;
+        if (progress > 90) progress = 90;
+
+        progressBar.style.width = progress + '%';
+
+        if (progress < 90) {
+            setTimeout(updateProgress, 80 + Math.random() * 120);
+        }
+    };
+
+    updateProgress();
+}
+
+function hidePageLoader() {
+    const pageLoader = document.getElementById('page-loader');
+    const progressBar = document.getElementById('loading-progress');
+
+    if (!pageLoader) return;
+
+    // Complete the progress bar
+    if (progressBar) {
+        progressBar.style.width = '100%';
+        progressBar.classList.add('complete');
+    }
+
+    // Hide the page loader
+    setTimeout(() => {
+        pageLoader.classList.add('hidden');
+
+        // Remove the loader from DOM after animation
+        setTimeout(() => {
+            if (pageLoader.parentNode) {
+                pageLoader.remove();
+            }
+            if (progressBar && progressBar.parentNode) {
+                progressBar.remove();
+            }
+        }, 500);
+    }, 200);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize loading progress and hide loader
+    initLoadingProgress();
+
+    // Initialize all documentation functionality
+    initThemeToggle();
+    initNavigation();
     initDocsNavigation();
     initSearch();
     initSidebarToggle();
@@ -9,7 +64,126 @@ document.addEventListener('DOMContentLoaded', function() {
     initTabSwitching();
     initAnimations();
     initSyntaxHighlighting();
+
+    // Hide the page loader after initialization
+    setTimeout(() => {
+        hidePageLoader();
+    }, 800);
+
+    // Fallback: Ensure loader is hidden even if something goes wrong
+    setTimeout(() => {
+        const pageLoader = document.getElementById('page-loader');
+        if (pageLoader && !pageLoader.classList.contains('hidden')) {
+            console.warn('Forcing page loader to hide due to timeout');
+            hidePageLoader();
+        }
+    }, 3000);
 });
+
+// Error handling to ensure page loads even if there are JavaScript errors
+window.addEventListener('error', function(e) {
+    console.error('JavaScript error detected:', e.error);
+    // Force hide loader if there's an error
+    setTimeout(() => {
+        const pageLoader = document.getElementById('page-loader');
+        if (pageLoader && !pageLoader.classList.contains('hidden')) {
+            hidePageLoader();
+        }
+    }, 1000);
+});
+
+// Ensure page loads if all resources are loaded
+window.addEventListener('load', function() {
+    // Double-check that loader is hidden when page is fully loaded
+    setTimeout(() => {
+        const pageLoader = document.getElementById('page-loader');
+        if (pageLoader && !pageLoader.classList.contains('hidden')) {
+            hidePageLoader();
+        }
+    }, 500);
+});
+
+// Theme Toggle Functionality
+function initThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (!themeToggle) return;
+
+    const themeIcon = themeToggle.querySelector('.theme-icon');
+
+    // Check for saved theme preference or default to light mode
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeToggle.addEventListener('click', function(e) {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        // Smooth theme transition
+        document.documentElement.style.transition = 'all 0.3s ease';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+
+        // Remove transition after animation
+        setTimeout(() => {
+            document.documentElement.style.transition = '';
+        }, 300);
+    });
+
+    function updateThemeIcon(theme) {
+        if (themeIcon) {
+            themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+    }
+}
+
+// Navigation Functionality
+function initNavigation() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navMenu = document.getElementById('nav-menu');
+    const navbar = document.getElementById('navbar');
+
+    // Mobile menu toggle
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', function() {
+            navMenu.classList.toggle('active');
+            navToggle.classList.toggle('active');
+        });
+    }
+
+    // Close mobile menu when clicking on a link
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (navMenu) navMenu.classList.remove('active');
+            if (navToggle) navToggle.classList.remove('active');
+        });
+    });
+
+    // Navbar scroll effect
+    if (navbar) {
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > 100) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+
+            // Hide/show navbar on scroll
+            if (scrollTop > lastScrollTop && scrollTop > 200) {
+                navbar.style.transform = 'translateY(-100%)';
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+
+            lastScrollTop = scrollTop;
+        });
+    }
+}
 
 // Documentation Navigation
 function initDocsNavigation() {
