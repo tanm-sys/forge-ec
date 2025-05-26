@@ -8,7 +8,7 @@ class ForgeECFirebase {
     this.isReady = false;
     this.currentUser = null;
     this.services = {};
-    
+
     // Wait for Firebase to be ready
     if (window.firebaseApp) {
       this.init();
@@ -31,19 +31,19 @@ class ForgeECFirebase {
 
       // Set up authentication state listener
       this.setupAuthListener();
-      
+
       // Set up UI components
       this.setupUI();
-      
+
       // Track initial page view
       this.trackPageView();
-      
+
       this.isReady = true;
       console.log('🔥 Forge EC Firebase integration ready');
-      
+
       // Dispatch ready event
       window.dispatchEvent(new CustomEvent('forgeFirebaseReady'));
-      
+
     } catch (error) {
       console.warn('Firebase integration failed:', error);
     }
@@ -53,31 +53,30 @@ class ForgeECFirebase {
   setupAuthListener() {
     if (!this.services.auth) return;
 
-    // Import auth functions dynamically
-    import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
-      onAuthStateChanged(this.services.auth, (user) => {
-        this.currentUser = user;
-        this.updateAuthUI(user);
-        
-        if (user) {
-          console.log('👤 User signed in:', user.email);
-          this.trackEvent('user_login', { method: 'firebase' });
-        } else {
-          console.log('👤 User signed out');
-        }
-      });
+    this.services.auth.onAuthStateChanged((user) => {
+      this.currentUser = user;
+      this.updateAuthUI(user);
+
+      if (user) {
+        console.log('👤 User signed in:', user.email);
+        this.trackEvent('user_login', { method: 'firebase' });
+      } else {
+        console.log('👤 User signed out');
+      }
     });
   }
 
   async signInWithGoogle() {
     try {
-      const { GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      
-      const provider = new GoogleAuthProvider();
+      if (!this.services.auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+
+      const provider = new firebase.auth.GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
-      
-      const result = await signInWithPopup(this.services.auth, provider);
+
+      const result = await this.services.auth.signInWithPopup(provider);
       this.showMessage('Signed in with Google!', 'success');
       return result.user;
     } catch (error) {
@@ -88,12 +87,14 @@ class ForgeECFirebase {
 
   async signInWithGitHub() {
     try {
-      const { GithubAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      
-      const provider = new GithubAuthProvider();
+      if (!this.services.auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+
+      const provider = new firebase.auth.GithubAuthProvider();
       provider.addScope('user:email');
-      
-      const result = await signInWithPopup(this.services.auth, provider);
+
+      const result = await this.services.auth.signInWithPopup(provider);
       this.showMessage('Signed in with GitHub!', 'success');
       return result.user;
     } catch (error) {
@@ -104,9 +105,11 @@ class ForgeECFirebase {
 
   async signInWithEmail(email, password) {
     try {
-      const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      
-      const userCredential = await signInWithEmailAndPassword(this.services.auth, email, password);
+      if (!this.services.auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+
+      const userCredential = await this.services.auth.signInWithEmailAndPassword(email, password);
       this.showMessage('Welcome back!', 'success');
       return userCredential.user;
     } catch (error) {
@@ -117,19 +120,21 @@ class ForgeECFirebase {
 
   async signUpWithEmail(email, password, displayName) {
     try {
-      const { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      
-      const userCredential = await createUserWithEmailAndPassword(this.services.auth, email, password);
+      if (!this.services.auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+
+      const userCredential = await this.services.auth.createUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
-      
+
       // Update profile with display name
       if (displayName) {
-        await updateProfile(user, { displayName });
+        await user.updateProfile({ displayName });
       }
-      
+
       // Send email verification
-      await sendEmailVerification(user);
-      
+      await user.sendEmailVerification();
+
       this.showMessage('Account created! Please check your email for verification.', 'success');
       return user;
     } catch (error) {
@@ -140,9 +145,11 @@ class ForgeECFirebase {
 
   async signOut() {
     try {
-      const { signOut } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      
-      await signOut(this.services.auth);
+      if (!this.services.auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+
+      await this.services.auth.signOut();
       this.showMessage('Signed out successfully', 'info');
     } catch (error) {
       this.handleAuthError(error);
@@ -155,17 +162,15 @@ class ForgeECFirebase {
     if (!this.currentUser || !this.services.db) return false;
 
     try {
-      const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
-      
       const bookmark = {
         userId: this.currentUser.uid,
         docId: docId,
         title: title,
         category: category,
-        createdAt: serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      await addDoc(collection(this.services.db, 'bookmarks'), bookmark);
+      await this.services.db.collection('bookmarks').add(bookmark);
       this.showMessage('Bookmark saved!', 'success');
       return true;
     } catch (error) {
@@ -180,7 +185,7 @@ class ForgeECFirebase {
 
     try {
       const { collection, query, where, orderBy, getDocs } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
-      
+
       const q = query(
         collection(this.services.db, 'bookmarks'),
         where('userId', '==', this.currentUser.uid),
@@ -203,7 +208,7 @@ class ForgeECFirebase {
 
     try {
       const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
-      
+
       const feedbackData = {
         docId: docId,
         userId: this.currentUser.uid,
@@ -228,11 +233,9 @@ class ForgeECFirebase {
     if (!this.services.analytics) return;
 
     try {
-      import('https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js').then(({ logEvent }) => {
-        logEvent(this.services.analytics, eventName, {
-          ...parameters,
-          timestamp: Date.now()
-        });
+      this.services.analytics.logEvent(eventName, {
+        ...parameters,
+        timestamp: Date.now()
       });
     } catch (error) {
       console.warn('Analytics tracking failed:', error);
@@ -288,7 +291,7 @@ class ForgeECFirebase {
       if (e.target.matches('.bookmark-btn')) {
         this.handleBookmarkClick(e.target);
       }
-      
+
       if (e.target.matches('.feedback-btn')) {
         this.handleFeedbackClick(e.target);
       }
@@ -307,7 +310,7 @@ class ForgeECFirebase {
         userMenuTrigger.style.display = 'flex';
         this.updateUserProfile(user);
       }
-      
+
       authRequired.forEach(element => {
         element.style.display = 'block';
         element.disabled = false;
@@ -316,7 +319,7 @@ class ForgeECFirebase {
       // User is not signed in
       if (authTrigger) authTrigger.style.display = 'block';
       if (userMenuTrigger) userMenuTrigger.style.display = 'none';
-      
+
       authRequired.forEach(element => {
         element.style.display = 'none';
         element.disabled = true;
@@ -342,7 +345,7 @@ class ForgeECFirebase {
 
   handleAuthError(error) {
     let message = 'An authentication error occurred';
-    
+
     switch (error.code) {
       case 'auth/user-not-found':
         message = 'No account found with this email address';
@@ -365,7 +368,7 @@ class ForgeECFirebase {
       default:
         message = error.message;
     }
-    
+
     this.showMessage(message, 'error');
     console.error('Auth Error:', error);
   }
@@ -373,7 +376,7 @@ class ForgeECFirebase {
   showMessage(message, type = 'info') {
     // Create or update message element
     let messageEl = document.getElementById('firebase-message');
-    
+
     if (!messageEl) {
       messageEl = document.createElement('div');
       messageEl.id = 'firebase-message';
@@ -393,18 +396,18 @@ class ForgeECFirebase {
       `;
       document.body.appendChild(messageEl);
     }
-    
+
     // Set message type styles
     const colors = {
       success: 'rgba(16, 185, 129, 0.9)',
       error: 'rgba(239, 68, 68, 0.9)',
       info: 'rgba(59, 130, 246, 0.9)'
     };
-    
+
     messageEl.style.background = colors[type] || colors.info;
     messageEl.textContent = message;
     messageEl.style.display = 'block';
-    
+
     // Auto-hide after 5 seconds
     setTimeout(() => {
       messageEl.style.display = 'none';

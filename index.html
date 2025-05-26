@@ -1737,16 +1737,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     <script src="js/main.js" defer></script>
     <script src="js/animations.js" defer></script>
     <script src="js/github-api.js" defer></script>
-    <!-- Firebase SDK v9 -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
-        import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-        import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-        import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js";
-        import { getPerformance } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-performance.js";
+    <!-- Firebase SDK v9 (Compat Version for better compatibility) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-performance-compat.js"></script>
 
+    <script>
         // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
@@ -1760,24 +1759,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
 
-        // Initialize Firebase services
-        window.firebaseApp = app;
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        window.firebaseFunctions = getFunctions(app);
+            // Initialize Firebase services
+            window.firebaseApp = firebase.app();
+            window.firebaseAuth = firebase.auth();
+            window.firebaseDb = firebase.firestore();
+            window.firebaseFunctions = firebase.functions();
 
-        // Initialize Analytics and Performance (only in production)
-        if (window.location.hostname !== 'localhost') {
-            window.firebaseAnalytics = getAnalytics(app);
-            window.firebasePerformance = getPerformance(app);
+            // Initialize Analytics and Performance (only in production and if not blocked)
+            if (window.location.hostname !== 'localhost') {
+                try {
+                    window.firebaseAnalytics = firebase.analytics();
+                    window.firebasePerformance = firebase.performance();
+                } catch (analyticsError) {
+                    console.warn('Analytics blocked by ad blocker or privacy extension:', analyticsError);
+                }
+            }
+
+            console.log('🔥 Firebase initialized successfully');
+
+            // Dispatch custom event to notify other scripts
+            window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { app: window.firebaseApp } }));
+        } catch (error) {
+            console.warn('Firebase initialization failed:', error);
+            // Continue without Firebase
+            window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { app: null } }));
         }
-
-        console.log('🔥 Firebase initialized successfully');
-
-        // Dispatch custom event to notify other scripts
-        window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { app } }));
     </script>
 
     <!-- Firebase Integration -->
@@ -1901,11 +1910,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     </script>
 
+    <!-- Main Application Script -->
+    <script src="js/main.js" defer></script>
+
     <!-- Legacy scripts for non-module browsers -->
     <script src="js/hero-canvas.js" defer></script>
     <script src="js/examples.js" defer></script>
     <script src="js/forge-animation.js" defer></script>
     <script src="js/interactive-components.js" defer></script>
     <script src="js/github-api.js" defer></script>
+
+    <!-- Fallback Loading Screen Handler -->
+    <script>
+        // Ensure loading screen disappears even if there are JavaScript errors
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                    console.log('🚨 Fallback: Force hiding loading screen');
+                    loadingScreen.classList.add('hidden');
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.remove();
+                        }
+                    }, 500);
+                }
+            }, 3000); // Fallback after 3 seconds
+        });
+
+        // Also handle DOMContentLoaded as a backup
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                    console.log('🚨 DOMContentLoaded fallback: Force hiding loading screen');
+                    loadingScreen.classList.add('hidden');
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.remove();
+                        }
+                    }, 500);
+                }
+            }, 5000); // Fallback after 5 seconds
+        });
+    </script>
 </body>
 </html>

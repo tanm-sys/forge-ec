@@ -510,18 +510,21 @@ class GitHubAPI {
 }
 
 // Initialize GitHub API
-window.GitHubAPI = new GitHubAPI();
+window.forgeGitHubAPI = new GitHubAPI();
 
 // Auto-refresh data every 5 minutes (300 seconds)
 setInterval(() => {
   console.log('🔄 Auto-refreshing GitHub data...');
-  window.GitHubAPI.refreshData();
+  window.forgeGitHubAPI.refreshData();
 }, 5 * 60 * 1000);
 
 // Also refresh when the page becomes visible again (user returns to tab)
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     console.log('👁️ Page visible again, refreshing GitHub data...');
-    window.GitHubAPI.refreshData();
+    window.forgeGitHubAPI.refreshData();
   }
 });
+
+// Export class for potential external use
+window.GitHubAPI = GitHubAPI;

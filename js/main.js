@@ -43,15 +43,45 @@ class ForgeECApp {
     try {
       console.log('🔥 Initializing Firebase services...');
 
-      // Firebase services are already initialized via imports
-      // Set up Firebase-specific event tracking
-      this.setupFirebaseTracking();
+      // Wait for Firebase to be ready
+      if (window.firebaseApp) {
+        // Firebase services are already initialized
+        this.setupFirebaseTracking();
+        this.setupRealtimeDocumentation();
+        this.firebaseInitialized = true;
+        console.log('✅ Firebase services initialized successfully');
+      } else {
+        // Wait for Firebase ready event
+        const firebaseReady = new Promise((resolve) => {
+          const checkFirebase = () => {
+            if (window.firebaseApp) {
+              resolve();
+            } else {
+              setTimeout(checkFirebase, 100);
+            }
+          };
 
-      // Initialize real-time documentation updates
-      this.setupRealtimeDocumentation();
+          // Listen for Firebase ready event
+          window.addEventListener('firebaseReady', resolve, { once: true });
 
-      this.firebaseInitialized = true;
-      console.log('✅ Firebase services initialized successfully');
+          // Also check periodically in case event was missed
+          setTimeout(checkFirebase, 100);
+
+          // Timeout after 5 seconds
+          setTimeout(() => resolve(), 5000);
+        });
+
+        await firebaseReady;
+
+        if (window.firebaseApp) {
+          this.setupFirebaseTracking();
+          this.setupRealtimeDocumentation();
+          this.firebaseInitialized = true;
+          console.log('✅ Firebase services initialized successfully (delayed)');
+        } else {
+          throw new Error('Firebase failed to initialize within timeout');
+        }
+      }
     } catch (error) {
       console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error);
       this.firebaseInitialized = false;
@@ -424,9 +454,9 @@ class ForgeECApp {
       console.log('🚀 Initializing GitHub data loading...');
 
       // Load GitHub data asynchronously without blocking page load
-      if (window.GitHubAPI) {
+      if (window.forgeGitHubAPI) {
         // Don't await this to prevent blocking page initialization
-        window.GitHubAPI.loadRepositoryData().catch(error => {
+        window.forgeGitHubAPI.loadRepositoryData().catch(error => {
           console.warn('GitHub data loading failed:', error);
         });
       } else {
@@ -434,9 +464,9 @@ class ForgeECApp {
 
         // Retry when GitHubAPI becomes available
         const checkGitHubAPI = () => {
-          if (window.GitHubAPI) {
+          if (window.forgeGitHubAPI) {
             console.log('🔄 GitHubAPI now available, loading data...');
-            window.GitHubAPI.loadRepositoryData().catch(error => {
+            window.forgeGitHubAPI.loadRepositoryData().catch(error => {
               console.warn('GitHub data loading failed on retry:', error);
             });
           } else {
@@ -453,12 +483,20 @@ class ForgeECApp {
   hideLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
+      console.log('🎯 Hiding loading screen...');
+
+      // Reduce loading time and ensure it always hides
       setTimeout(() => {
         loadingScreen.classList.add('hidden');
+        console.log('✅ Loading screen hidden');
+
         setTimeout(() => {
           loadingScreen.remove();
+          console.log('🗑️ Loading screen removed from DOM');
         }, 500);
-      }, 2000); // Show loading for at least 2 seconds
+      }, 1000); // Reduced from 2 seconds to 1 second
+    } else {
+      console.warn('⚠️ Loading screen element not found');
     }
   }
 

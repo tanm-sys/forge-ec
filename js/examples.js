@@ -50,7 +50,7 @@ class ExamplesController {
 
   setupDemoButtons() {
     const demoButtons = document.querySelectorAll('[id$="-demo-btn"]');
-    
+
     demoButtons.forEach(button => {
       button.addEventListener('click', () => {
         const demoType = button.id.replace('-demo-btn', '');
@@ -79,11 +79,11 @@ class ExamplesController {
     try {
       // Simulate demo execution with realistic timing
       await this.simulateDemo(demoType, outputElement, statusElement);
-      
+
       // Success state
       statusElement.textContent = 'Demo completed successfully';
       statusElement.style.color = 'var(--color-success)';
-      
+
     } catch (error) {
       // Error state
       statusElement.textContent = 'Demo failed';
@@ -99,13 +99,13 @@ class ExamplesController {
 
   async simulateDemo(demoType, outputElement, statusElement) {
     const steps = this.getDemoSteps(demoType);
-    
+
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
-      
+
       // Update status
       statusElement.textContent = step.status;
-      
+
       // Add step output
       const stepElement = document.createElement('div');
       stepElement.className = 'demo-step';
@@ -116,12 +116,12 @@ class ExamplesController {
         </div>
         <div class="step-output">${step.output}</div>
       `;
-      
+
       outputElement.appendChild(stepElement);
-      
+
       // Scroll to bottom
       outputElement.scrollTop = outputElement.scrollHeight;
-      
+
       // Wait for realistic timing
       await this.delay(step.delay || 800);
     }
@@ -261,10 +261,10 @@ class ExamplesController {
   makeCodeInteractive(codeElement) {
     // Add line numbers
     const lines = codeElement.textContent.split('\n');
-    const numberedLines = lines.map((line, index) => 
+    const numberedLines = lines.map((line, index) =>
       `<span class="line-number">${index + 1}</span>${line}`
     ).join('\n');
-    
+
     codeElement.innerHTML = this.highlightCode(numberedLines);
   }
 
@@ -272,17 +272,17 @@ class ExamplesController {
   exportDemoResults(demoType) {
     const outputElement = document.getElementById(`${demoType}-output`);
     const results = outputElement.textContent;
-    
+
     const blob = new Blob([results], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `forge-ec-${demoType}-demo-results.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
+
     URL.revokeObjectURL(url);
   }
 }
@@ -298,7 +298,7 @@ const demoCSS = `
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  
+
   .step-header {
     display: flex;
     align-items: center;
@@ -307,7 +307,7 @@ const demoCSS = `
     font-weight: 600;
     color: var(--text-primary);
   }
-  
+
   .step-number {
     width: 20px;
     height: 20px;
@@ -320,7 +320,7 @@ const demoCSS = `
     font-size: 0.75rem;
     font-weight: 700;
   }
-  
+
   .step-output {
     font-family: var(--font-family-mono);
     font-size: 0.875rem;
@@ -328,14 +328,14 @@ const demoCSS = `
     white-space: pre-wrap;
     line-height: 1.4;
   }
-  
+
   .demo-loading {
     text-align: center;
     color: var(--text-secondary);
     font-style: italic;
     padding: 2rem;
   }
-  
+
   .demo-error {
     color: var(--color-error);
     background: rgba(239, 68, 68, 0.1);
@@ -343,13 +343,13 @@ const demoCSS = `
     border-radius: var(--radius-lg);
     border: 1px solid rgba(239, 68, 68, 0.2);
   }
-  
+
   .keyword { color: #c678dd; }
   .type { color: #e06c75; }
   .string { color: #98c379; }
   .comment { color: #5c6370; font-style: italic; }
   .number { color: #d19a66; }
-  
+
   .line-number {
     display: inline-block;
     width: 2em;
@@ -361,9 +361,9 @@ const demoCSS = `
 `;
 
 // Inject demo CSS
-const style = document.createElement('style');
-style.textContent = demoCSS;
-document.head.appendChild(style);
+const demoStyleElement = document.createElement('style');
+demoStyleElement.textContent = demoCSS;
+document.head.appendChild(demoStyleElement);
 
 // Initialize examples controller when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
