@@ -41,16 +41,16 @@ class ForgeECApp {
       console.log('🔥 Initializing Firebase services...');
 
       // Wait for Firebase to be ready
-      if (window.firebaseApp) {
+      if (window.firebaseInitialized) {
         // Firebase services are already initialized
         this.setupFirebaseAuth();
         this.firebaseInitialized = true;
-        console.log('✅ Firebase services initialized successfully');
+        console.log('✅ Firebase services already initialized');
       } else {
         // Wait for Firebase ready event
         const firebaseReady = new Promise((resolve) => {
           const checkFirebase = () => {
-            if (window.firebaseApp) {
+            if (window.firebaseInitialized) {
               resolve();
             } else {
               setTimeout(checkFirebase, 100);
@@ -63,13 +63,13 @@ class ForgeECApp {
           // Also check periodically in case event was missed
           setTimeout(checkFirebase, 100);
 
-          // Timeout after 5 seconds
-          setTimeout(() => resolve(), 5000);
+          // Timeout after 10 seconds
+          setTimeout(() => resolve(), 10000);
         });
 
         await firebaseReady;
 
-        if (window.firebaseApp) {
+        if (window.firebaseInitialized) {
           this.setupFirebaseAuth();
           this.firebaseInitialized = true;
           console.log('✅ Firebase services initialized successfully (delayed)');
@@ -78,8 +78,10 @@ class ForgeECApp {
         }
       }
     } catch (error) {
-      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error);
+      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error.message);
       this.firebaseInitialized = false;
+      // Still create auth modal for UI consistency, but without Firebase functionality
+      this.createAuthModal();
     }
   }
 
@@ -117,6 +119,23 @@ class ForgeECApp {
   }
 
   createAuthModal() {
+    // Prevent duplicate modal creation
+    const existingModal = document.getElementById('auth-modal');
+    if (existingModal) {
+      console.log('🔄 Auth modal already exists, skipping creation');
+      return;
+    }
+
+    // Also check for any existing modals with auth forms to prevent ID conflicts
+    const existingAuthForms = document.querySelectorAll('#email-signin-form, #email-signup-form');
+    if (existingAuthForms.length > 0) {
+      console.log('🔄 Auth forms already exist, removing duplicates before creating new modal');
+      existingAuthForms.forEach(form => {
+        const modal = form.closest('.modal-overlay');
+        if (modal) modal.remove();
+      });
+    }
+
     const modalHTML = `
       <div id="auth-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content glass-enhanced">
@@ -194,6 +213,7 @@ class ForgeECApp {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('✅ Auth modal created successfully');
   }
 
   getCurrentSection() {

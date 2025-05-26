@@ -6,18 +6,59 @@ class GitHubAPI {
     this.owner = 'tanm-sys';
     this.repo = 'forge-ec';
     this.cache = new Map();
-    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+    this.cacheTimeout = 10 * 60 * 1000; // 10 minutes (increased for rate limiting)
+    this.rateLimitRemaining = 60;
+    this.rateLimitReset = 0;
+    this.pendingRequests = new Map(); // Prevent duplicate requests
+    this.lastRequestTime = 0;
+    this.requestDelay = 1000; // 1 second between requests
   }
 
   async fetchWithCache(url, options = {}) {
     const cacheKey = url;
     const cached = this.cache.get(cacheKey);
 
+    // Return cached data if still valid
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       console.log('📦 Using cached data for:', url);
       return cached.data;
     }
 
+    // Check if there's already a pending request for this URL
+    if (this.pendingRequests.has(cacheKey)) {
+      console.log('⏳ Request already pending for:', url);
+      return await this.pendingRequests.get(cacheKey);
+    }
+
+    // Check rate limiting before making request
+    if (this.rateLimitRemaining <= 5 && Date.now() < this.rateLimitReset * 1000) {
+      console.warn('⚠️ Rate limit approaching, using cached data if available');
+      if (cached) {
+        return cached.data;
+      }
+    }
+
+    // Implement request delay to avoid hitting rate limits
+    const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+    if (timeSinceLastRequest < this.requestDelay) {
+      await new Promise(resolve => setTimeout(resolve, this.requestDelay - timeSinceLastRequest));
+    }
+
+    // Create the request promise
+    const requestPromise = this.makeRequest(url, options, cached);
+    this.pendingRequests.set(cacheKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up pending request
+      this.pendingRequests.delete(cacheKey);
+      this.lastRequestTime = Date.now();
+    }
+  }
+
+  async makeRequest(url, options, cached) {
     try {
       console.log('🌐 Fetching from GitHub API:', url);
       const response = await fetch(url, {
@@ -29,21 +70,29 @@ class GitHubAPI {
         }
       });
 
-      // Check for rate limiting
-      if (response.status === 403) {
-        const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
-        const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+      // Update rate limit info from headers
+      const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+      const rateLimitReset = response.headers.get('X-RateLimit-Reset');
 
-        if (rateLimitRemaining === '0') {
-          const resetTime = new Date(parseInt(rateLimitReset) * 1000);
-          console.warn('⚠️ GitHub API rate limit exceeded. Resets at:', resetTime);
+      if (rateLimitRemaining) {
+        this.rateLimitRemaining = parseInt(rateLimitRemaining);
+      }
+      if (rateLimitReset) {
+        this.rateLimitReset = parseInt(rateLimitReset);
+      }
 
-          // Return cached data if available
-          if (cached) {
-            console.log('📦 Using expired cached data due to rate limit');
-            return cached.data;
-          }
+      // Handle rate limiting
+      if (response.status === 403 && this.rateLimitRemaining === 0) {
+        const resetTime = new Date(this.rateLimitReset * 1000);
+        console.warn('⚠️ GitHub API rate limit exceeded. Resets at:', resetTime);
+
+        // Return cached data if available
+        if (cached) {
+          console.log('📦 Using expired cached data due to rate limit');
+          return cached.data;
         }
+
+        throw new Error(`Rate limit exceeded. Resets at ${resetTime.toLocaleTimeString()}`);
       }
 
       if (!response.ok) {
@@ -53,7 +102,7 @@ class GitHubAPI {
       const data = await response.json();
 
       // Cache the response
-      this.cache.set(cacheKey, {
+      this.cache.set(url, {
         data,
         timestamp: Date.now()
       });
@@ -67,6 +116,11 @@ class GitHubAPI {
       if (cached) {
         console.log('📦 Using expired cached data due to error');
         return cached.data;
+      }
+
+      // For rate limit errors, throw a more user-friendly error
+      if (error.message.includes('Rate limit')) {
+        throw new Error('GitHub API rate limit exceeded. Please try again later.');
       }
 
       throw error;
@@ -509,24 +563,58 @@ class GitHubAPI {
   }
 }
 
-// Initialize GitHub API
-window.forgeGitHubAPI = new GitHubAPI();
+// Initialize GitHub API (prevent duplicate initialization)
+if (!window.forgeGitHubAPI) {
+  try {
+    window.forgeGitHubAPI = new GitHubAPI();
+    console.log('✅ GitHub API initialized');
 
-// Auto-refresh data every 5 minutes (300 seconds)
-setInterval(() => {
-  console.log('🔄 Auto-refreshing GitHub data...');
-  window.forgeGitHubAPI.refreshData();
-}, 5 * 60 * 1000);
+    // Auto-refresh data every 15 minutes (increased to reduce rate limiting)
+    const refreshInterval = setInterval(() => {
+      if (window.forgeGitHubAPI && window.forgeGitHubAPI.rateLimitRemaining > 10) {
+        console.log('🔄 Auto-refreshing GitHub data...');
+        window.forgeGitHubAPI.refreshData().catch(error => {
+          console.warn('Auto-refresh failed:', error.message);
+        });
+      } else {
+        console.log('⏸️ Skipping auto-refresh due to rate limiting');
+      }
+    }, 15 * 60 * 1000);
 
-// Also refresh when the page becomes visible again (user returns to tab)
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    console.log('👁️ Page visible again, refreshing GitHub data...');
-    window.forgeGitHubAPI.refreshData();
+    // Also refresh when the page becomes visible again (user returns to tab)
+    // But only if enough time has passed and rate limit allows
+    let lastVisibilityRefresh = 0;
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden &&
+          Date.now() - lastVisibilityRefresh > 5 * 60 * 1000 && // 5 minutes minimum
+          window.forgeGitHubAPI.rateLimitRemaining > 5) {
+        console.log('👁️ Page visible again, refreshing GitHub data...');
+        lastVisibilityRefresh = Date.now();
+        window.forgeGitHubAPI.refreshData().catch(error => {
+          console.warn('Visibility refresh failed:', error.message);
+        });
+      }
+    });
+
+    // Clean up interval on page unload
+    window.addEventListener('beforeunload', () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to initialize GitHub API:', error);
+    window.forgeGitHubAPI = null;
   }
-});
+} else {
+  console.log('🔄 GitHub API already initialized, skipping...');
+}
 
-// Export class for potential external use (avoid duplicate declaration)
+// Export class for potential external use (prevent duplicate declaration)
 if (!window.GitHubAPI) {
     window.GitHubAPI = GitHubAPI;
+    console.log('✅ GitHubAPI class exported to window');
+} else {
+    console.log('🔄 GitHubAPI class already exists on window, skipping export');
 }

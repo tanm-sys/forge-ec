@@ -9,6 +9,9 @@
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
 
+    <!-- Permissions Policy to suppress browser warnings -->
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=(), browsing-topics=(), run-ad-auction=(), join-ad-interest-group=(), private-state-token-redemption=(), private-state-token-issuance=(), private-aggregation=(), attribution-reporting=()">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://tanm-sys.github.io/forge-ec/">
@@ -1687,238 +1690,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         </div>
     </footer>
 
-    <!-- Firebase Authentication Modal -->
-    <div id="firebase-auth-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content glass-enhanced" style="max-width: 400px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Sign In to Forge EC</h3>
-                <button class="modal-close" onclick="hideFirebaseAuth()">&times;</button>
-            </div>
+    <!-- Authentication modal will be created dynamically by main.js -->
 
-            <div class="modal-body">
-                <div class="social-auth" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                    <button class="social-btn google-btn" onclick="signInWithGoogle()" style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; cursor: pointer; transition: all 0.2s;">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        Continue with Google
-                    </button>
-
-                    <button class="social-btn github-btn" onclick="signInWithGitHub()" style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; cursor: pointer; transition: all 0.2s;">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                        Continue with GitHub
-                    </button>
-                </div>
-
-                <div class="divider" style="display: flex; align-items: center; margin: 20px 0; color: rgba(255, 255, 255, 0.6); font-size: 14px;">
-                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.2);"></div>
-                    <span style="padding: 0 12px;">or</span>
-                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.2);"></div>
-                </div>
-
-                <form onsubmit="signInWithEmailForm(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="email" id="auth-email" placeholder="Email address" required style="padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; font-size: 14px;">
-                    <input type="password" id="auth-password" placeholder="Password" required style="padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; font-size: 14px;">
-                    <button type="submit" style="padding: 12px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">Sign In</button>
-                </form>
-
-                <div style="text-align: center; margin-top: 16px;">
-                    <a href="#" onclick="createAccount()" style="color: #667eea; text-decoration: none; font-size: 14px;">Create new account</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="js/main.js" defer></script>
-    <script src="js/animations.js" defer></script>
-    <script src="js/github-api.js" defer></script>
-    <!-- Firebase SDK v9 (Compat Version for better compatibility) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-performance-compat.js"></script>
-
-    <script>
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
-            authDomain: "forge-ec.firebaseapp.com",
-            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
-            projectId: "forge-ec",
-            storageBucket: "forge-ec.firebasestorage.app",
-            messagingSenderId: "436060720516",
-            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
-            measurementId: "G-1BVB7FLGRJ"
-        };
-
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-
-            // Initialize Firebase services
-            window.firebaseApp = firebase.app();
-            window.firebaseAuth = firebase.auth();
-            window.firebaseDb = firebase.firestore();
-            window.firebaseFunctions = firebase.functions();
-
-            // Initialize Analytics and Performance (only in production and if not blocked)
-            if (window.location.hostname !== 'localhost') {
-                try {
-                    window.firebaseAnalytics = firebase.analytics();
-                    window.firebasePerformance = firebase.performance();
-                } catch (analyticsError) {
-                    console.warn('Analytics blocked by ad blocker or privacy extension:', analyticsError);
-                }
-            }
-
-            console.log('🔥 Firebase initialized successfully');
-
-            // Dispatch custom event to notify other scripts
-            window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { app: window.firebaseApp } }));
-        } catch (error) {
-            console.warn('Firebase initialization failed:', error);
-            // Continue without Firebase
-            window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { app: null } }));
-        }
-    </script>
-
-    <!-- Firebase Integration -->
-    <script src="js/firebase-integration.js" defer></script>
-
-    <!-- Firebase Auth Helper Functions -->
-    <script>
-        function showFirebaseAuth() {
-            document.getElementById('firebase-auth-modal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function hideFirebaseAuth() {
-            document.getElementById('firebase-auth-modal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        function signInWithGoogle() {
-            if (window.forgeFirebase) {
-                window.forgeFirebase.signInWithGoogle().then(() => {
-                    hideFirebaseAuth();
-                }).catch(console.error);
-            }
-        }
-
-        function signInWithGitHub() {
-            if (window.forgeFirebase) {
-                window.forgeFirebase.signInWithGitHub().then(() => {
-                    hideFirebaseAuth();
-                }).catch(console.error);
-            }
-        }
-
-        function signInWithEmailForm(event) {
-            event.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-
-            if (window.forgeFirebase) {
-                window.forgeFirebase.signInWithEmail(email, password).then(() => {
-                    hideFirebaseAuth();
-                }).catch(console.error);
-            }
-        }
-
-        function createAccount() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const name = prompt('Enter your full name:');
-
-            if (email && password && name && window.forgeFirebase) {
-                window.forgeFirebase.signUpWithEmail(email, password, name).then(() => {
-                    hideFirebaseAuth();
-                }).catch(console.error);
-            } else {
-                alert('Please fill in email and password first');
-            }
-        }
-
-        // Close modal when clicking outside
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('firebase-auth-modal');
-            if (e.target === modal) {
-                hideFirebaseAuth();
-            }
-        });
-
-        // Add sign out functionality to user menu
-        window.addEventListener('forgeFirebaseReady', () => {
-            const userMenuTrigger = document.getElementById('user-menu-trigger');
-            if (userMenuTrigger) {
-                userMenuTrigger.addEventListener('click', () => {
-                    const menu = document.createElement('div');
-                    menu.style.cssText = `
-                        position: absolute;
-                        top: 100%;
-                        right: 0;
-                        background: rgba(255, 255, 255, 0.1);
-                        backdrop-filter: blur(20px);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        border-radius: 8px;
-                        padding: 8px;
-                        margin-top: 8px;
-                        min-width: 150px;
-                        z-index: 1000;
-                    `;
-
-                    menu.innerHTML = `
-                        <button onclick="window.forgeFirebase.signOut(); this.parentElement.remove();" style="
-                            width: 100%;
-                            padding: 8px 12px;
-                            background: transparent;
-                            border: none;
-                            color: white;
-                            text-align: left;
-                            cursor: pointer;
-                            border-radius: 4px;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                            Sign Out
-                        </button>
-                    `;
-
-                    // Remove existing menu
-                    const existingMenu = userMenuTrigger.querySelector('div[style*="position: absolute"]');
-                    if (existingMenu) existingMenu.remove();
-
-                    userMenuTrigger.appendChild(menu);
-
-                    // Remove menu when clicking outside
-                    setTimeout(() => {
-                        document.addEventListener('click', function removeMenu(e) {
-                            if (!userMenuTrigger.contains(e.target)) {
-                                menu.remove();
-                                document.removeEventListener('click', removeMenu);
-                            }
-                        });
-                    }, 100);
-                });
-            }
-        });
-    </script>
-
-    <!-- Firebase Configuration (must load first) -->
+    <!-- Firebase Configuration (Single Source of Truth) -->
     <script type="module">
         // Firebase CDN imports
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
         import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
         import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
         import { getFunctions } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js';
-        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -1932,28 +1712,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             measurementId: "G-1BVB7FLGRJ"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const functions = getFunctions(app);
+        // Prevent multiple Firebase initializations
+        if (!window.firebaseApp) {
+            try {
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                const functions = getFunctions(app);
 
-        // Initialize Analytics (only in production)
-        let analytics = null;
-        if (window.location.hostname !== 'localhost') {
-            analytics = getAnalytics(app);
+                // Initialize Analytics and Performance only in production and handle blockers gracefully
+                let analytics = null;
+                let performance = null;
+
+                if (window.location.hostname !== 'localhost') {
+                    // Try to initialize Analytics
+                    try {
+                        const { getAnalytics } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js');
+                        analytics = getAnalytics(app);
+                        console.log('📊 Firebase Analytics initialized');
+                    } catch (analyticsError) {
+                        console.warn('🚫 Analytics blocked by ad blocker or privacy extension:', analyticsError.message);
+                    }
+
+                    // Try to initialize Performance
+                    try {
+                        const { getPerformance } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-performance.js');
+                        performance = getPerformance(app);
+                        console.log('⚡ Firebase Performance initialized');
+                    } catch (performanceError) {
+                        console.warn('🚫 Performance monitoring blocked or unavailable:', performanceError.message);
+                    }
+                }
+
+                // Make Firebase services globally available
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseAuth = auth;
+                window.firebaseFunctions = functions;
+                window.firebaseAnalytics = analytics;
+                window.firebasePerformance = performance;
+
+                // Mark Firebase as initialized
+                window.firebaseInitialized = true;
+
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+                console.log('🔥 Firebase v11.8.1 initialized successfully');
+            } catch (error) {
+                console.warn('⚠️ Firebase initialization failed:', error);
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady', { detail: { error } }));
+            }
+        } else {
+            console.log('🔥 Firebase already initialized, skipping...');
         }
-
-        // Make Firebase services globally available
-        window.firebaseApp = app;
-        window.firebaseDb = db;
-        window.firebaseAuth = auth;
-        window.firebaseFunctions = functions;
-        window.firebaseAnalytics = analytics;
-
-        // Dispatch ready event
-        window.dispatchEvent(new CustomEvent('firebaseReady'));
-        console.log('🔥 Firebase initialized successfully');
     </script>
 
     <!-- Main Application Script (ES6 Module) -->
