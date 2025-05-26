@@ -62,6 +62,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
@@ -146,7 +147,7 @@
                 </a>
 
                 <!-- Authentication Button -->
-                <button class="auth-trigger auth-btn" id="auth-trigger" style="display: block;" onclick="showFirebaseAuth()">
+                <button class="auth-trigger auth-btn" id="auth-trigger" style="display: block;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
@@ -1910,8 +1911,53 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     </script>
 
-    <!-- Main Application Script -->
-    <script src="js/main.js" defer></script>
+    <!-- Firebase Configuration (must load first) -->
+    <script type="module">
+        // Firebase CDN imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+        import { getFunctions } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+            authDomain: "forge-ec.firebaseapp.com",
+            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+            projectId: "forge-ec",
+            storageBucket: "forge-ec.firebasestorage.app",
+            messagingSenderId: "436060720516",
+            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+            measurementId: "G-1BVB7FLGRJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const functions = getFunctions(app);
+
+        // Initialize Analytics (only in production)
+        let analytics = null;
+        if (window.location.hostname !== 'localhost') {
+            analytics = getAnalytics(app);
+        }
+
+        // Make Firebase services globally available
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        window.firebaseFunctions = functions;
+        window.firebaseAnalytics = analytics;
+
+        // Dispatch ready event
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+        console.log('🔥 Firebase initialized successfully');
+    </script>
+
+    <!-- Main Application Script (ES6 Module) -->
+    <script type="module" src="js/main.js"></script>
 
     <!-- Legacy scripts for non-module browsers -->
     <script src="js/hero-canvas.js" defer></script>

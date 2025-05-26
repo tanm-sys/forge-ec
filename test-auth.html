@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge EC - Authentication Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .success { background: rgba(16, 185, 129, 0.2); }
+        .error { background: rgba(239, 68, 68, 0.2); }
+        .info { background: rgba(59, 130, 246, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔥 Forge EC Authentication Test</h1>
+        <p>This page tests the Firebase Authentication integration and module loading fixes.</p>
+        
+        <div class="status" id="status">
+            <strong>Status:</strong> Initializing...
+        </div>
+        
+        <div>
+            <button class="test-button" id="auth-trigger">🔐 Test Authentication Modal</button>
+            <button class="test-button" id="test-firebase">🔥 Test Firebase Connection</button>
+            <button class="test-button" id="test-modules">📦 Test Module Loading</button>
+        </div>
+        
+        <div id="test-results">
+            <h3>Test Results:</h3>
+            <ul id="results-list"></ul>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Firebase CDN imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+            authDomain: "forge-ec.firebaseapp.com",
+            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+            projectId: "forge-ec",
+            storageBucket: "forge-ec.firebasestorage.app",
+            messagingSenderId: "436060720516",
+            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+            measurementId: "G-1BVB7FLGRJ"
+        };
+
+        try {
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+
+            // Make Firebase services globally available
+            window.firebaseApp = app;
+            window.firebaseDb = db;
+            window.firebaseAuth = auth;
+
+            // Update status
+            document.getElementById('status').innerHTML = '<strong>Status:</strong> ✅ Firebase initialized successfully!';
+            document.getElementById('status').className = 'status success';
+            
+            addResult('✅ Firebase modules loaded successfully');
+            addResult('✅ Firebase app initialized');
+            addResult('✅ Firestore connected');
+            addResult('✅ Authentication service ready');
+
+            console.log('🔥 Firebase initialized successfully');
+        } catch (error) {
+            document.getElementById('status').innerHTML = `<strong>Status:</strong> ❌ Firebase initialization failed: ${error.message}`;
+            document.getElementById('status').className = 'status error';
+            addResult(`❌ Firebase initialization error: ${error.message}`);
+            console.error('Firebase initialization error:', error);
+        }
+    </script>
+
+    <!-- Main Application Script -->
+    <script type="module" src="js/main.js"></script>
+
+    <!-- Test Scripts -->
+    <script>
+        function addResult(message) {
+            const resultsList = document.getElementById('results-list');
+            const li = document.createElement('li');
+            li.textContent = message;
+            li.style.margin = '5px 0';
+            resultsList.appendChild(li);
+        }
+
+        // Test Firebase connection
+        document.getElementById('test-firebase').addEventListener('click', () => {
+            if (window.firebaseApp) {
+                addResult('✅ Firebase app is accessible globally');
+                if (window.firebaseAuth) {
+                    addResult('✅ Firebase Auth is accessible');
+                } else {
+                    addResult('❌ Firebase Auth not accessible');
+                }
+                if (window.firebaseDb) {
+                    addResult('✅ Firestore is accessible');
+                } else {
+                    addResult('❌ Firestore not accessible');
+                }
+            } else {
+                addResult('❌ Firebase app not accessible globally');
+            }
+        });
+
+        // Test module loading
+        document.getElementById('test-modules').addEventListener('click', () => {
+            if (window.forgeECApp) {
+                addResult('✅ Main application loaded successfully');
+                if (typeof window.forgeECApp.showAuthModal === 'function') {
+                    addResult('✅ Authentication methods available');
+                } else {
+                    addResult('❌ Authentication methods not available');
+                }
+            } else {
+                addResult('❌ Main application not loaded');
+            }
+            
+            if (window.forgeGitHubAPI) {
+                addResult('✅ GitHub API loaded successfully');
+            } else {
+                addResult('❌ GitHub API not loaded');
+            }
+        });
+
+        // Wait for DOM and app to load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                addResult('✅ DOM loaded successfully');
+                if (window.forgeECApp) {
+                    addResult('✅ Forge EC App initialized');
+                } else {
+                    addResult('⏳ Waiting for Forge EC App...');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

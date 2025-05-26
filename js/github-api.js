@@ -526,5 +526,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Export class for potential external use
-window.GitHubAPI = GitHubAPI;
+// Export class for potential external use (avoid duplicate declaration)
+if (!window.GitHubAPI) {
+    window.GitHubAPI = GitHubAPI;
+}
