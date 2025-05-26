@@ -278,6 +278,17 @@ class GitHubAPI {
         </div>
       `).join('');
     }
+
+    // Update About page contributors section
+    const aboutContributors = document.getElementById('about-contributors');
+    if (aboutContributors && contributors.length > 0) {
+      aboutContributors.innerHTML = contributors.slice(0, 8).map(contributor => `
+        <div class="contributor-item" title="${contributor.login} - ${contributor.contributions} contributions">
+          <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar" loading="lazy">
+          <span class="contributor-name">${contributor.login}</span>
+        </div>
+      `).join('');
+    }
   }
 
   updateCommitStatsWithTotal(totalCommits, recentCommits) {

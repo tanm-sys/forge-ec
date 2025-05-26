@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub API Test - Forge EC</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .stat-card {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin: 0.5rem 0;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+        .loading {
+            color: #fbbf24;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .success {
+            color: #10b981;
+        }
+        .log {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 GitHub API Test - Forge EC Repository</h1>
+        <p>Testing real-time GitHub API integration for the <strong>tanm-sys/forge-ec</strong> repository.</p>
+        
+        <div>
+            <button onclick="testGitHubAPI()">🔄 Test GitHub API</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+            <span id="status" class="loading">Ready to test</span>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="test-stars">--</div>
+                <div class="stat-label">⭐ Stars</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="test-forks">--</div>
+                <div class="stat-label">🍴 Forks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="test-commits">--</div>
+                <div class="stat-label">📝 Commits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="test-contributors">--</div>
+                <div class="stat-label">👥 Contributors</div>
+            </div>
+        </div>
+
+        <h3>📋 API Test Log</h3>
+        <div id="log" class="log">Click "Test GitHub API" to start testing...\n</div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateStatus(message, className = '') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = className;
+        }
+
+        async function testGitHubAPI() {
+            updateStatus('Testing GitHub API...', 'loading');
+            log('🚀 Starting GitHub API test...');
+
+            try {
+                // Test repository info
+                log('📊 Fetching repository information...');
+                const repoResponse = await fetch('https://api.github.com/repos/tanm-sys/forge-ec', {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Forge-EC-Website-Test'
+                    }
+                });
+
+                if (!repoResponse.ok) {
+                    throw new Error(`Repository API failed: ${repoResponse.status} ${repoResponse.statusText}`);
+                }
+
+                const repoData = await repoResponse.json();
+                log(`✅ Repository data loaded: ${repoData.name}`);
+                log(`   Stars: ${repoData.stargazers_count}`);
+                log(`   Forks: ${repoData.forks_count}`);
+                log(`   Description: ${repoData.description}`);
+
+                // Update stats
+                document.getElementById('test-stars').textContent = repoData.stargazers_count;
+                document.getElementById('test-forks').textContent = repoData.forks_count;
+
+                // Test contributors
+                log('👥 Fetching contributors...');
+                const contributorsResponse = await fetch('https://api.github.com/repos/tanm-sys/forge-ec/contributors', {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Forge-EC-Website-Test'
+                    }
+                });
+
+                if (contributorsResponse.ok) {
+                    const contributorsData = await contributorsResponse.json();
+                    log(`✅ Contributors loaded: ${contributorsData.length} contributors`);
+                    document.getElementById('test-contributors').textContent = contributorsData.length;
+                    
+                    contributorsData.forEach(contributor => {
+                        log(`   - ${contributor.login}: ${contributor.contributions} contributions`);
+                    });
+                } else {
+                    log(`⚠️ Contributors API failed: ${contributorsResponse.status}`);
+                }
+
+                // Test commits (first page)
+                log('📝 Fetching commits...');
+                const commitsResponse = await fetch('https://api.github.com/repos/tanm-sys/forge-ec/commits?per_page=100', {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Forge-EC-Website-Test'
+                    }
+                });
+
+                if (commitsResponse.ok) {
+                    const commitsData = await commitsResponse.json();
+                    log(`✅ Commits loaded: ${commitsData.length} commits (first page)`);
+                    document.getElementById('test-commits').textContent = `${commitsData.length}+`;
+                    
+                    if (commitsData.length > 0) {
+                        const latestCommit = commitsData[0];
+                        log(`   Latest: "${latestCommit.commit.message.split('\n')[0]}" by ${latestCommit.commit.author.name}`);
+                    }
+                } else {
+                    log(`⚠️ Commits API failed: ${commitsResponse.status}`);
+                }
+
+                // Check rate limits
+                const rateLimitResponse = await fetch('https://api.github.com/rate_limit', {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Forge-EC-Website-Test'
+                    }
+                });
+
+                if (rateLimitResponse.ok) {
+                    const rateLimitData = await rateLimitResponse.json();
+                    log(`📊 Rate limit status:`);
+                    log(`   Remaining: ${rateLimitData.rate.remaining}/${rateLimitData.rate.limit}`);
+                    log(`   Resets at: ${new Date(rateLimitData.rate.reset * 1000).toLocaleTimeString()}`);
+                }
+
+                updateStatus('✅ GitHub API test completed successfully!', 'success');
+                log('🎉 All tests completed successfully!');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                updateStatus('❌ GitHub API test failed', 'error');
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testGitHubAPI, 1000);
+        });
+    </script>
+</body>
+</html>
