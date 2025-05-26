@@ -40,31 +40,46 @@ class ForgeECApp {
     try {
       console.log('🔥 Initializing Firebase services...');
 
-      // Wait for Firebase to be ready
+      // Wait for Firebase to be ready with improved timeout handling
       if (window.firebaseInitialized) {
         // Firebase services are already initialized
         this.setupFirebaseAuth();
         this.firebaseInitialized = true;
         console.log('✅ Firebase services already initialized');
       } else {
-        // Wait for Firebase ready event
-        const firebaseReady = new Promise((resolve) => {
+        // Wait for Firebase ready event with race condition protection
+        const firebaseReady = new Promise((resolve, reject) => {
+          let resolved = false;
+          let checkCount = 0;
+          const maxChecks = 100; // Maximum 10 seconds (100 * 100ms)
+
           const checkFirebase = () => {
+            if (resolved) return; // Prevent multiple resolutions
+
+            checkCount++;
             if (window.firebaseInitialized) {
+              resolved = true;
               resolve();
+            } else if (checkCount >= maxChecks) {
+              resolved = true;
+              reject(new Error('Firebase initialization timeout'));
             } else {
               setTimeout(checkFirebase, 100);
             }
           };
 
           // Listen for Firebase ready event
-          window.addEventListener('firebaseReady', resolve, { once: true });
+          const handleFirebaseReady = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
 
-          // Also check periodically in case event was missed
+          window.addEventListener('firebaseReady', handleFirebaseReady, { once: true });
+
+          // Start checking periodically
           setTimeout(checkFirebase, 100);
-
-          // Timeout after 10 seconds
-          setTimeout(() => resolve(), 10000);
         });
 
         await firebaseReady;
@@ -93,30 +108,44 @@ class ForgeECApp {
     this.setupAuthEventListeners();
   }
 
-  initializeAuth() {
+  async initializeAuth() {
     if (!window.firebaseAuth) {
       console.warn('Firebase Auth not available');
       return;
     }
 
-    // Import Firebase Auth functions dynamically
-    import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js').then((authModule) => {
-      this.authModule = authModule;
+    try {
+      // Import Firebase Auth functions dynamically with timeout
+      console.log('📦 Loading Firebase Auth module...');
 
-      // Set up auth state listener
-      authModule.onAuthStateChanged(window.firebaseAuth, (user) => {
-        this.currentUser = user;
-        this.updateAuthUI();
-
-        if (user) {
-          console.log('👤 User signed in:', user.email);
-        } else {
-          console.log('👤 User signed out');
-        }
+      const authModulePromise = import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Auth module load timeout')), 5000);
       });
-    }).catch(error => {
+
+      const authModule = await Promise.race([authModulePromise, timeoutPromise]);
+      this.authModule = authModule;
+      console.log('✅ Firebase Auth module loaded successfully');
+
+      // Set up auth state listener with error handling
+      try {
+        authModule.onAuthStateChanged(window.firebaseAuth, (user) => {
+          this.currentUser = user;
+          this.updateAuthUI();
+
+          if (user) {
+            console.log('👤 User signed in:', user.email);
+          } else {
+            console.log('👤 User signed out');
+          }
+        });
+      } catch (listenerError) {
+        console.warn('Failed to set up auth state listener:', listenerError);
+      }
+    } catch (error) {
       console.warn('Failed to load Firebase Auth module:', error);
-    });
+      this.authModule = null;
+    }
   }
 
   createAuthModal() {
@@ -313,61 +342,102 @@ class ForgeECApp {
   }
 
   setupAuthEventListeners() {
-    // Auth modal events
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('#auth-trigger') || e.target.closest('#auth-trigger')) {
-        this.showAuthModal();
-      }
-    });
+    // Prevent multiple event listener registrations
+    if (this.authEventListenersSetup) {
+      console.log('🔄 Auth event listeners already setup, skipping...');
+      return;
+    }
 
-    // Modal close events
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('#auth-modal-close')) {
-        this.hideAuthModal();
-      }
-      if (e.target.matches('#auth-modal')) {
-        this.hideAuthModal();
-      }
-    });
+    console.log('🎯 Setting up authentication event listeners...');
 
-    // Tab switching
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('.auth-tab')) {
-        this.switchAuthTab(e.target.dataset.tab);
-      }
-    });
+    // Create a single delegated event listener for all auth-related clicks
+    this.authClickHandler = (e) => {
+      try {
+        // Auth trigger button
+        if (e.target.matches('#auth-trigger') || e.target.closest('#auth-trigger')) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🔐 Auth trigger clicked');
+          this.showAuthModal();
+          return;
+        }
 
-    // Social auth buttons
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('#google-signin') || e.target.closest('#google-signin')) {
-        this.handleGoogleSignIn();
-      }
-      if (e.target.matches('#github-signin') || e.target.closest('#github-signin')) {
-        this.handleGitHubSignIn();
-      }
-    });
+        // Modal close events
+        if (e.target.matches('#auth-modal-close')) {
+          e.preventDefault();
+          this.hideAuthModal();
+          return;
+        }
 
-    // Email forms
-    document.addEventListener('submit', (e) => {
-      if (e.target.matches('#email-signin-form')) {
-        e.preventDefault();
-        this.handleEmailSignIn(e);
-      }
-      if (e.target.matches('#email-signup-form')) {
-        e.preventDefault();
-        this.handleEmailSignUp(e);
-      }
-    });
+        if (e.target.matches('#auth-modal') && !e.target.closest('.modal-content')) {
+          e.preventDefault();
+          this.hideAuthModal();
+          return;
+        }
 
-    // User menu events
-    document.addEventListener('click', (e) => {
-      if (e.target.matches('#user-menu-btn') || e.target.closest('#user-menu-btn')) {
-        this.toggleUserMenu();
+        // Tab switching
+        if (e.target.matches('.auth-tab')) {
+          e.preventDefault();
+          this.switchAuthTab(e.target.dataset.tab);
+          return;
+        }
+
+        // Social auth buttons
+        if (e.target.matches('#google-signin') || e.target.closest('#google-signin')) {
+          e.preventDefault();
+          this.handleGoogleSignIn();
+          return;
+        }
+
+        if (e.target.matches('#github-signin') || e.target.closest('#github-signin')) {
+          e.preventDefault();
+          this.handleGitHubSignIn();
+          return;
+        }
+
+        // User menu events
+        if (e.target.matches('#user-menu-btn') || e.target.closest('#user-menu-btn')) {
+          e.preventDefault();
+          this.toggleUserMenu();
+          return;
+        }
+
+        if (e.target.matches('#user-signout') || e.target.closest('#user-signout')) {
+          e.preventDefault();
+          this.handleSignOut();
+          return;
+        }
+      } catch (error) {
+        console.error('Error in auth click handler:', error);
       }
-      if (e.target.matches('#user-signout') || e.target.closest('#user-signout')) {
-        this.handleSignOut();
+    };
+
+    // Form submission handler
+    this.authSubmitHandler = (e) => {
+      try {
+        if (e.target.matches('#email-signin-form')) {
+          e.preventDefault();
+          this.handleEmailSignIn(e);
+          return;
+        }
+
+        if (e.target.matches('#email-signup-form')) {
+          e.preventDefault();
+          this.handleEmailSignUp(e);
+          return;
+        }
+      } catch (error) {
+        console.error('Error in auth submit handler:', error);
       }
-    });
+    };
+
+    // Register event listeners
+    document.addEventListener('click', this.authClickHandler);
+    document.addEventListener('submit', this.authSubmitHandler);
+
+    // Mark as setup to prevent duplicates
+    this.authEventListenersSetup = true;
+    console.log('✅ Auth event listeners setup complete');
   }
 
   initializeTheme() {
@@ -807,18 +877,69 @@ class ForgeECApp {
 
   // Authentication Methods
   showAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+    try {
+      console.log('🔐 Showing authentication modal...');
+
+      // Prevent multiple modal openings
+      if (this.isAuthModalOpen) {
+        console.log('🔄 Auth modal already open, skipping...');
+        return;
+      }
+
+      const modal = document.getElementById('auth-modal');
+      if (!modal) {
+        console.warn('⚠️ Auth modal not found, creating...');
+        this.createAuthModal();
+        // Try again after creation
+        setTimeout(() => this.showAuthModal(), 100);
+        return;
+      }
+
+      // Set loading state
+      this.isAuthModalOpen = true;
+
+      // Show modal with smooth animation
+      requestAnimationFrame(() => {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Add fade-in animation
+        modal.style.opacity = '0';
+        requestAnimationFrame(() => {
+          modal.style.transition = 'opacity 0.3s ease';
+          modal.style.opacity = '1';
+        });
+
+        console.log('✅ Auth modal displayed successfully');
+      });
+    } catch (error) {
+      console.error('❌ Error showing auth modal:', error);
+      this.isAuthModalOpen = false;
     }
   }
 
   hideAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
+    try {
+      console.log('🔐 Hiding authentication modal...');
+
+      const modal = document.getElementById('auth-modal');
+      if (modal) {
+        // Add fade-out animation
+        modal.style.transition = 'opacity 0.3s ease';
+        modal.style.opacity = '0';
+
+        setTimeout(() => {
+          modal.style.display = 'none';
+          document.body.style.overflow = '';
+          this.isAuthModalOpen = false;
+          console.log('✅ Auth modal hidden successfully');
+        }, 300);
+      } else {
+        this.isAuthModalOpen = false;
+      }
+    } catch (error) {
+      console.error('❌ Error hiding auth modal:', error);
+      this.isAuthModalOpen = false;
     }
   }
 
@@ -836,18 +957,31 @@ class ForgeECApp {
   async handleGoogleSignIn() {
     if (!this.authModule || !window.firebaseAuth) {
       console.warn('Firebase Auth not available');
+      this.showAuthFeedback('Authentication service not available', 'error');
       return;
     }
 
     try {
+      console.log('🔐 Attempting Google sign-in...');
+      this.showAuthFeedback('Connecting to Google...', 'info');
+
       const provider = new this.authModule.GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
 
-      await this.authModule.signInWithPopup(window.firebaseAuth, provider);
+      // Add timeout to prevent hanging
+      const signInPromise = this.authModule.signInWithPopup(window.firebaseAuth, provider);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Google sign-in timeout')), 30000);
+      });
+
+      await Promise.race([signInPromise, timeoutPromise]);
+
       this.hideAuthModal();
       this.showAuthFeedback('Signed in with Google!', 'success');
+      console.log('✅ Google sign-in successful');
     } catch (error) {
+      console.error('❌ Google sign-in failed:', error);
       this.handleAuthError(error);
     }
   }
@@ -855,17 +989,30 @@ class ForgeECApp {
   async handleGitHubSignIn() {
     if (!this.authModule || !window.firebaseAuth) {
       console.warn('Firebase Auth not available');
+      this.showAuthFeedback('Authentication service not available', 'error');
       return;
     }
 
     try {
+      console.log('🔐 Attempting GitHub sign-in...');
+      this.showAuthFeedback('Connecting to GitHub...', 'info');
+
       const provider = new this.authModule.GithubAuthProvider();
       provider.addScope('user:email');
 
-      await this.authModule.signInWithPopup(window.firebaseAuth, provider);
+      // Add timeout to prevent hanging
+      const signInPromise = this.authModule.signInWithPopup(window.firebaseAuth, provider);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('GitHub sign-in timeout')), 30000);
+      });
+
+      await Promise.race([signInPromise, timeoutPromise]);
+
       this.hideAuthModal();
       this.showAuthFeedback('Signed in with GitHub!', 'success');
+      console.log('✅ GitHub sign-in successful');
     } catch (error) {
+      console.error('❌ GitHub sign-in failed:', error);
       this.handleAuthError(error);
     }
   }
