@@ -13,13 +13,14 @@ import { getPerformance } from 'firebase/performance';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "your-api-key-here",
-  authDomain: "forge-ec-docs.firebaseapp.com",
-  projectId: "forge-ec-docs",
-  storageBucket: "forge-ec-docs.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456",
-  measurementId: "G-XXXXXXXXXX"
+  apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+  authDomain: "forge-ec.firebaseapp.com",
+  databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+  projectId: "forge-ec",
+  storageBucket: "forge-ec.firebasestorage.app",
+  messagingSenderId: "436060720516",
+  appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+  measurementId: "G-1BVB7FLGRJ"
 };
 
 // Initialize Firebase
@@ -44,7 +45,7 @@ export { analytics, performance };
 // Development emulator setup
 if (window.location.hostname === 'localhost') {
   console.log('🔥 Connecting to Firebase emulators...');
-  
+
   try {
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectAuthEmulator(auth, 'http://localhost:9099');
