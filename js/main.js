@@ -6,7 +6,7 @@ class ForgeECApp {
     this.currentTheme = 'light';
     this.scrollPosition = 0;
     this.isScrolling = false;
-    
+
     this.init();
   }
 
@@ -17,16 +17,16 @@ class ForgeECApp {
     this.setupScrollEffects();
     this.setupNavigation();
     this.setupAnimations();
-    
+
     // Load external data
     await this.loadGitHubData();
-    
+
     // Hide loading screen
     this.hideLoadingScreen();
-    
+
     // Initialize scroll-triggered animations
     this.initScrollAnimations();
-    
+
     console.log('🦀 Forge EC website initialized successfully!');
   }
 
@@ -61,11 +61,11 @@ class ForgeECApp {
     // CTA buttons
     const getStartedBtn = document.getElementById('get-started-btn');
     const liveDemoBtn = document.getElementById('live-demo-btn');
-    
+
     if (getStartedBtn) {
       getStartedBtn.addEventListener('click', () => this.scrollToSection('docs'));
     }
-    
+
     if (liveDemoBtn) {
       liveDemoBtn.addEventListener('click', () => this.openLiveDemo());
     }
@@ -79,7 +79,7 @@ class ForgeECApp {
     // Window events
     window.addEventListener('scroll', () => this.handleScroll());
     window.addEventListener('resize', () => this.handleResize());
-    
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => this.handleKeyboard(e));
   }
@@ -88,7 +88,7 @@ class ForgeECApp {
     // Check for saved theme or system preference
     const savedTheme = localStorage.getItem('forge-ec-theme');
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    
+
     this.currentTheme = savedTheme || systemTheme;
     this.applyTheme(this.currentTheme);
 
@@ -109,7 +109,7 @@ class ForgeECApp {
 
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    
+
     // Update theme toggle icon
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
@@ -120,7 +120,7 @@ class ForgeECApp {
   setupScrollEffects() {
     // Throttled scroll handler
     let ticking = false;
-    
+
     window.addEventListener('scroll', () => {
       if (!ticking) {
         requestAnimationFrame(() => {
@@ -135,7 +135,7 @@ class ForgeECApp {
   updateScrollEffects() {
     const scrollY = window.scrollY;
     const navbar = document.getElementById('navbar');
-    
+
     // Update navbar appearance
     if (navbar) {
       if (scrollY > 50) {
@@ -147,14 +147,14 @@ class ForgeECApp {
 
     // Update parallax effects
     this.updateParallax(scrollY);
-    
+
     // Update active navigation
     this.updateActiveNavigation(scrollY);
   }
 
   updateParallax(scrollY) {
     const parallaxElements = document.querySelectorAll('.parallax');
-    
+
     parallaxElements.forEach(element => {
       const speed = element.dataset.speed || 0.5;
       const yPos = -(scrollY * speed);
@@ -165,13 +165,13 @@ class ForgeECApp {
   updateActiveNavigation(scrollY) {
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.nav-link');
-    
+
     let currentSection = '';
-    
+
     sections.forEach(section => {
       const sectionTop = section.offsetTop - 100;
       const sectionHeight = section.offsetHeight;
-      
+
       if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
         currentSection = section.getAttribute('id');
       }
@@ -188,7 +188,7 @@ class ForgeECApp {
   setupNavigation() {
     // Smooth scrolling for anchor links
     const links = document.querySelectorAll('a[href^="#"]');
-    
+
     links.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -204,7 +204,7 @@ class ForgeECApp {
     const section = document.getElementById(sectionId);
     if (section) {
       const offsetTop = section.offsetTop - 80; // Account for fixed navbar
-      
+
       window.scrollTo({
         top: offsetTop,
         behavior: 'smooth'
@@ -221,10 +221,10 @@ class ForgeECApp {
   setupAnimations() {
     // Initialize intersection observer for scroll animations
     this.observeElements();
-    
+
     // Setup magnetic hover effects
     this.setupMagneticEffects();
-    
+
     // Setup ripple effects
     this.setupRippleEffects();
   }
@@ -239,7 +239,7 @@ class ForgeECApp {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('animated');
-          
+
           // Add stagger effect for child elements
           const staggerItems = entry.target.querySelectorAll('.stagger-item');
           staggerItems.forEach((item, index) => {
@@ -258,19 +258,19 @@ class ForgeECApp {
 
   setupMagneticEffects() {
     const magneticElements = document.querySelectorAll('.magnetic');
-    
+
     magneticElements.forEach(element => {
       element.addEventListener('mousemove', (e) => {
         const rect = element.getBoundingClientRect();
         const x = e.clientX - rect.left - rect.width / 2;
         const y = e.clientY - rect.top - rect.height / 2;
-        
+
         const moveX = x * 0.1;
         const moveY = y * 0.1;
-        
+
         element.style.transform = `translate(${moveX}px, ${moveY}px)`;
       });
-      
+
       element.addEventListener('mouseleave', () => {
         element.style.transform = 'translate(0, 0)';
       });
@@ -279,20 +279,20 @@ class ForgeECApp {
 
   setupRippleEffects() {
     const rippleElements = document.querySelectorAll('.ripple');
-    
+
     rippleElements.forEach(element => {
       element.addEventListener('click', (e) => {
         const rect = element.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         const ripple = document.createElement('span');
         ripple.className = 'ripple-effect';
         ripple.style.left = x + 'px';
         ripple.style.top = y + 'px';
-        
+
         element.appendChild(ripple);
-        
+
         setTimeout(() => {
           ripple.remove();
         }, 600);
@@ -302,12 +302,32 @@ class ForgeECApp {
 
   async loadGitHubData() {
     try {
-      // This will be implemented in github-api.js
+      console.log('🚀 Initializing GitHub data loading...');
+
+      // Load GitHub data asynchronously without blocking page load
       if (window.GitHubAPI) {
-        await window.GitHubAPI.loadRepositoryData();
+        // Don't await this to prevent blocking page initialization
+        window.GitHubAPI.loadRepositoryData().catch(error => {
+          console.warn('GitHub data loading failed:', error);
+        });
+      } else {
+        console.warn('GitHubAPI not available, will retry when loaded');
+
+        // Retry when GitHubAPI becomes available
+        const checkGitHubAPI = () => {
+          if (window.GitHubAPI) {
+            console.log('🔄 GitHubAPI now available, loading data...');
+            window.GitHubAPI.loadRepositoryData().catch(error => {
+              console.warn('GitHub data loading failed on retry:', error);
+            });
+          } else {
+            setTimeout(checkGitHubAPI, 100);
+          }
+        };
+        setTimeout(checkGitHubAPI, 100);
       }
     } catch (error) {
-      console.warn('Failed to load GitHub data:', error);
+      console.warn('Failed to initialize GitHub data loading:', error);
     }
   }
 
@@ -347,7 +367,7 @@ class ForgeECApp {
 
   copyToClipboard(button) {
     const textToCopy = button.getAttribute('data-copy');
-    
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(textToCopy).then(() => {
         this.showCopyFeedback(button);
@@ -368,7 +388,7 @@ class ForgeECApp {
     const originalHTML = button.innerHTML;
     button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>';
     button.style.color = 'var(--color-success)';
-    
+
     setTimeout(() => {
       button.innerHTML = originalHTML;
       button.style.color = '';
@@ -383,7 +403,7 @@ class ForgeECApp {
 
   handleScroll() {
     this.scrollPosition = window.scrollY;
-    
+
     if (!this.isScrolling) {
       this.isScrolling = true;
       requestAnimationFrame(() => {
@@ -397,11 +417,11 @@ class ForgeECApp {
     // Handle responsive behavior
     const mobileBreakpoint = 768;
     const isMobile = window.innerWidth < mobileBreakpoint;
-    
+
     // Update mobile menu state
     const navMenu = document.getElementById('nav-menu');
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-    
+
     if (!isMobile && navMenu) {
       navMenu.classList.remove('active');
       if (mobileMenuToggle) {
@@ -424,7 +444,7 @@ class ForgeECApp {
           break;
       }
     }
-    
+
     // Theme toggle with 't' key
     if (e.key === 't' && !e.ctrlKey && !e.metaKey) {
       const activeElement = document.activeElement;

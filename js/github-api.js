@@ -12,41 +12,63 @@ class GitHubAPI {
   async fetchWithCache(url, options = {}) {
     const cacheKey = url;
     const cached = this.cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log('📦 Using cached data for:', url);
       return cached.data;
     }
 
     try {
+      console.log('🌐 Fetching from GitHub API:', url);
       const response = await fetch(url, {
         ...options,
         headers: {
           'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Forge-EC-Website',
           ...options.headers
         }
       });
 
+      // Check for rate limiting
+      if (response.status === 403) {
+        const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+        const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+
+        if (rateLimitRemaining === '0') {
+          const resetTime = new Date(parseInt(rateLimitReset) * 1000);
+          console.warn('⚠️ GitHub API rate limit exceeded. Resets at:', resetTime);
+
+          // Return cached data if available
+          if (cached) {
+            console.log('📦 Using expired cached data due to rate limit');
+            return cached.data;
+          }
+        }
+      }
+
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status}`);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      
+
       // Cache the response
       this.cache.set(cacheKey, {
         data,
         timestamp: Date.now()
       });
 
+      console.log('✅ Successfully fetched and cached data');
       return data;
     } catch (error) {
-      console.warn('GitHub API request failed:', error);
-      
+      console.warn('❌ GitHub API request failed:', error.message);
+
       // Return cached data if available, even if expired
       if (cached) {
+        console.log('📦 Using expired cached data due to error');
         return cached.data;
       }
-      
+
       throw error;
     }
   }
@@ -61,9 +83,59 @@ class GitHubAPI {
     return await this.fetchWithCache(url);
   }
 
-  async getCommits(page = 1, perPage = 10) {
+  async getCommits(page = 1, perPage = 100) {
     const url = `${this.baseURL}/repos/${this.owner}/${this.repo}/commits?page=${page}&per_page=${perPage}`;
     return await this.fetchWithCache(url);
+  }
+
+  async getTotalCommitCount() {
+    try {
+      // Get the default branch first
+      const repoInfo = await this.getRepositoryInfo();
+      const defaultBranch = repoInfo.default_branch || 'main';
+
+      // Get commits from the default branch with pagination to get total count
+      const url = `${this.baseURL}/repos/${this.owner}/${this.repo}/commits?sha=${defaultBranch}&per_page=1`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (response.ok) {
+        // GitHub provides the total count in the Link header for pagination
+        const linkHeader = response.headers.get('Link');
+        if (linkHeader) {
+          const lastPageMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
+          if (lastPageMatch) {
+            return parseInt(lastPageMatch[1]);
+          }
+        }
+
+        // Fallback: try to get a reasonable estimate by fetching multiple pages
+        let totalCommits = 0;
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore && page <= 10) { // Limit to 10 pages to avoid rate limiting
+          const commits = await this.getCommits(page, 100);
+          if (commits && commits.length > 0) {
+            totalCommits += commits.length;
+            hasMore = commits.length === 100;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        return totalCommits;
+      }
+    } catch (error) {
+      console.warn('Failed to get total commit count:', error);
+    }
+
+    // Fallback to a reasonable estimate
+    return 150;
   }
 
   async getContributors() {
@@ -88,44 +160,84 @@ class GitHubAPI {
 
   async loadRepositoryData() {
     try {
-      // Load basic repository information
+      console.log('🔄 Loading GitHub repository data...');
+
+      // Load basic repository information first
       const repoInfo = await this.getRepositoryInfo();
+      console.log('📊 Repository info loaded:', {
+        stars: repoInfo.stargazers_count,
+        forks: repoInfo.forks_count,
+        name: repoInfo.name
+      });
+
+      // Update basic stats immediately
       this.updateRepositoryStats(repoInfo);
 
       // Load additional data in parallel
-      const [contributors, commits] = await Promise.all([
-        this.getContributors().catch(() => []),
-        this.getCommits(1, 100).catch(() => [])
+      const [contributors, totalCommits, recentCommits] = await Promise.all([
+        this.getContributors().catch(err => {
+          console.warn('Failed to load contributors:', err);
+          return [];
+        }),
+        this.getTotalCommitCount().catch(err => {
+          console.warn('Failed to load commit count:', err);
+          return 150; // Fallback
+        }),
+        this.getCommits(1, 10).catch(err => {
+          console.warn('Failed to load recent commits:', err);
+          return [];
+        })
       ]);
 
+      console.log('📈 Additional data loaded:', {
+        contributors: contributors.length,
+        totalCommits,
+        recentCommits: recentCommits.length
+      });
+
+      // Update all statistics with real data
       this.updateContributorStats(contributors);
-      this.updateCommitStats(commits);
+      this.updateCommitStatsWithTotal(totalCommits, recentCommits);
       this.updateGitHubBadges(repoInfo);
 
       console.log('✅ GitHub data loaded successfully');
     } catch (error) {
-      console.warn('Failed to load GitHub data:', error);
+      console.error('❌ Failed to load GitHub data:', error);
       this.showFallbackData();
     }
   }
 
   updateRepositoryStats(repoInfo) {
-    // Update stars count
+    const stars = repoInfo.stargazers_count || 0;
+    const forks = repoInfo.forks_count || 0;
+    const watchers = repoInfo.subscribers_count || 0;
+
+    console.log('🔄 Updating repository stats:', { stars, forks, watchers });
+
+    // Update stars count with data-target override
     const starsElements = document.querySelectorAll('#repo-stars, #stars-count, .stars-count');
     starsElements.forEach(element => {
-      this.animateNumber(element, repoInfo.stargazers_count || 0, '⭐ ');
+      // Override the hardcoded data-target value
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', stars);
+      }
+      this.animateNumber(element, stars, element.id === 'stars-count' ? '⭐ ' : '');
     });
 
-    // Update forks count
+    // Update forks count with data-target override
     const forksElements = document.querySelectorAll('#repo-forks, #forks-count, .forks-count');
     forksElements.forEach(element => {
-      this.animateNumber(element, repoInfo.forks_count || 0, '🍴 ');
+      // Override the hardcoded data-target value
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', forks);
+      }
+      this.animateNumber(element, forks, element.id === 'forks-count' ? '🍴 ' : '');
     });
 
     // Update watchers count
     const watchersElements = document.querySelectorAll('#repo-watchers');
     watchersElements.forEach(element => {
-      this.animateNumber(element, repoInfo.subscribers_count || 0);
+      this.animateNumber(element, watchers);
     });
 
     // Update repository description
@@ -143,9 +255,16 @@ class GitHubAPI {
   }
 
   updateContributorStats(contributors) {
+    const contributorCount = contributors.length || 1;
+    console.log('🔄 Updating contributor stats:', contributorCount);
+
     const contributorsElements = document.querySelectorAll('#repo-contributors');
     contributorsElements.forEach(element => {
-      this.animateNumber(element, contributors.length || 1);
+      // Override the hardcoded data-target value
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', contributorCount);
+      }
+      this.animateNumber(element, contributorCount);
     });
 
     // Update contributors list if element exists
@@ -161,16 +280,22 @@ class GitHubAPI {
     }
   }
 
-  updateCommitStats(commits) {
+  updateCommitStatsWithTotal(totalCommits, recentCommits) {
+    console.log('🔄 Updating commit stats:', totalCommits);
+
     const commitsElements = document.querySelectorAll('#repo-commits');
     commitsElements.forEach(element => {
-      this.animateNumber(element, commits.length || 0);
+      // Override the hardcoded data-target value
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', totalCommits);
+      }
+      this.animateNumber(element, totalCommits);
     });
 
     // Update recent commits if element exists
-    const recentCommits = document.querySelector('.recent-commits');
-    if (recentCommits && commits.length > 0) {
-      recentCommits.innerHTML = commits.slice(0, 5).map(commit => `
+    const recentCommitsList = document.querySelector('.recent-commits');
+    if (recentCommitsList && recentCommits.length > 0) {
+      recentCommitsList.innerHTML = recentCommits.slice(0, 5).map(commit => `
         <div class="commit-item">
           <div class="commit-message">${commit.commit.message.split('\n')[0]}</div>
           <div class="commit-meta">
@@ -182,38 +307,65 @@ class GitHubAPI {
     }
   }
 
+
+
   updateGitHubBadges(repoInfo) {
+    const stars = repoInfo.stargazers_count || 0;
+    const forks = repoInfo.forks_count || 0;
+
+    console.log('🔄 Updating GitHub badges:', { stars, forks });
+
     // Update GitHub stats in navigation
-    const githubStats = document.getElementById('github-stats');
-    if (githubStats) {
-      githubStats.innerHTML = `
-        <span class="stars-count">⭐ ${this.formatNumber(repoInfo.stargazers_count || 0)}</span>
-        <span class="forks-count">🍴 ${this.formatNumber(repoInfo.forks_count || 0)}</span>
-      `;
+    const starsCountNav = document.getElementById('stars-count');
+    const forksCountNav = document.getElementById('forks-count');
+
+    if (starsCountNav) {
+      starsCountNav.textContent = `⭐ ${this.formatNumber(stars)}`;
     }
+
+    if (forksCountNav) {
+      forksCountNav.textContent = `🍴 ${this.formatNumber(forks)}`;
+    }
+
+    // Also update any other navigation stats elements
+    const navStarsElements = document.querySelectorAll('#nav-stars, .nav-stars');
+    navStarsElements.forEach(element => {
+      element.textContent = `⭐ ${this.formatNumber(stars)}`;
+    });
+
+    const navForksElements = document.querySelectorAll('#nav-forks, .nav-forks');
+    navForksElements.forEach(element => {
+      element.textContent = `🍴 ${this.formatNumber(forks)}`;
+    });
   }
 
   animateNumber(element, targetNumber, prefix = '') {
     if (!element) return;
 
+    // Clear any existing loading text
+    if (element.textContent.includes('Loading')) {
+      element.textContent = prefix + '0';
+    }
+
     const startNumber = 0;
-    const duration = 2000; // 2 seconds
+    const duration = 1500; // 1.5 seconds for smoother animation
     const startTime = performance.now();
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Easing function (ease-out)
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const currentNumber = Math.floor(startNumber + (targetNumber - startNumber) * easeOut);
-      
+
       element.textContent = prefix + this.formatNumber(currentNumber);
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
         element.textContent = prefix + this.formatNumber(targetNumber);
+        console.log(`✅ Animated ${element.id || 'element'} to ${targetNumber}`);
       }
     };
 
@@ -232,7 +384,7 @@ class GitHubAPI {
   formatRelativeTime(date) {
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     const intervals = [
       { label: 'year', seconds: 31536000 },
       { label: 'month', seconds: 2592000 },
@@ -254,31 +406,46 @@ class GitHubAPI {
 
   showFallbackData() {
     // Show fallback data when GitHub API is unavailable
+    // Using more realistic current estimates for the forge-ec repository
     const fallbackData = {
-      stars: 42,
-      forks: 8,
-      contributors: 3,
-      commits: 156
+      stars: 15,
+      forks: 3,
+      contributors: 2,
+      commits: 85
     };
 
-    // Update with fallback data
+    console.log('⚠️ GitHub API unavailable, using fallback data:', fallbackData);
+
+    // Update with fallback data and override data-target attributes
     const starsElements = document.querySelectorAll('#repo-stars, #stars-count, .stars-count');
     starsElements.forEach(element => {
-      this.animateNumber(element, fallbackData.stars, '⭐ ');
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', fallbackData.stars);
+      }
+      this.animateNumber(element, fallbackData.stars, element.id === 'stars-count' ? '⭐ ' : '');
     });
 
     const forksElements = document.querySelectorAll('#repo-forks, #forks-count, .forks-count');
     forksElements.forEach(element => {
-      this.animateNumber(element, fallbackData.forks, '🍴 ');
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', fallbackData.forks);
+      }
+      this.animateNumber(element, fallbackData.forks, element.id === 'forks-count' ? '🍴 ' : '');
     });
 
     const contributorsElements = document.querySelectorAll('#repo-contributors');
     contributorsElements.forEach(element => {
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', fallbackData.contributors);
+      }
       this.animateNumber(element, fallbackData.contributors);
     });
 
     const commitsElements = document.querySelectorAll('#repo-commits');
     commitsElements.forEach(element => {
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', fallbackData.commits);
+      }
       this.animateNumber(element, fallbackData.commits);
     });
 
@@ -296,7 +463,7 @@ class GitHubAPI {
     try {
       const url = `${this.baseURL}/repos/${this.owner}/${this.repo}/actions/runs?per_page=1`;
       const runs = await this.fetchWithCache(url);
-      
+
       if (runs.workflow_runs && runs.workflow_runs.length > 0) {
         const latestRun = runs.workflow_runs[0];
         return {
@@ -308,7 +475,7 @@ class GitHubAPI {
     } catch (error) {
       console.warn('Failed to get build status:', error);
     }
-    
+
     return null;
   }
 
@@ -316,14 +483,14 @@ class GitHubAPI {
   async updateBuildStatus() {
     const buildStatus = await this.getBuildStatus();
     const buildBadge = document.querySelector('.build-status-badge');
-    
+
     if (buildBadge && buildStatus) {
-      const statusClass = buildStatus.conclusion === 'success' ? 'success' : 
+      const statusClass = buildStatus.conclusion === 'success' ? 'success' :
                          buildStatus.conclusion === 'failure' ? 'error' : 'warning';
-      
+
       buildBadge.className = `badge badge-${statusClass}`;
       buildBadge.textContent = buildStatus.conclusion || buildStatus.status;
-      
+
       if (buildStatus.url) {
         buildBadge.onclick = () => window.open(buildStatus.url, '_blank');
       }
@@ -334,7 +501,16 @@ class GitHubAPI {
 // Initialize GitHub API
 window.GitHubAPI = new GitHubAPI();
 
-// Auto-refresh data every 10 minutes
+// Auto-refresh data every 5 minutes (300 seconds)
 setInterval(() => {
+  console.log('🔄 Auto-refreshing GitHub data...');
   window.GitHubAPI.refreshData();
-}, 10 * 60 * 1000);
+}, 5 * 60 * 1000);
+
+// Also refresh when the page becomes visible again (user returns to tab)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    console.log('👁️ Page visible again, refreshing GitHub data...');
+    window.GitHubAPI.refreshData();
+  }
+});
