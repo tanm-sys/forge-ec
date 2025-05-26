@@ -82,6 +82,7 @@ class ForgeECApp {
       this.firebaseInitialized = false;
       // Still create auth modal for UI consistency, but without Firebase functionality
       this.createAuthModal();
+      this.setupFallbackAuth();
     }
   }
 
@@ -871,25 +872,48 @@ class ForgeECApp {
 
   async handleEmailSignIn(e) {
     if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
+      console.warn('Firebase Auth not available, using fallback');
+      if (this.fallbackMode) {
+        const email = document.getElementById('signin-email').value;
+        const password = document.getElementById('signin-password').value;
+        this.handleFallbackAuth('sign-in', email, password);
+      } else {
+        this.showAuthFeedback('Authentication service not available', 'error');
+      }
       return;
     }
 
     const email = document.getElementById('signin-email').value;
     const password = document.getElementById('signin-password').value;
 
+    if (!email || !password) {
+      this.showAuthFeedback('Please enter both email and password', 'error');
+      return;
+    }
+
     try {
+      console.log('🔐 Attempting email sign-in...');
       await this.authModule.signInWithEmailAndPassword(window.firebaseAuth, email, password);
       this.hideAuthModal();
       this.showAuthFeedback('Welcome back!', 'success');
+      console.log('✅ Email sign-in successful');
     } catch (error) {
+      console.error('❌ Email sign-in failed:', error);
       this.handleAuthError(error);
     }
   }
 
   async handleEmailSignUp(e) {
     if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
+      console.warn('Firebase Auth not available, using fallback');
+      if (this.fallbackMode) {
+        const name = document.getElementById('signup-name').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        this.handleFallbackAuth('sign-up', email, password, name);
+      } else {
+        this.showAuthFeedback('Authentication service not available', 'error');
+      }
       return;
     }
 
@@ -897,7 +921,18 @@ class ForgeECApp {
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
 
+    if (!name || !email || !password) {
+      this.showAuthFeedback('Please fill in all fields', 'error');
+      return;
+    }
+
+    if (password.length < 6) {
+      this.showAuthFeedback('Password must be at least 6 characters', 'error');
+      return;
+    }
+
     try {
+      console.log('🔐 Attempting email sign-up...');
       const userCredential = await this.authModule.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
       const user = userCredential.user;
 
@@ -906,7 +941,9 @@ class ForgeECApp {
 
       this.hideAuthModal();
       this.showAuthFeedback('Account created successfully!', 'success');
+      console.log('✅ Email sign-up successful');
     } catch (error) {
+      console.error('❌ Email sign-up failed:', error);
       this.handleAuthError(error);
     }
   }
@@ -963,13 +1000,24 @@ class ForgeECApp {
 
   handleAuthError(error) {
     let message = 'An authentication error occurred';
+    let isConfigurationError = false;
 
     switch (error.code) {
+      case 'auth/configuration-not-found':
+        message = 'Authentication service is not properly configured. Please contact support.';
+        isConfigurationError = true;
+        console.error('🔧 Firebase Auth Configuration Error:', {
+          error: error.code,
+          message: error.message,
+          suggestion: 'Check Firebase Console > Authentication > Sign-in method'
+        });
+        break;
       case 'auth/user-not-found':
         message = 'No account found with this email address';
         break;
       case 'auth/wrong-password':
-        message = 'Incorrect password';
+      case 'auth/invalid-credential':
+        message = 'Incorrect email or password';
         break;
       case 'auth/email-already-in-use':
         message = 'An account with this email already exists';
@@ -983,12 +1031,39 @@ class ForgeECApp {
       case 'auth/popup-closed-by-user':
         message = 'Sign-in popup was closed';
         break;
+      case 'auth/popup-blocked':
+        message = 'Sign-in popup was blocked by your browser';
+        break;
+      case 'auth/cancelled-popup-request':
+        message = 'Sign-in was cancelled';
+        break;
+      case 'auth/network-request-failed':
+        message = 'Network error. Please check your connection and try again.';
+        break;
       default:
-        message = error.message;
+        message = error.message || 'An unexpected error occurred';
     }
 
     this.showAuthFeedback(message, 'error');
-    console.error('Auth Error:', error);
+
+    // Log detailed error information for debugging
+    console.error('🚨 Authentication Error:', {
+      code: error.code,
+      message: error.message,
+      isConfigurationError,
+      timestamp: new Date().toISOString()
+    });
+
+    // If it's a configuration error, also log helpful debugging info
+    if (isConfigurationError) {
+      console.error('🔍 Debug Info:', {
+        firebaseApp: !!window.firebaseApp,
+        firebaseAuth: !!window.firebaseAuth,
+        authModule: !!this.authModule,
+        projectId: window.firebaseApp?.options?.projectId,
+        authDomain: window.firebaseApp?.options?.authDomain
+      });
+    }
   }
 
   showAuthFeedback(message, type = 'info') {
@@ -1010,6 +1085,31 @@ class ForgeECApp {
     setTimeout(() => {
       feedback.style.display = 'none';
     }, 5000);
+  }
+
+  // Fallback Authentication System (when Firebase is not available)
+  setupFallbackAuth() {
+    console.log('🔄 Setting up fallback authentication system');
+    this.fallbackMode = true;
+    this.setupAuthEventListeners();
+  }
+
+  handleFallbackAuth(type, email, password, name = null) {
+    // Simulate authentication for demo purposes
+    console.log(`🔄 Fallback ${type} attempt:`, { email, name });
+
+    // Show informational message about Firebase configuration
+    const message = `Demo mode: Firebase Authentication needs to be configured. Please check the configuration guide.`;
+    this.showAuthFeedback(message, 'warning');
+
+    // Log configuration guidance
+    console.warn('🔧 Firebase Configuration Required:', {
+      issue: 'Authentication service not configured',
+      solution: 'Enable Authentication in Firebase Console',
+      guide: 'See FIREBASE_AUTH_CONFIGURATION_GUIDE.md for detailed instructions'
+    });
+
+    return false;
   }
 }
 
