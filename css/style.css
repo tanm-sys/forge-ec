@@ -580,6 +580,8 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: var(--shadow-glass);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .code-header {
@@ -628,6 +630,33 @@ body {
   outline: none;
   white-space: pre;
   overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  min-width: 0;
+  /* Custom scrollbar for webkit browsers */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--bg-tertiary);
+}
+
+/* Custom scrollbar styles for code-content */
+.code-content::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-content::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.code-content::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.code-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+  opacity: 1;
 }
 
 .scroll-indicator {
@@ -2634,8 +2663,9 @@ body {
 
 .installation-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--space-8);
+  max-width: 100%;
 }
 
 .step-card {
@@ -2649,6 +2679,8 @@ body {
   -webkit-backdrop-filter: blur(20px);
   box-shadow: var(--shadow-glass);
   transition: all var(--transition-normal);
+  min-width: 0; /* Allow flex items to shrink below content size */
+  max-width: 100%;
 }
 
 .step-card:hover {
@@ -2672,6 +2704,8 @@ body {
 
 .step-content {
   flex: 1;
+  min-width: 0; /* Allow flex item to shrink below content size */
+  max-width: 100%;
 }
 
 .step-title {
@@ -2993,11 +3027,27 @@ body {
 
   .installation-steps {
     grid-template-columns: 1fr;
+    gap: var(--space-6);
   }
 
   .step-card {
     flex-direction: column;
     text-align: center;
+    padding: var(--space-6);
+    gap: var(--space-4);
+  }
+
+  .step-content {
+    max-width: 100%;
+  }
+
+  .code-snippet {
+    margin: var(--space-3) 0;
+  }
+
+  .code-snippet-content {
+    padding: var(--space-3);
+    font-size: calc(var(--text-sm) * 0.9);
   }
 
   .tab-panel.active {
@@ -3010,6 +3060,28 @@ body {
 
   .community-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Additional responsive styles for very small screens */
+@media (max-width: 320px) {
+  .installation-steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .step-card {
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .code-snippet-content {
+    padding: var(--space-2);
+    font-size: calc(var(--text-sm) * 0.85);
+  }
+
+  .installation-preview {
+    max-width: 100%;
   }
 }
 
