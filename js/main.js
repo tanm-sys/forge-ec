@@ -1,4 +1,9 @@
-// ===== MAIN APPLICATION JAVASCRIPT =====
+// ===== MAIN APPLICATION JAVASCRIPT WITH FIREBASE INTEGRATION =====
+
+import { firebaseAuthService } from './firebase-auth.js';
+import { firebaseDocsService } from './firebase-docs.js';
+import { firebaseAnalyticsService } from './firebase-analytics.js';
+import { firebaseUI } from './firebase-ui.js';
 
 class ForgeECApp {
   constructor() {
@@ -6,6 +11,7 @@ class ForgeECApp {
     this.currentTheme = 'light';
     this.scrollPosition = 0;
     this.isScrolling = false;
+    this.firebaseInitialized = false;
 
     this.init();
   }
@@ -18,6 +24,9 @@ class ForgeECApp {
     this.setupNavigation();
     this.setupAnimations();
 
+    // Initialize Firebase services
+    await this.initializeFirebase();
+
     // Load external data
     await this.loadGitHubData();
 
@@ -27,7 +36,96 @@ class ForgeECApp {
     // Initialize scroll-triggered animations
     this.initScrollAnimations();
 
-    console.log('🦀 Forge EC website initialized successfully!');
+    console.log('🦀 Forge EC website with Firebase initialized successfully!');
+  }
+
+  async initializeFirebase() {
+    try {
+      console.log('🔥 Initializing Firebase services...');
+
+      // Firebase services are already initialized via imports
+      // Set up Firebase-specific event tracking
+      this.setupFirebaseTracking();
+
+      // Initialize real-time documentation updates
+      this.setupRealtimeDocumentation();
+
+      this.firebaseInitialized = true;
+      console.log('✅ Firebase services initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error);
+      this.firebaseInitialized = false;
+    }
+  }
+
+  setupFirebaseTracking() {
+    // Track theme changes
+    const originalToggleTheme = this.toggleTheme.bind(this);
+    this.toggleTheme = () => {
+      originalToggleTheme();
+      firebaseAnalyticsService.trackThemeToggle(this.currentTheme);
+    };
+
+    // Track section navigation
+    const originalScrollToSection = this.scrollToSection.bind(this);
+    this.scrollToSection = (sectionId) => {
+      originalScrollToSection(sectionId);
+      firebaseAnalyticsService.trackPageView(sectionId);
+    };
+
+    // Track code copying
+    const originalCopyToClipboard = this.copyToClipboard.bind(this);
+    this.copyToClipboard = (button) => {
+      originalCopyToClipboard(button);
+      const codeType = button.closest('.code-block')?.querySelector('.code-title')?.textContent || 'unknown';
+      firebaseAnalyticsService.trackCodeCopy(codeType, this.getCurrentSection());
+    };
+  }
+
+  setupRealtimeDocumentation() {
+    // Subscribe to documentation updates
+    firebaseDocsService.subscribeToDocumentation(null, (docs) => {
+      console.log('📚 Documentation updated:', docs.length, 'documents');
+      this.updateDocumentationUI(docs);
+    });
+  }
+
+  updateDocumentationUI(docs) {
+    // Update documentation search with new content
+    if (window.docsSearch) {
+      // Add Firebase docs to search
+      docs.forEach(doc => {
+        window.docsSearch.addDoc({
+          id: doc.id,
+          title: doc.title,
+          description: doc.description || doc.content?.substring(0, 200) || '',
+          category: doc.category,
+          level: doc.level || 'Intermediate',
+          keywords: doc.keywords || [],
+          url: `#${doc.id}`
+        });
+      });
+    }
+  }
+
+  getCurrentSection() {
+    const hash = window.location.hash.substring(1);
+    if (hash) return hash;
+
+    const sections = document.querySelectorAll('section[id]');
+    const scrollY = window.scrollY + 100;
+
+    for (const section of sections) {
+      const rect = section.getBoundingClientRect();
+      const sectionTop = scrollY - rect.height + window.scrollY;
+      const sectionBottom = sectionTop + rect.height;
+
+      if (scrollY >= sectionTop && scrollY < sectionBottom) {
+        return section.id;
+      }
+    }
+
+    return 'home';
   }
 
   setupEventListeners() {

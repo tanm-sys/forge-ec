@@ -145,6 +145,25 @@
                     </span>
                 </a>
 
+                <!-- Authentication Button -->
+                <button class="auth-trigger auth-btn" id="auth-trigger" style="display: block;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+
+                <!-- User Menu Trigger -->
+                <div class="user-menu-trigger auth-required" id="user-menu-trigger" style="display: none;">
+                    <div class="user-info"></div>
+                    <button class="user-menu-btn" id="user-menu-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                </div>
+
                 <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="nav-menu">
                     <span class="hamburger-line"></span>
                     <span class="hamburger-line"></span>
@@ -1671,11 +1690,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     <script src="js/main.js" defer></script>
     <script src="js/animations.js" defer></script>
     <script src="js/github-api.js" defer></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import './js/firebase-config.js';
+        import './js/firebase-auth.js';
+        import './js/firebase-docs.js';
+        import './js/firebase-functions.js';
+        import './js/firebase-analytics.js';
+        import './js/firebase-ui.js';
+
+        // Import enhanced modules
+        import './js/main.js';
+        import './js/contact.js';
+        import './js/docs-search.js';
+
+        console.log('🔥 Firebase modules loaded');
+    </script>
+
+    <!-- Legacy scripts for non-module browsers -->
     <script src="js/hero-canvas.js" defer></script>
     <script src="js/examples.js" defer></script>
     <script src="js/forge-animation.js" defer></script>
     <script src="js/interactive-components.js" defer></script>
-    <script src="js/contact.js" defer></script>
-    <script src="js/docs-search.js" defer></script>
+    <script src="js/github-api.js" defer></script>
 </body>
 </html>

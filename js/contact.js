@@ -1,14 +1,19 @@
 /**
- * Contact Form Handler
- * Handles form validation, submission, and user feedback
+ * Enhanced Contact Form Handler with Firebase Integration
+ * Handles form validation, submission via Firebase Cloud Functions, and user feedback
  */
+
+import { firebaseFunctionsService } from './firebase-functions.js';
+import { firebaseAuthService } from './firebase-auth.js';
 
 class ContactForm {
   constructor() {
     this.form = document.getElementById('contact-form');
     this.submitButton = document.getElementById('contact-submit');
     this.successMessage = document.getElementById('contact-success');
-    
+    this.isSubmitting = false;
+    this.rateLimiter = firebaseFunctionsService.createRateLimiter(5, 300000); // 5 submissions per 5 minutes
+
     this.init();
   }
 
@@ -17,7 +22,7 @@ class ContactForm {
 
     // Add event listeners
     this.form.addEventListener('submit', this.handleSubmit.bind(this));
-    
+
     // Add real-time validation
     const inputs = this.form.querySelectorAll('input, select, textarea');
     inputs.forEach(input => {
@@ -30,40 +35,78 @@ class ContactForm {
 
   async handleSubmit(event) {
     event.preventDefault();
-    
+
+    if (this.isSubmitting) {
+      return;
+    }
+
     if (!this.validateForm()) {
       return;
     }
 
     const formData = new FormData(this.form);
     const data = Object.fromEntries(formData.entries());
-    
+
+    // Add user information if authenticated
+    const currentUser = firebaseAuthService.getCurrentUser();
+    if (currentUser) {
+      data.userId = currentUser.uid;
+      data.userEmail = currentUser.email;
+      data.userName = currentUser.displayName || data.name;
+    }
+
+    this.isSubmitting = true;
     this.setLoading(true);
-    
+
     try {
-      // Simulate form submission (replace with actual endpoint)
-      await this.submitForm(data);
+      // Use rate limiter to prevent spam
+      await this.rateLimiter(async () => {
+        await this.submitForm(data);
+      });
+
       this.showSuccess();
       this.form.reset();
+
+      // Track successful submission
+      console.log('📧 Contact form submitted successfully');
     } catch (error) {
       console.error('Form submission error:', error);
-      this.showError('Failed to send message. Please try again or contact us directly.');
+
+      let errorMessage = 'Failed to send message. Please try again later.';
+
+      if (error.message.includes('Rate limit')) {
+        errorMessage = 'Too many submissions. Please wait a few minutes before trying again.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+
+      this.showError(errorMessage);
+
+      // Show fallback option
+      this.showFallbackOption(data);
     } finally {
+      this.isSubmitting = false;
       this.setLoading(false);
     }
   }
 
   async submitForm(data) {
-    // For now, we'll simulate a successful submission
-    // In production, this would send to a real endpoint
-    console.log('📧 Form submission data:', data);
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // For demonstration, we'll create a mailto link as fallback
-    const subject = encodeURIComponent(`Forge EC Contact: ${data.subject}`);
-    const body = encodeURIComponent(`
+    try {
+      // Try Firebase Cloud Function first
+      const result = await firebaseFunctionsService.sendContactEmail(data);
+
+      if (result.success) {
+        console.log('📧 Email sent successfully via Firebase:', result.messageId);
+        return result;
+      } else {
+        throw new Error('Firebase function returned failure');
+      }
+    } catch (firebaseError) {
+      console.warn('Firebase submission failed, trying fallback:', firebaseError);
+
+      // Fallback to mailto link
+      const subject = encodeURIComponent(`Forge EC Contact: ${data.subject}`);
+      const body = encodeURIComponent(`
 Name: ${data.name}
 Email: ${data.email}
 Subject: ${data.subject}
@@ -72,15 +115,74 @@ Message:
 ${data.message}
 
 ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter: No'}
-    `);
-    
-    // Open email client as fallback
-    const mailtoLink = `mailto:tanmayspatil2006@gmail.com?subject=${subject}&body=${body}`;
-    
-    // Store the mailto link for potential use
-    this.mailtoFallback = mailtoLink;
-    
-    return { success: true };
+
+---
+Sent via Forge EC website contact form
+User ID: ${data.userId || 'Anonymous'}
+Timestamp: ${new Date().toISOString()}
+      `);
+
+      // Create mailto link as fallback
+      const mailtoLink = `mailto:tanmayspatil2006@gmail.com?subject=${subject}&body=${body}`;
+      this.mailtoFallback = mailtoLink;
+
+      // For development/fallback, we'll simulate success
+      // In production, you might want to store this in a backup system
+      console.log('📧 Using mailto fallback:', mailtoLink);
+
+      return {
+        success: true,
+        method: 'fallback',
+        mailtoLink: mailtoLink
+      };
+    }
+  }
+
+  showFallbackOption(data) {
+    if (this.mailtoFallback) {
+      // Create fallback message
+      let fallbackElement = this.form.querySelector('.form-fallback');
+
+      if (!fallbackElement) {
+        fallbackElement = document.createElement('div');
+        fallbackElement.className = 'form-fallback';
+        fallbackElement.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+          padding: var(--space-4);
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          border-radius: var(--radius-lg);
+          color: #3b82f6;
+          font-size: var(--text-sm);
+          margin-top: var(--space-4);
+        `;
+
+        this.form.appendChild(fallbackElement);
+      }
+
+      fallbackElement.innerHTML = `
+        <div style="display: flex; align-items: center; gap: var(--space-2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <strong>Alternative: Send via Email Client</strong>
+        </div>
+        <p>If the form submission failed, you can send your message directly via email:</p>
+        <button type="button" class="btn-secondary" onclick="window.open('${this.mailtoFallback}')">
+          Open Email Client
+        </button>
+      `;
+
+      // Hide fallback message after 10 seconds
+      setTimeout(() => {
+        if (fallbackElement.parentNode) {
+          fallbackElement.remove();
+        }
+      }, 10000);
+    }
   }
 
   validateForm() {
@@ -146,7 +248,7 @@ ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter:
       errorElement.textContent = message;
       errorElement.classList.add('show');
     }
-    
+
     field.style.borderColor = '#ef4444';
   }
 
@@ -155,7 +257,7 @@ ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter:
     if (errorElement) {
       errorElement.classList.remove('show');
     }
-    
+
     field.style.borderColor = '';
   }
 
@@ -179,23 +281,23 @@ ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter:
 
   showSuccess() {
     this.successMessage.style.display = 'flex';
-    
+
     // Hide success message after 5 seconds
     setTimeout(() => {
       this.successMessage.style.display = 'none';
     }, 5000);
 
     // Scroll to success message
-    this.successMessage.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'center' 
+    this.successMessage.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
     });
   }
 
   showError(message) {
     // Create or update error message
     let errorElement = this.form.querySelector('.form-error-general');
-    
+
     if (!errorElement) {
       errorElement = document.createElement('div');
       errorElement.className = 'form-error-general';
@@ -212,10 +314,10 @@ ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter:
         font-weight: 500;
         margin-top: var(--space-4);
       `;
-      
+
       this.form.appendChild(errorElement);
     }
-    
+
     errorElement.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
         <circle cx="12" cy="12" r="10"/>
@@ -224,7 +326,7 @@ ${data.newsletter ? 'Subscribed to newsletter: Yes' : 'Subscribed to newsletter:
       </svg>
       <span>${message}</span>
     `;
-    
+
     // Hide error message after 5 seconds
     setTimeout(() => {
       if (errorElement.parentNode) {

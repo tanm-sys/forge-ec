@@ -1,14 +1,19 @@
 /**
- * Documentation Search Functionality
- * Provides real-time search across documentation content
+ * Enhanced Documentation Search with Firebase Integration
+ * Provides real-time search across documentation content with user tracking
  */
+
+import { firebaseDocsService } from './firebase-docs.js';
+import { firebaseAuthService } from './firebase-auth.js';
 
 class DocsSearch {
   constructor() {
     this.searchInput = document.getElementById('docs-search');
     this.searchResults = document.getElementById('search-results');
     this.isSearching = false;
-    
+    this.searchHistory = [];
+    this.recentSearches = new Set();
+
     // Documentation content for search
     this.docs = [
       {
@@ -148,7 +153,7 @@ class DocsSearch {
 
   handleSearch(event) {
     const query = event.target.value.trim().toLowerCase();
-    
+
     if (query.length < 2) {
       this.hideResults();
       return;
@@ -173,26 +178,109 @@ class DocsSearch {
     }, 150);
   }
 
-  performSearch(query) {
+  async performSearch(query) {
     if (this.isSearching) return;
-    
+
     this.isSearching = true;
-    
-    // Search through documentation
-    const results = this.docs.filter(doc => {
-      const searchText = `${doc.title} ${doc.description} ${doc.category} ${doc.keywords.join(' ')}`.toLowerCase();
-      return searchText.includes(query);
+
+    try {
+      // Track search query with Firebase
+      const userId = firebaseAuthService.getCurrentUserId();
+
+      // Search through local documentation first (for immediate results)
+      const localResults = this.docs.filter(doc => {
+        const searchText = `${doc.title} ${doc.description} ${doc.category} ${doc.keywords.join(' ')}`.toLowerCase();
+        return searchText.includes(query);
+      });
+
+      // Search through Firebase documentation
+      let firebaseResults = [];
+      try {
+        const allDocs = await firebaseDocsService.getDocumentation();
+        firebaseResults = allDocs.filter(doc => {
+          const searchText = `${doc.title} ${doc.content || ''} ${doc.category} ${doc.keywords?.join(' ') || ''}`.toLowerCase();
+          return searchText.includes(query);
+        });
+      } catch (error) {
+        console.warn('Firebase search failed, using local results:', error);
+      }
+
+      // Combine and deduplicate results
+      const combinedResults = this.combineSearchResults(localResults, firebaseResults);
+
+      // Sort results by relevance
+      combinedResults.sort((a, b) => {
+        const aScore = this.calculateRelevance(a, query);
+        const bScore = this.calculateRelevance(b, query);
+        return bScore - aScore;
+      });
+
+      const finalResults = combinedResults.slice(0, 8);
+
+      // Track search analytics
+      await firebaseDocsService.trackSearchQuery(query, userId, finalResults.length);
+
+      // Add to search history
+      this.addToSearchHistory(query, finalResults.length);
+
+      this.displayResults(finalResults);
+    } catch (error) {
+      console.error('Search error:', error);
+      // Fallback to local search
+      const localResults = this.docs.filter(doc => {
+        const searchText = `${doc.title} ${doc.description} ${doc.category} ${doc.keywords.join(' ')}`.toLowerCase();
+        return searchText.includes(query);
+      });
+      this.displayResults(localResults.slice(0, 8));
+    } finally {
+      this.isSearching = false;
+    }
+  }
+
+  combineSearchResults(localResults, firebaseResults) {
+    const resultMap = new Map();
+
+    // Add local results
+    localResults.forEach(result => {
+      resultMap.set(result.id || result.title, result);
     });
 
-    // Sort results by relevance
-    results.sort((a, b) => {
-      const aScore = this.calculateRelevance(a, query);
-      const bScore = this.calculateRelevance(b, query);
-      return bScore - aScore;
+    // Add Firebase results (will override local if same ID)
+    firebaseResults.forEach(result => {
+      resultMap.set(result.id || result.title, result);
     });
 
-    this.displayResults(results.slice(0, 8)); // Show top 8 results
-    this.isSearching = false;
+    return Array.from(resultMap.values());
+  }
+
+  addToSearchHistory(query, resultCount) {
+    const searchEntry = {
+      query,
+      resultCount,
+      timestamp: new Date().toISOString()
+    };
+
+    this.searchHistory.unshift(searchEntry);
+    this.recentSearches.add(query);
+
+    // Keep only last 50 searches
+    if (this.searchHistory.length > 50) {
+      this.searchHistory = this.searchHistory.slice(0, 50);
+    }
+
+    // Keep only last 10 recent searches
+    if (this.recentSearches.size > 10) {
+      const recentArray = Array.from(this.recentSearches);
+      this.recentSearches = new Set(recentArray.slice(0, 10));
+    }
+
+    // Save to localStorage
+    try {
+      localStorage.setItem('forge-ec-search-history', JSON.stringify(Array.from(this.searchHistory)));
+      localStorage.setItem('forge-ec-recent-searches', JSON.stringify(Array.from(this.recentSearches)));
+    } catch (error) {
+      console.warn('Failed to save search history:', error);
+    }
   }
 
   calculateRelevance(doc, query) {
@@ -204,17 +292,17 @@ class DocsSearch {
       if (doc.title.toLowerCase().includes(word)) {
         score += 10;
       }
-      
+
       // Keywords match (high weight)
       if (doc.keywords.some(keyword => keyword.includes(word))) {
         score += 5;
       }
-      
+
       // Description match (medium weight)
       if (doc.description.toLowerCase().includes(word)) {
         score += 3;
       }
-      
+
       // Category match (low weight)
       if (doc.category.toLowerCase().includes(word)) {
         score += 1;
