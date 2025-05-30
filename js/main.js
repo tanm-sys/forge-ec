@@ -395,6 +395,13 @@ class ForgeECApp {
           return;
         }
 
+        // Forgot password link
+        if (e.target.matches('#forgot-password')) {
+          e.preventDefault();
+          this.handleForgotPassword();
+          return;
+        }
+
         // User menu events
         if (e.target.matches('#user-menu-btn') || e.target.closest('#user-menu-btn')) {
           e.preventDefault();
@@ -1092,6 +1099,45 @@ class ForgeECApp {
     } catch (error) {
       console.error('❌ Email sign-up failed:', error);
       this.handleAuthError(error);
+    }
+  }
+
+  async handleForgotPassword() {
+    if (!this.authModule || !window.firebaseAuth) {
+      this.showAuthFeedback('Authentication service not available.', 'error');
+      console.warn('Firebase Auth not available for password reset.');
+      return;
+    }
+
+    const email = prompt('Please enter your email address to reset your password:');
+
+    if (email === null || email.trim() === "") { // Handle empty or cancelled prompt
+      this.showAuthFeedback('Password reset cancelled or no email provided.', 'info');
+      return;
+    }
+
+    try {
+      console.log(`🔐 Attempting password reset for: ${email}`);
+      this.showAuthFeedback('Sending password reset email...', 'info');
+      // Ensure authModule and sendPasswordResetEmail are correctly referenced
+      await this.authModule.sendPasswordResetEmail(window.firebaseAuth, email.trim());
+      this.showAuthFeedback('Password reset email sent! Please check your inbox.', 'success');
+      console.log('✅ Password reset email sent successfully.');
+    } catch (error) {
+      console.error('❌ Password reset failed:', error);
+      // Firebase often doesn't explicitly state 'auth/user-not-found' for password resets for security.
+      // A generic success-like message is often preferred regardless of whether the email exists,
+      // unless a specific error like 'auth/invalid-email' occurs.
+      if (error.code === 'auth/invalid-email') {
+          this.showAuthFeedback('The email address is not valid.', 'error');
+      } else {
+          // For other errors, including potential network issues or if Firebase does return user-not-found here
+          // you might still opt for a generic message or use handleAuthError.
+          // Using a generic message for non-invalid-email errors to avoid account enumeration:
+          this.showAuthFeedback('If your email address is registered, you will receive a password reset email.', 'info');
+          // Alternatively, for more detailed client-side debugging (but not necessarily for user display):
+          // this.handleAuthError(error); 
+      }
     }
   }
 
