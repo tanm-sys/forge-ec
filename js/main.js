@@ -1,6 +1,9 @@
-// ===== MAIN APPLICATION JAVASCRIPT WITH FIREBASE INTEGRATION =====
+// ===== MAIN APPLICATION JAVASCRIPT WITH LOCALSTORAGE AUTH =====
 
-// Firebase services will be loaded dynamically when available
+// IMPORTANT: This is a client-side authentication system using localStorage.
+// It is NOT secure for sensitive data and is intended for demonstration or
+// simple personalization purposes on static sites only.
+// User credentials are stored in the browser and are susceptible to XSS attacks.
 
 class ForgeECApp {
   constructor() {
@@ -8,7 +11,6 @@ class ForgeECApp {
     this.currentTheme = 'light';
     this.scrollPosition = 0;
     this.isScrolling = false;
-    this.firebaseInitialized = false;
 
     this.init();
   }
@@ -21,8 +23,10 @@ class ForgeECApp {
     this.setupNavigation();
     this.setupAnimations();
 
-    // Initialize Firebase services
-    await this.initializeFirebase();
+    // Setup auth related functionality
+    this.createAuthModal(); // Ensure modal is created
+    this.setupAuthEventListeners(); // Setup general event listeners for auth
+    this.updateAuthUI(); // Check initial auth state from localStorage
 
     // Load external data
     await this.loadGitHubData();
@@ -33,119 +37,7 @@ class ForgeECApp {
     // Initialize scroll-triggered animations
     this.initScrollAnimations();
 
-    console.log('🦀 Forge EC website with Firebase initialized successfully!');
-  }
-
-  async initializeFirebase() {
-    try {
-      console.log('🔥 Initializing Firebase services...');
-
-      // Wait for Firebase to be ready with improved timeout handling
-      if (window.firebaseInitialized) {
-        // Firebase services are already initialized
-        this.setupFirebaseAuth();
-        this.firebaseInitialized = true;
-        console.log('✅ Firebase services already initialized');
-      } else {
-        // Wait for Firebase ready event with race condition protection
-        const firebaseReady = new Promise((resolve, reject) => {
-          let resolved = false;
-          let checkCount = 0;
-          const maxChecks = 100; // Maximum 10 seconds (100 * 100ms)
-
-          const checkFirebase = () => {
-            if (resolved) return; // Prevent multiple resolutions
-
-            checkCount++;
-            if (window.firebaseInitialized) {
-              resolved = true;
-              resolve();
-            } else if (checkCount >= maxChecks) {
-              resolved = true;
-              reject(new Error('Firebase initialization timeout'));
-            } else {
-              setTimeout(checkFirebase, 100);
-            }
-          };
-
-          // Listen for Firebase ready event
-          const handleFirebaseReady = () => {
-            if (!resolved) {
-              resolved = true;
-              resolve();
-            }
-          };
-
-          window.addEventListener('firebaseReady', handleFirebaseReady, { once: true });
-
-          // Start checking periodically
-          setTimeout(checkFirebase, 100);
-        });
-
-        await firebaseReady;
-
-        if (window.firebaseInitialized) {
-          this.setupFirebaseAuth();
-          this.firebaseInitialized = true;
-          console.log('✅ Firebase services initialized successfully (delayed)');
-        } else {
-          throw new Error('Firebase failed to initialize within timeout');
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error.message);
-      this.firebaseInitialized = false;
-      // Still create auth modal for UI consistency, but without Firebase functionality
-      this.createAuthModal();
-      this.setupFallbackAuth();
-    }
-  }
-
-  setupFirebaseAuth() {
-    // Initialize Firebase Authentication
-    this.initializeAuth();
-    this.createAuthModal();
-    this.setupAuthEventListeners();
-  }
-
-  async initializeAuth() {
-    if (!window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
-      return;
-    }
-
-    try {
-      // Import Firebase Auth functions dynamically with timeout
-      console.log('📦 Loading Firebase Auth module...');
-
-      const authModulePromise = import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Auth module load timeout')), 5000);
-      });
-
-      const authModule = await Promise.race([authModulePromise, timeoutPromise]);
-      this.authModule = authModule;
-      console.log('✅ Firebase Auth module loaded successfully');
-
-      // Set up auth state listener with error handling
-      try {
-        authModule.onAuthStateChanged(window.firebaseAuth, (user) => {
-          this.currentUser = user;
-          this.updateAuthUI();
-
-          if (user) {
-            console.log('👤 User signed in:', user.email);
-          } else {
-            console.log('👤 User signed out');
-          }
-        });
-      } catch (listenerError) {
-        console.warn('Failed to set up auth state listener:', listenerError);
-      }
-    } catch (error) {
-      console.warn('Failed to load Firebase Auth module:', error);
-      this.authModule = null;
-    }
+    console.log('🦀 Forge EC website initialized successfully!');
   }
 
   createAuthModal() {
@@ -183,27 +75,9 @@ class ForgeECApp {
             <div class="auth-content">
               <!-- Sign In Form -->
               <div id="signin-form" class="auth-form active">
-                <div class="social-auth">
-                  <button class="social-btn google-btn" id="google-signin">
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                  </button>
-
-                  <button class="social-btn github-btn" id="github-signin">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    Continue with GitHub
-                  </button>
-                </div>
-
+                <!-- Social auth buttons removed -->
                 <div class="divider">
-                  <span>or</span>
+                  <span>Sign in with your email</span>
                 </div>
 
                 <form id="email-signin-form">
@@ -223,6 +97,9 @@ class ForgeECApp {
 
               <!-- Sign Up Form -->
               <div id="signup-form" class="auth-form">
+                 <div class="divider">
+                  <span>Create an account</span>
+                </div>
                 <form id="email-signup-form">
                   <div class="form-group">
                     <input type="text" id="signup-name" placeholder="Full name" required>
@@ -382,18 +259,7 @@ class ForgeECApp {
           return;
         }
 
-        // Social auth buttons
-        if (e.target.matches('#google-signin') || e.target.closest('#google-signin')) {
-          e.preventDefault();
-          this.handleGoogleSignIn();
-          return;
-        }
-
-        if (e.target.matches('#github-signin') || e.target.closest('#github-signin')) {
-          e.preventDefault();
-          this.handleGitHubSignIn();
-          return;
-        }
+        // Social auth buttons are removed, so no listeners for them.
 
         // Forgot password link
         if (e.target.matches('#forgot-password')) {
@@ -962,212 +828,105 @@ class ForgeECApp {
   }
 
   async handleGoogleSignIn() {
-    if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
-      this.showAuthFeedback('Authentication service not available', 'error');
-      return;
-    }
-
-    try {
-      console.log('🔐 Attempting Google sign-in...');
-      this.showAuthFeedback('Connecting to Google...', 'info');
-
-      const provider = new this.authModule.GoogleAuthProvider();
-      provider.addScope('profile');
-      provider.addScope('email');
-
-      // Add timeout to prevent hanging
-      const signInPromise = this.authModule.signInWithPopup(window.firebaseAuth, provider);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Google sign-in timeout')), 30000);
-      });
-
-      await Promise.race([signInPromise, timeoutPromise]);
-
-      this.hideAuthModal();
-      this.showAuthFeedback('Signed in with Google!', 'success');
-      console.log('✅ Google sign-in successful');
-    } catch (error) {
-      console.error('❌ Google sign-in failed:', error);
-      this.handleAuthError(error);
-    }
+    // Firebase specific logic removed
+    this.showAuthFeedback('Google Sign-In is currently not available.', 'info');
+    console.log('🔐 Google Sign-In clicked (feature disabled)');
   }
 
   async handleGitHubSignIn() {
-    if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
-      this.showAuthFeedback('Authentication service not available', 'error');
-      return;
-    }
-
-    try {
-      console.log('🔐 Attempting GitHub sign-in...');
-      this.showAuthFeedback('Connecting to GitHub...', 'info');
-
-      const provider = new this.authModule.GithubAuthProvider();
-      provider.addScope('user:email');
-
-      // Add timeout to prevent hanging
-      const signInPromise = this.authModule.signInWithPopup(window.firebaseAuth, provider);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('GitHub sign-in timeout')), 30000);
-      });
-
-      await Promise.race([signInPromise, timeoutPromise]);
-
-      this.hideAuthModal();
-      this.showAuthFeedback('Signed in with GitHub!', 'success');
-      console.log('✅ GitHub sign-in successful');
-    } catch (error) {
-      console.error('❌ GitHub sign-in failed:', error);
-      this.handleAuthError(error);
-    }
+    // Firebase specific logic removed
+    this.showAuthFeedback('GitHub Sign-In is currently not available.', 'info');
+    console.log('🔐 GitHub Sign-In clicked (feature disabled)');
   }
 
   async handleEmailSignIn(e) {
-    if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available, using fallback');
-      if (this.fallbackMode) {
-        const email = document.getElementById('signin-email').value;
-        const password = document.getElementById('signin-password').value;
-        this.handleFallbackAuth('sign-in', email, password);
-      } else {
-        this.showAuthFeedback('Authentication service not available', 'error');
-      }
-      return;
-    }
-
     const email = document.getElementById('signin-email').value;
     const password = document.getElementById('signin-password').value;
 
     if (!email || !password) {
-      this.showAuthFeedback('Please enter both email and password', 'error');
+      this.handleAuthError('Please enter both email and password.');
       return;
     }
 
-    try {
-      console.log('🔐 Attempting email sign-in...');
-      await this.authModule.signInWithEmailAndPassword(window.firebaseAuth, email, password);
-      this.hideAuthModal();
-      this.showAuthFeedback('Welcome back!', 'success');
-      console.log('✅ Email sign-in successful');
-    } catch (error) {
-      console.error('❌ Email sign-in failed:', error);
-      this.handleAuthError(error);
+    const users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    const user = users.find(u => u.email === email);
+
+    if (!user || user.password !== password) { // IMPORTANT: Never store/compare plain text passwords in a real app!
+      this.handleAuthError('Invalid email or password.');
+      return;
     }
+
+    localStorage.setItem('forgeECCurrentUser', JSON.stringify({ email: user.email, name: user.name }));
+    this.currentUser = { email: user.email, name: user.name };
+    this.updateAuthUI();
+    this.hideAuthModal();
+    this.showAuthFeedback('Signed in successfully!', 'success');
+    console.log('👤 User signed in:', user.email);
   }
 
   async handleEmailSignUp(e) {
-    if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available, using fallback');
-      if (this.fallbackMode) {
-        const name = document.getElementById('signup-name').value;
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        this.handleFallbackAuth('sign-up', email, password, name);
-      } else {
-        this.showAuthFeedback('Authentication service not available', 'error');
-      }
-      return;
-    }
-
     const name = document.getElementById('signup-name').value;
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
 
     if (!name || !email || !password) {
-      this.showAuthFeedback('Please fill in all fields', 'error');
+      this.handleAuthError('Please fill in all fields.');
       return;
     }
-
     if (password.length < 6) {
-      this.showAuthFeedback('Password must be at least 6 characters', 'error');
+      this.handleAuthError('Password must be at least 6 characters.');
       return;
     }
 
-    try {
-      console.log('🔐 Attempting email sign-up...');
-      const userCredential = await this.authModule.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
-      const user = userCredential.user;
-
-      // Update profile with display name
-      await this.authModule.updateProfile(user, { displayName: name });
-
-      this.hideAuthModal();
-      this.showAuthFeedback('Account created successfully!', 'success');
-      console.log('✅ Email sign-up successful');
-    } catch (error) {
-      console.error('❌ Email sign-up failed:', error);
-      this.handleAuthError(error);
+    let users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    if (users.find(u => u.email === email)) {
+      this.handleAuthError('Email already in use.');
+      return;
     }
+
+    const newUser = { name, email, password }; // IMPORTANT: Never store plain text passwords in a real app!
+    users.push(newUser);
+    localStorage.setItem('forgeECUsers', JSON.stringify(users));
+
+    localStorage.setItem('forgeECCurrentUser', JSON.stringify({ email: newUser.email, name: newUser.name }));
+    this.currentUser = { email: newUser.email, name: newUser.name };
+    this.updateAuthUI();
+    this.hideAuthModal();
+    this.showAuthFeedback('Account created successfully!', 'success');
+    console.log('👤 User account created:', newUser.email);
   }
 
   async handleForgotPassword() {
-    if (!this.authModule || !window.firebaseAuth) {
-      this.showAuthFeedback('Authentication service not available.', 'error');
-      console.warn('Firebase Auth not available for password reset.');
-      return;
-    }
-
-    const email = prompt('Please enter your email address to reset your password:');
-
-    if (email === null || email.trim() === "") { // Handle empty or cancelled prompt
-      this.showAuthFeedback('Password reset cancelled or no email provided.', 'info');
-      return;
-    }
-
-    try {
-      console.log(`🔐 Attempting password reset for: ${email}`);
-      this.showAuthFeedback('Sending password reset email...', 'info');
-      // Ensure authModule and sendPasswordResetEmail are correctly referenced
-      await this.authModule.sendPasswordResetEmail(window.firebaseAuth, email.trim());
-      this.showAuthFeedback('Password reset email sent! Please check your inbox.', 'success');
-      console.log('✅ Password reset email sent successfully.');
-    } catch (error) {
-      console.error('❌ Password reset failed:', error);
-      // Firebase often doesn't explicitly state 'auth/user-not-found' for password resets for security.
-      // A generic success-like message is often preferred regardless of whether the email exists,
-      // unless a specific error like 'auth/invalid-email' occurs.
-      if (error.code === 'auth/invalid-email') {
-          this.showAuthFeedback('The email address is not valid.', 'error');
-      } else {
-          // For other errors, including potential network issues or if Firebase does return user-not-found here
-          // you might still opt for a generic message or use handleAuthError.
-          // Using a generic message for non-invalid-email errors to avoid account enumeration:
-          this.showAuthFeedback('If your email address is registered, you will receive a password reset email.', 'info');
-          // Alternatively, for more detailed client-side debugging (but not necessarily for user display):
-          // this.handleAuthError(error); 
-      }
-    }
+    this.showAuthFeedback('Password reset is not available in this version.', 'info');
+    console.log('🔐 Password reset clicked (feature disabled)');
   }
 
   async handleSignOut() {
-    if (!this.authModule || !window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
-      return;
-    }
-
-    try {
-      await this.authModule.signOut(window.firebaseAuth);
-      this.showAuthFeedback('Signed out successfully', 'info');
-    } catch (error) {
-      this.handleAuthError(error);
-    }
+    localStorage.removeItem('forgeECCurrentUser');
+    this.currentUser = null;
+    this.updateAuthUI();
+    this.showAuthFeedback('Signed out successfully', 'info');
+    console.log('👤 User signed out');
   }
 
   updateAuthUI() {
+    const storedUser = localStorage.getItem('forgeECCurrentUser');
+    if (storedUser) {
+      this.currentUser = JSON.parse(storedUser);
+    } else {
+      this.currentUser = null;
+    }
+
     const authTrigger = document.getElementById('auth-trigger');
     const userMenuTrigger = document.getElementById('user-menu-trigger');
 
     if (this.currentUser) {
-      // User is signed in
       if (authTrigger) authTrigger.style.display = 'none';
       if (userMenuTrigger) {
         userMenuTrigger.style.display = 'flex';
         this.updateUserProfile();
       }
     } else {
-      // User is not signed in
       if (authTrigger) authTrigger.style.display = 'block';
       if (userMenuTrigger) userMenuTrigger.style.display = 'none';
     }
@@ -1180,8 +939,8 @@ class ForgeECApp {
     const userInfo = document.querySelector('#user-menu-trigger .user-info');
     if (userInfo) {
       userInfo.innerHTML = `
-        <img src="${user.photoURL || '/assets/default-avatar.png'}" alt="${user.displayName}" class="user-avatar">
-        <span class="user-name">${user.displayName || user.email}</span>
+        <img src="/assets/default-avatar.png" alt="${user.name || user.email}" class="user-avatar">
+        <span class="user-name">${user.name || user.email}</span>
       `;
     }
   }
@@ -1191,72 +950,11 @@ class ForgeECApp {
     console.log('User menu toggle');
   }
 
-  handleAuthError(error) {
-    let message = 'An authentication error occurred';
-    let isConfigurationError = false;
-
-    switch (error.code) {
-      case 'auth/configuration-not-found':
-        message = 'Authentication service is not properly configured. Please contact support.';
-        isConfigurationError = true;
-        console.error('🔧 Firebase Auth Configuration Error:', {
-          error: error.code,
-          message: error.message,
-          suggestion: 'Check Firebase Console > Authentication > Sign-in method'
-        });
-        break;
-      case 'auth/user-not-found':
-        message = 'No account found with this email address';
-        break;
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        message = 'Incorrect email or password';
-        break;
-      case 'auth/email-already-in-use':
-        message = 'An account with this email already exists';
-        break;
-      case 'auth/weak-password':
-        message = 'Password should be at least 6 characters';
-        break;
-      case 'auth/invalid-email':
-        message = 'Invalid email address';
-        break;
-      case 'auth/popup-closed-by-user':
-        message = 'Sign-in popup was closed';
-        break;
-      case 'auth/popup-blocked':
-        message = 'Sign-in popup was blocked by your browser';
-        break;
-      case 'auth/cancelled-popup-request':
-        message = 'Sign-in was cancelled';
-        break;
-      case 'auth/network-request-failed':
-        message = 'Network error. Please check your connection and try again.';
-        break;
-      default:
-        message = error.message || 'An unexpected error occurred';
-    }
-
+  handleAuthError(errorMessage) {
+    // Simplified error handling
+    let message = typeof errorMessage === 'string' ? errorMessage : 'An authentication error occurred. Please try again.';
     this.showAuthFeedback(message, 'error');
-
-    // Log detailed error information for debugging
-    console.error('🚨 Authentication Error:', {
-      code: error.code,
-      message: error.message,
-      isConfigurationError,
-      timestamp: new Date().toISOString()
-    });
-
-    // If it's a configuration error, also log helpful debugging info
-    if (isConfigurationError) {
-      console.error('🔍 Debug Info:', {
-        firebaseApp: !!window.firebaseApp,
-        firebaseAuth: !!window.firebaseAuth,
-        authModule: !!this.authModule,
-        projectId: window.firebaseApp?.options?.projectId,
-        authDomain: window.firebaseApp?.options?.authDomain
-      });
-    }
+    console.error('🚨 Authentication Error:', message);
   }
 
   showAuthFeedback(message, type = 'info') {
@@ -1280,30 +978,8 @@ class ForgeECApp {
     }, 5000);
   }
 
-  // Fallback Authentication System (when Firebase is not available)
-  setupFallbackAuth() {
-    console.log('🔄 Setting up fallback authentication system');
-    this.fallbackMode = true;
-    this.setupAuthEventListeners();
-  }
-
-  handleFallbackAuth(type, email, password, name = null) {
-    // Simulate authentication for demo purposes
-    console.log(`🔄 Fallback ${type} attempt:`, { email, name });
-
-    // Show informational message about Firebase configuration
-    const message = `Demo mode: Firebase Authentication needs to be configured. Please check the configuration guide.`;
-    this.showAuthFeedback(message, 'warning');
-
-    // Log configuration guidance
-    console.warn('🔧 Firebase Configuration Required:', {
-      issue: 'Authentication service not configured',
-      solution: 'Enable Authentication in Firebase Console',
-      guide: 'See FIREBASE_AUTH_CONFIGURATION_GUIDE.md for detailed instructions'
-    });
-
-    return false;
-  }
+  // Fallback/Demo auth methods are now replaced by localStorage logic
+  // setupFallbackAuth() and handleFallbackAuth() are no longer needed.
 }
 
 // Initialize the application when DOM is loaded
@@ -1314,8 +990,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export for use in other modules
 window.ForgeECApp = ForgeECApp;
 
-// Global function to show Firebase Auth modal
-window.showFirebaseAuth = function() {
+// Global function to show Auth modal (no longer Firebase specific)
+window.showAuthModal = function() {
   if (window.forgeECApp && typeof window.forgeECApp.showAuthModal === 'function') {
     window.forgeECApp.showAuthModal();
   } else {
