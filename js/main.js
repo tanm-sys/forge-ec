@@ -17,27 +17,149 @@ class ForgeECApp {
 
   async init() {
     // Initialize core functionality
+    this.updateLoadingProgress(10);
     this.setupEventListeners();
+
+    this.updateLoadingProgress(20);
     this.initializeTheme();
+
+    this.updateLoadingProgress(30);
     this.setupScrollEffects();
+
+    this.updateLoadingProgress(40);
     this.setupNavigation();
+
+    this.updateLoadingProgress(50);
     this.setupAnimations();
 
-    // Setup auth related functionality
-    this.createAuthModal(); // Ensure modal is created
-    this.setupAuthEventListeners(); // Setup general event listeners for auth
-    this.updateAuthUI(); // Check initial auth state from localStorage
+    // Initialize Firebase services
+    this.updateLoadingProgress(60);
+    await this.initializeFirebase();
 
     // Load external data
+    this.updateLoadingProgress(80);
     await this.loadGitHubData();
+
+    // Initialize scroll-triggered animations
+    this.updateLoadingProgress(90);
+    this.initScrollAnimations();
 
     // Hide loading screen
     this.hideLoadingScreen();
 
-    // Initialize scroll-triggered animations
-    this.initScrollAnimations();
+    console.log('🦀 Forge EC website with Firebase initialized successfully!');
+  }
 
-    console.log('🦀 Forge EC website initialized successfully!');
+  async initializeFirebase() {
+    try {
+      console.log('🔥 Initializing Firebase services...');
+
+      // Wait for Firebase to be ready with improved timeout handling
+      if (window.firebaseInitialized) {
+        // Firebase services are already initialized
+        this.setupFirebaseAuth();
+        this.firebaseInitialized = true;
+        console.log('✅ Firebase services already initialized');
+      } else {
+        // Wait for Firebase ready event with race condition protection
+        const firebaseReady = new Promise((resolve, reject) => {
+          let resolved = false;
+          let checkCount = 0;
+          const maxChecks = 100; // Maximum 10 seconds (100 * 100ms)
+
+          const checkFirebase = () => {
+            if (resolved) return; // Prevent multiple resolutions
+
+            checkCount++;
+            if (window.firebaseInitialized) {
+              resolved = true;
+              resolve();
+            } else if (checkCount >= maxChecks) {
+              resolved = true;
+              reject(new Error('Firebase initialization timeout'));
+            } else {
+              setTimeout(checkFirebase, 100);
+            }
+          };
+
+          // Listen for Firebase ready event
+          const handleFirebaseReady = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
+
+          window.addEventListener('firebaseReady', handleFirebaseReady, { once: true });
+
+          // Start checking periodically
+          setTimeout(checkFirebase, 100);
+        });
+
+        await firebaseReady;
+
+        if (window.firebaseInitialized) {
+          this.setupFirebaseAuth();
+          this.firebaseInitialized = true;
+          console.log('✅ Firebase services initialized successfully (delayed)');
+        } else {
+          throw new Error('Firebase failed to initialize within timeout');
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error.message);
+      this.firebaseInitialized = false;
+      // Still create auth modal for UI consistency, but without Firebase functionality
+      this.createAuthModal();
+      this.setupFallbackAuth();
+    }
+  }
+
+  setupFirebaseAuth() {
+    // Initialize Firebase Authentication
+    this.initializeAuth();
+    this.createAuthModal();
+    this.setupAuthEventListeners();
+  }
+
+  async initializeAuth() {
+    if (!window.firebaseAuth) {
+      console.warn('Firebase Auth not available');
+      return;
+    }
+
+    try {
+      // Import Firebase Auth functions dynamically with timeout
+      console.log('📦 Loading Firebase Auth module...');
+
+      const authModulePromise = import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Auth module load timeout')), 5000);
+      });
+
+      const authModule = await Promise.race([authModulePromise, timeoutPromise]);
+      this.authModule = authModule;
+      console.log('✅ Firebase Auth module loaded successfully');
+
+      // Set up auth state listener with error handling
+      try {
+        authModule.onAuthStateChanged(window.firebaseAuth, (user) => {
+          this.currentUser = user;
+          this.updateAuthUI();
+
+          if (user) {
+            console.log('👤 User signed in:', user.email);
+          } else {
+            console.log('👤 User signed out');
+          }
+        });
+      } catch (listenerError) {
+        console.warn('Failed to set up auth state listener:', listenerError);
+      }
+    } catch (error) {
+      console.warn('Failed to load Firebase Auth module:', error);
+      this.authModule = null;
+    }
   }
 
   createAuthModal() {
@@ -148,8 +270,6 @@ class ForgeECApp {
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
       themeToggle.addEventListener('click', () => this.toggleTheme());
-    } else {
-      console.warn('Element with ID "theme-toggle" not found.');
     }
 
     // Mobile menu toggle with enhanced functionality
@@ -196,17 +316,14 @@ class ForgeECApp {
 
     // CTA buttons
     const getStartedBtn = document.getElementById('get-started-btn');
+    const liveDemoBtn = document.getElementById('live-demo-btn');
+
     if (getStartedBtn) {
       getStartedBtn.addEventListener('click', () => this.scrollToSection('docs'));
-    } else {
-      console.warn('Element with ID "get-started-btn" not found.');
     }
 
-    const liveDemoBtn = document.getElementById('live-demo-btn');
     if (liveDemoBtn) {
       liveDemoBtn.addEventListener('click', () => this.openLiveDemo());
-    } else {
-      console.warn('Element with ID "live-demo-btn" not found.');
     }
 
     // Copy buttons
@@ -570,18 +687,47 @@ class ForgeECApp {
     if (loadingScreen) {
       console.log('🎯 Hiding loading screen...');
 
+      // Update progress bar to 100% before hiding
+      this.updateLoadingProgress(100);
+
       // Reduce loading time and ensure it always hides
       setTimeout(() => {
         loadingScreen.classList.add('hidden');
+        // Announce to screen readers that loading is complete
+        loadingScreen.setAttribute('aria-hidden', 'true');
         console.log('✅ Loading screen hidden');
 
         setTimeout(() => {
           loadingScreen.remove();
           console.log('🗑️ Loading screen removed from DOM');
+
+          // Announce that the page is ready
+          this.announceToScreenReader('Page loaded successfully');
         }, 500);
       }, 1000); // Reduced from 2 seconds to 1 second
     } else {
       console.warn('⚠️ Loading screen element not found');
+    }
+  }
+
+  updateLoadingProgress(percentage) {
+    try {
+      const progressBar = document.querySelector('.loading-progress');
+      const progressBarFill = document.querySelector('.progress-bar');
+
+      if (progressBar && progressBarFill) {
+        progressBar.setAttribute('aria-valuenow', percentage);
+        progressBarFill.style.width = `${percentage}%`;
+
+        // Update screen reader announcement
+        if (percentage === 100) {
+          progressBar.setAttribute('aria-label', 'Loading complete');
+        } else {
+          progressBar.setAttribute('aria-label', `Loading ${percentage}% complete`);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to update loading progress:', error);
     }
   }
 
@@ -628,18 +774,12 @@ class ForgeECApp {
 
   showCopyFeedback(button) {
     const originalHTML = button.innerHTML;
-    // Checkmark SVG - ensure this path is correct or use a simpler text checkmark if SVG is problematic
-    const checkSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-    
-    button.innerHTML = `${checkSVG} Copied!`;
-    button.classList.add('copied-feedback');
-    // Temporarily disable the button to prevent multiple rapid clicks
-    button.disabled = true;
+    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>';
+    button.style.color = 'var(--color-success)';
 
     setTimeout(() => {
       button.innerHTML = originalHTML;
-      button.classList.remove('copied-feedback');
-      button.disabled = false;
+      button.style.color = '';
     }, 2000);
   }
 
@@ -702,14 +842,23 @@ class ForgeECApp {
       mobileMenuToggle.classList.add('active');
       mobileMenuToggle.setAttribute('aria-expanded', 'true');
 
+      // Update ARIA label
+      mobileMenuToggle.setAttribute('aria-label', 'Close navigation menu');
+
       // Prevent body scroll when menu is open
       document.body.style.overflow = 'hidden';
 
       // Focus first nav link for accessibility
       const firstNavLink = navMenu.querySelector('.nav-link');
       if (firstNavLink) {
-        setTimeout(() => firstNavLink.focus(), 100);
+        setTimeout(() => {
+          this.manageFocus(firstNavLink);
+          this.announceToScreenReader('Navigation menu opened');
+        }, 100);
       }
+
+      // Trap focus within the menu
+      this.trapFocus(navMenu);
     }
   }
 
@@ -722,8 +871,55 @@ class ForgeECApp {
       mobileMenuToggle.classList.remove('active');
       mobileMenuToggle.setAttribute('aria-expanded', 'false');
 
+      // Update ARIA label
+      mobileMenuToggle.setAttribute('aria-label', 'Open navigation menu');
+
       // Restore body scroll
       document.body.style.overflow = '';
+
+      // Return focus to menu toggle
+      this.manageFocus(mobileMenuToggle);
+      this.announceToScreenReader('Navigation menu closed');
+
+      // Remove focus trap
+      this.removeFocusTrap();
+    }
+  }
+
+  // Focus trapping for accessibility
+  trapFocus(container) {
+    const focusableElements = container.querySelectorAll(
+      'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select'
+    );
+
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    this.focusTrapHandler = (e) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', this.focusTrapHandler);
+  }
+
+  removeFocusTrap() {
+    if (this.focusTrapHandler) {
+      document.removeEventListener('keydown', this.focusTrapHandler);
+      this.focusTrapHandler = null;
     }
   }
 
@@ -989,8 +1185,89 @@ class ForgeECApp {
     }, 5000);
   }
 
-  // Fallback/Demo auth methods are now replaced by localStorage logic
-  // setupFallbackAuth() and handleFallbackAuth() are no longer needed.
+  // Fallback Authentication System (when Firebase is not available)
+  setupFallbackAuth() {
+    console.log('🔄 Setting up fallback authentication system');
+    this.fallbackMode = true;
+    this.setupAuthEventListeners();
+  }
+
+  // Accessibility helper methods
+  announceToScreenReader(message) {
+    try {
+      // Create or update live region for screen reader announcements
+      let liveRegion = document.getElementById('sr-live-region');
+
+      if (!liveRegion) {
+        liveRegion = document.createElement('div');
+        liveRegion.id = 'sr-live-region';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.style.cssText = `
+          position: absolute;
+          left: -10000px;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+        `;
+        document.body.appendChild(liveRegion);
+      }
+
+      // Clear and set new message
+      liveRegion.textContent = '';
+      setTimeout(() => {
+        liveRegion.textContent = message;
+      }, 100);
+
+      console.log('📢 Screen reader announcement:', message);
+    } catch (error) {
+      console.warn('Failed to announce to screen reader:', error);
+    }
+  }
+
+  // Enhanced focus management
+  manageFocus(element) {
+    try {
+      if (element && typeof element.focus === 'function') {
+        element.focus();
+
+        // Add focus indicator if not present
+        if (!element.classList.contains('focus-visible')) {
+          element.style.outline = '2px solid var(--color-primary)';
+          element.style.outlineOffset = '2px';
+
+          // Remove custom outline when element loses focus
+          const removeFocusIndicator = () => {
+            element.style.outline = '';
+            element.style.outlineOffset = '';
+            element.removeEventListener('blur', removeFocusIndicator);
+          };
+
+          element.addEventListener('blur', removeFocusIndicator);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to manage focus:', error);
+    }
+  }
+
+  handleFallbackAuth(type, email, password, name = null) {
+    // Simulate authentication for demo purposes
+    console.log(`🔄 Fallback ${type} attempt:`, { email, name });
+
+    // Show informational message about Firebase configuration
+    const message = `Demo mode: Firebase Authentication needs to be configured. Please check the configuration guide.`;
+    this.showAuthFeedback(message, 'warning');
+
+    // Log configuration guidance
+    console.warn('🔧 Firebase Configuration Required:', {
+      issue: 'Authentication service not configured',
+      solution: 'Enable Authentication in Firebase Console',
+      guide: 'See FIREBASE_AUTH_CONFIGURATION_GUIDE.md for detailed instructions'
+    });
+
+    return false;
+  }
 }
 
 // Initialize the application when DOM is loaded
