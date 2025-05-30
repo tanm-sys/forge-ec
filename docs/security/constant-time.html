@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constant-Time Operations - Forge EC Security</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Understanding and implementing timing-attack resistant code with Forge EC. Learn about constant-time operations and side-channel attack prevention.">
+    <meta name="keywords" content="forge ec, constant-time, timing attacks, side-channel, security, rust">
+    <meta name="author" content="Tanmay Patil">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Constant-Time Operations - Forge EC Security">
+    <meta property="og:description" content="Timing-attack resistant cryptographic operations">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/docs/security/constant-time.html">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/animations.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="../docs.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+    
+    <!-- Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-text">Loading Constant-Time Operations Guide...</div>
+            <div class="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar docs-navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="../../index.html" class="brand-link">
+                    <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                    </svg>
+                    <span class="brand-text">Forge EC</span>
+                </a>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="../../index.html" class="nav-link">Home</a>
+                <a href="../../index.html#features" class="nav-link">Features</a>
+                <a href="../../index.html#about" class="nav-link">About</a>
+                <a href="../index.html" class="nav-link active">Documentation</a>
+                <a href="../../index.html#examples" class="nav-link">Examples</a>
+                <a href="../../index.html#community" class="nav-link">Community</a>
+                <a href="../../index.html#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="auth-btn" id="auth-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Content -->
+    <main class="docs-main">
+        <!-- Documentation Header -->
+        <div class="docs-header">
+            <div class="container">
+                <div class="docs-header-content">
+                    <div class="docs-meta">
+                        <span class="docs-category">Security</span>
+                        <span class="docs-level expert">Expert</span>
+                        <span class="docs-time">15 min read</span>
+                    </div>
+                    <h1 class="docs-title">Constant-Time Operations</h1>
+                    <p class="docs-subtitle">
+                        Understanding and implementing timing-attack resistant code. Learn how to protect 
+                        against side-channel attacks through constant-time cryptographic operations.
+                    </p>
+                    <div class="docs-actions">
+                        <button class="bookmark-btn" id="bookmark-btn" aria-label="Bookmark this page">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Content -->
+        <div class="docs-content">
+            <div class="container">
+                <div class="docs-layout">
+                    <!-- Table of Contents -->
+                    <aside class="docs-sidebar">
+                        <div class="toc-container glass-enhanced">
+                            <h3 class="toc-title">Table of Contents</h3>
+                            <nav class="toc" id="toc">
+                                <ul class="toc-list">
+                                    <li class="toc-item">
+                                        <a href="#overview" class="toc-link">Overview</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#timing-attacks" class="toc-link">Timing Attacks</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#constant-time-principles" class="toc-link">Constant-Time Principles</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#implementation" class="toc-link">Implementation</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#verification" class="toc-link">Verification</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#examples" class="toc-link">Examples</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#best-practices" class="toc-link">Best Practices</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <article class="docs-article">
+                        <section id="overview" class="docs-section">
+                            <h2>Overview</h2>
+                            <p>
+                                Constant-time operations are crucial for preventing timing attacks in cryptographic 
+                                implementations. Forge EC provides built-in constant-time operations and guidelines 
+                                for maintaining timing-attack resistance in your applications.
+                            </p>
+
+                            <div class="warning-box">
+                                <div class="warning-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </div>
+                                <div class="warning-content">
+                                    <strong>Critical Security Requirement:</strong>
+                                    <p>All cryptographic operations involving secret data must be implemented in constant time 
+                                    to prevent timing attacks. This includes key operations, signature verification, 
+                                    and any computation that depends on private keys or sensitive data.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="timing-attacks" class="docs-section">
+                            <h2>Timing Attacks</h2>
+                            <p>
+                                Timing attacks exploit variations in execution time to extract information about secret data. 
+                                Even microsecond differences can leak sensitive information over many observations.
+                            </p>
+
+                            <h3>Attack Vectors</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Vulnerable Code Example (DO NOT USE)</span>
+                                    <button class="copy-btn" data-copy='// ❌ VULNERABLE: Early return leaks timing information
+fn vulnerable_verify(signature: &[u8], expected: &[u8]) -> bool {
+    if signature.len() != expected.len() {
+        return false; // Early return - timing leak!
+    }
+    
+    for (a, b) in signature.iter().zip(expected.iter()) {
+        if a != b {
+            return false; // Early return - timing leak!
+        }
+    }
+    true
+}
+
+// ❌ VULNERABLE: Conditional operations leak timing
+fn vulnerable_scalar_mult(scalar: &[u8], point: &Point) -> Point {
+    let mut result = Point::identity();
+    for bit in scalar.iter() {
+        result = result.double();
+        if *bit == 1 {
+            result = result.add(point); // Conditional operation - timing leak!
+        }
+    }
+    result
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">// ❌ VULNERABLE: Early return leaks timing information
+fn vulnerable_verify(signature: &[u8], expected: &[u8]) -> bool {
+    if signature.len() != expected.len() {
+        return false; // Early return - timing leak!
+    }
+    
+    for (a, b) in signature.iter().zip(expected.iter()) {
+        if a != b {
+            return false; // Early return - timing leak!
+        }
+    }
+    true
+}
+
+// ❌ VULNERABLE: Conditional operations leak timing
+fn vulnerable_scalar_mult(scalar: &[u8], point: &Point) -> Point {
+    let mut result = Point::identity();
+    for bit in scalar.iter() {
+        result = result.double();
+        if *bit == 1 {
+            result = result.add(point); // Conditional operation - timing leak!
+        }
+    }
+    result
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="constant-time-principles" class="docs-section">
+                            <h2>Constant-Time Principles</h2>
+                            <p>
+                                Constant-time implementations ensure that execution time is independent of secret data values.
+                            </p>
+
+                            <h3>Secure Implementation</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Constant-Time Code Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::subtle::{ConstantTimeEq, Choice};
+
+// ✅ SECURE: Constant-time comparison
+fn secure_verify(signature: &[u8], expected: &[u8]) -> bool {
+    use forge_ec::subtle::ConstantTimeEq;
+    
+    // Always check full length, no early returns
+    let len_match = signature.len() == expected.len();
+    
+    // Pad shorter array to avoid timing leaks
+    let max_len = signature.len().max(expected.len());
+    let mut sig_padded = vec![0u8; max_len];
+    let mut exp_padded = vec![0u8; max_len];
+    
+    sig_padded[..signature.len()].copy_from_slice(signature);
+    exp_padded[..expected.len()].copy_from_slice(expected);
+    
+    // Constant-time comparison
+    let bytes_match = sig_padded.ct_eq(&exp_padded);
+    
+    len_match && bytes_match.into()
+}
+
+// ✅ SECURE: Constant-time scalar multiplication
+fn secure_scalar_mult(scalar: &[u8], point: &Point) -> Point {
+    let mut result = Point::identity();
+    let mut addend = *point;
+    
+    for byte in scalar.iter() {
+        for bit_index in 0..8 {
+            let bit = (byte >> bit_index) & 1;
+            let choice = Choice::from(bit);
+            
+            // Always perform both operations, select result
+            let add_result = result.add(&addend);
+            result = Point::conditional_select(&result, &add_result, choice);
+            
+            addend = addend.double();
+        }
+    }
+    result
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::subtle::{ConstantTimeEq, Choice};
+
+// ✅ SECURE: Constant-time comparison
+fn secure_verify(signature: &[u8], expected: &[u8]) -> bool {
+    use forge_ec::subtle::ConstantTimeEq;
+    
+    // Always check full length, no early returns
+    let len_match = signature.len() == expected.len();
+    
+    // Pad shorter array to avoid timing leaks
+    let max_len = signature.len().max(expected.len());
+    let mut sig_padded = vec![0u8; max_len];
+    let mut exp_padded = vec![0u8; max_len];
+    
+    sig_padded[..signature.len()].copy_from_slice(signature);
+    exp_padded[..expected.len()].copy_from_slice(expected);
+    
+    // Constant-time comparison
+    let bytes_match = sig_padded.ct_eq(&exp_padded);
+    
+    len_match && bytes_match.into()
+}
+
+// ✅ SECURE: Constant-time scalar multiplication
+fn secure_scalar_mult(scalar: &[u8], point: &Point) -> Point {
+    let mut result = Point::identity();
+    let mut addend = *point;
+    
+    for byte in scalar.iter() {
+        for bit_index in 0..8 {
+            let bit = (byte >> bit_index) & 1;
+            let choice = Choice::from(bit);
+            
+            // Always perform both operations, select result
+            let add_result = result.add(&addend);
+            result = Point::conditional_select(&result, &add_result, choice);
+            
+            addend = addend.double();
+        }
+    }
+    result
+}</code></pre>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>

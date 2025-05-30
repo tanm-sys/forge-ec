@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNG Module - Forge EC API Reference</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Complete API reference for Forge EC RNG module. Secure random number generation and entropy sources for cryptographic applications.">
+    <meta name="keywords" content="forge ec, RNG, random number generation, entropy, cryptography, rust, API">
+    <meta name="author" content="Tanmay Patil">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="RNG Module - Forge EC API Reference">
+    <meta property="og:description" content="Secure random number generation and entropy sources API">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/docs/api/rng.html">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/animations.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="../docs.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+    
+    <!-- Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-text">Loading RNG API Reference...</div>
+            <div class="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar docs-navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="../../index.html" class="brand-link">
+                    <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                    </svg>
+                    <span class="brand-text">Forge EC</span>
+                </a>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="../../index.html" class="nav-link">Home</a>
+                <a href="../../index.html#features" class="nav-link">Features</a>
+                <a href="../../index.html#about" class="nav-link">About</a>
+                <a href="../index.html" class="nav-link active">Documentation</a>
+                <a href="../../index.html#examples" class="nav-link">Examples</a>
+                <a href="../../index.html#community" class="nav-link">Community</a>
+                <a href="../../index.html#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="auth-btn" id="auth-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Content -->
+    <main class="docs-main">
+        <!-- Documentation Header -->
+        <div class="docs-header">
+            <div class="container">
+                <div class="docs-header-content">
+                    <div class="docs-meta">
+                        <span class="docs-category">API Reference</span>
+                        <span class="docs-level intermediate">Intermediate</span>
+                        <span class="docs-time">8 min read</span>
+                    </div>
+                    <h1 class="docs-title">RNG Module</h1>
+                    <p class="docs-subtitle">
+                        Secure random number generation and entropy sources for cryptographic applications. 
+                        Hardware-backed randomness with fallback mechanisms for maximum security.
+                    </p>
+                    <div class="docs-actions">
+                        <button class="bookmark-btn" id="bookmark-btn" aria-label="Bookmark this page">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Content -->
+        <div class="docs-content">
+            <div class="container">
+                <div class="docs-layout">
+                    <!-- Table of Contents -->
+                    <aside class="docs-sidebar">
+                        <div class="toc-container glass-enhanced">
+                            <h3 class="toc-title">Table of Contents</h3>
+                            <nav class="toc" id="toc">
+                                <ul class="toc-list">
+                                    <li class="toc-item">
+                                        <a href="#overview" class="toc-link">Overview</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#secure-rng" class="toc-link">Secure RNG</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#entropy-sources" class="toc-link">Entropy Sources</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#hardware-rng" class="toc-link">Hardware RNG</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#deterministic-rng" class="toc-link">Deterministic RNG</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#key-generation" class="toc-link">Key Generation</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#examples" class="toc-link">Examples</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#security" class="toc-link">Security Considerations</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <article class="docs-article">
+                        <section id="overview" class="docs-section">
+                            <h2>Overview</h2>
+                            <p>
+                                The RNG module provides cryptographically secure random number generation with multiple 
+                                entropy sources. It automatically selects the best available randomness source and 
+                                provides fallback mechanisms for maximum security across different platforms.
+                            </p>
+
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Key Features:</strong>
+                                    <ul>
+                                        <li>Hardware-backed random number generation</li>
+                                        <li>Multiple entropy sources with automatic fallback</li>
+                                        <li>Cryptographically secure pseudorandom number generators</li>
+                                        <li>Deterministic RNG for testing and reproducibility</li>
+                                        <li>Secure key and nonce generation utilities</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="secure-rng" class="docs-section">
+                            <h2>Secure RNG</h2>
+                            <p>
+                                The primary interface for generating cryptographically secure random numbers.
+                            </p>
+
+                            <h3>Basic Random Generation</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Secure RNG Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::rng::{SecureRng, RngCore};
+
+fn secure_rng_example() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize secure RNG (uses best available entropy source)
+    let mut rng = SecureRng::new()?;
+
+    // Generate random bytes
+    let mut random_bytes = [0u8; 32];
+    rng.fill_bytes(&mut random_bytes);
+    println!("Random bytes: {:?}", random_bytes);
+
+    // Generate random u64
+    let random_u64 = rng.next_u64();
+    println!("Random u64: {}", random_u64);
+
+    // Generate random in range
+    let random_in_range = rng.gen_range(1..=100);
+    println!("Random 1-100: {}", random_in_range);
+
+    Ok(())
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::rng::{SecureRng, RngCore};
+
+fn secure_rng_example() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize secure RNG (uses best available entropy source)
+    let mut rng = SecureRng::new()?;
+
+    // Generate random bytes
+    let mut random_bytes = [0u8; 32];
+    rng.fill_bytes(&mut random_bytes);
+    println!("Random bytes: {:?}", random_bytes);
+
+    // Generate random u64
+    let random_u64 = rng.next_u64();
+    println!("Random u64: {}", random_u64);
+
+    // Generate random in range
+    let random_in_range = rng.gen_range(1..=100);
+    println!("Random 1-100: {}", random_in_range);
+
+    Ok(())
+}</code></pre>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>
