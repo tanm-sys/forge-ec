@@ -67,9 +67,17 @@ class ExamplesController {
     const outputElement = document.getElementById(`${demoType}-output`);
     const buttonElement = document.getElementById(`${demoType}-demo-btn`);
 
+    if (!statusElement || !outputElement || !buttonElement) {
+      console.warn(`UI elements for demo "${demoType}" not found. Aborting demo.`);
+      this.demoRunning = false;
+      return;
+    }
+
     // Update UI state
     buttonElement.disabled = true;
-    buttonElement.querySelector('.btn-text').textContent = 'Running...';
+    const btnText = buttonElement.querySelector('.btn-text');
+    if (btnText) btnText.textContent = 'Running...';
+    
     statusElement.textContent = 'Executing demo...';
     statusElement.style.color = 'var(--color-warning)';
 
@@ -92,19 +100,20 @@ class ExamplesController {
     } finally {
       // Reset button state
       buttonElement.disabled = false;
-      buttonElement.querySelector('.btn-text').textContent = `Run ${this.getDemoDisplayName(demoType)} Demo`;
+      if (btnText) btnText.textContent = `Run ${this.getDemoDisplayName(demoType)} Demo`;
       this.demoRunning = false;
     }
   }
 
   async simulateDemo(demoType, outputElement, statusElement) {
+    // outputElement and statusElement are assumed to be valid here as they are checked in runDemo
     const steps = this.getDemoSteps(demoType);
 
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
 
       // Update status
-      statusElement.textContent = step.status;
+      if (statusElement) statusElement.textContent = step.status;
 
       // Add step output
       const stepElement = document.createElement('div');
