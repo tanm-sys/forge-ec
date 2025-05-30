@@ -623,12 +623,18 @@ class ForgeECApp {
 
   showCopyFeedback(button) {
     const originalHTML = button.innerHTML;
-    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>';
-    button.style.color = 'var(--color-success)';
+    // Checkmark SVG - ensure this path is correct or use a simpler text checkmark if SVG is problematic
+    const checkSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    
+    button.innerHTML = `${checkSVG} Copied!`;
+    button.classList.add('copied-feedback');
+    // Temporarily disable the button to prevent multiple rapid clicks
+    button.disabled = true;
 
     setTimeout(() => {
       button.innerHTML = originalHTML;
-      button.style.color = '';
+      button.classList.remove('copied-feedback');
+      button.disabled = false;
     }, 2000);
   }
 
