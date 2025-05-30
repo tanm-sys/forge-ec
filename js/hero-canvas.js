@@ -196,7 +196,7 @@ class HeroCanvas {
     }
 
     // Update audio data if available
-    if (this.audioEnabled && this.analyser) {
+    if (this.audioEnabled && this.analyser && this.audioData) { // Add check for this.audioData
       this.analyser.getByteFrequencyData(this.audioData);
     }
 
@@ -211,11 +211,16 @@ class HeroCanvas {
       curve.centerY = this.height * 0.5 + Math.sin(scrollY * parallaxFactor) * 20;
 
       // Audio-reactive modifications
-      if (this.audioEnabled && this.audioData) {
-        const audioIndex = Math.floor((index / this.curves.length) * this.audioData.length);
-        const audioValue = this.audioData[audioIndex] / 255;
-        curve.opacity = (0.08 + index * 0.03) * (1 + audioValue * 0.5);
-        curve.a = (50 + index * 25) * (1 + audioValue * 0.3);
+      if (this.audioEnabled && this.analyser && this.audioData && this.audioData.length > 0) { // Add check for this.analyser and this.audioData.length
+        const audioBufferLength = this.analyser.frequencyBinCount; // Use frequencyBinCount for consistency
+        const audioIndex = Math.floor((index / this.curves.length) * audioBufferLength);
+        // Ensure audioIndex is within bounds of this.audioData if its length might differ from frequencyBinCount
+        // (though they should typically match after getByteFrequencyData)
+        if (audioIndex < this.audioData.length) { 
+            const audioValue = this.audioData[audioIndex] / 255;
+            curve.opacity = (0.08 + index * 0.03) * (1 + audioValue * 0.5);
+            curve.a = (50 + index * 25) * (1 + audioValue * 0.3);
+        }
       }
     });
   }
