@@ -323,10 +323,105 @@ class GitHubAPI {
 
     // Update contributors list if element exists
     const contributorsList = document.querySelector('.contributors-list');
-    if (contributorsList && contributors.length > 0) {
-      contributorsList.innerHTML = contributors.slice(0, 10).map(contributor => `
-        <div class="contributor-item" title="${contributor.login}">
-          <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar">
+    if (contributorsList) {
+      if (contributors.length > 0) {
+        contributorsList.innerHTML = contributors.slice(0, 10).map(contributor => `
+          <div class="contributor-item" title="${contributor.login}">
+            <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar">
+      else {
+        // Optionally clear or hide if no contributors
+        // contributorsList.innerHTML = '<p>No contributors data available.</p>';
+      }
+    } else {
+      console.warn("Element with class '.contributors-list' not found.");
+    }
+
+    // Update About page contributors section
+    const aboutContributors = document.getElementById('about-contributors');
+    if (aboutContributors) {
+      if (contributors.length > 0) {
+        aboutContributors.innerHTML = contributors.slice(0, 8).map(contributor => `
+          <div class="contributor-item" title="${contributor.login} - ${contributor.contributions} contributions">
+            <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar" loading="lazy">
+      else {
+        // Optionally clear or hide
+        // aboutContributors.innerHTML = '<p>No contributors data available.</p>';
+      }
+    } else {
+      console.warn("Element with ID 'about-contributors' not found.");
+    }
+  }
+
+  updateCommitStatsWithTotal(totalCommits, recentCommits) {
+    console.log('🔄 Updating commit stats:', totalCommits);
+
+    const commitsElements = document.querySelectorAll('#repo-commits');
+    commitsElements.forEach(element => {
+      // Override the hardcoded data-target value
+      if (element.hasAttribute('data-target')) {
+        element.setAttribute('data-target', totalCommits);
+      }
+      this.animateNumber(element, totalCommits);
+    });
+
+    // Update recent commits if element exists
+    const recentCommitsList = document.querySelector('.recent-commits');
+    if (recentCommitsList) {
+      if (recentCommits.length > 0) {
+        recentCommitsList.innerHTML = recentCommits.slice(0, 5).map(commit => `
+          <div class="commit-item">
+            <div class="commit-message">${commit.commit.message.split('\n')[0]}</div>
+            <div class="commit-meta">
+              <span class="commit-author">${commit.commit.author.name}</span>
+              <span class="commit-date">${this.formatRelativeTime(new Date(commit.commit.author.date))}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        // Optionally clear or hide if no recent commits
+        // recentCommitsList.innerHTML = '<p>No recent commits to display.</p>';
+      }
+    } else {
+      console.warn("Element with class '.recent-commits' not found.");
+    }
+  }
+
+
+
+  updateGitHubBadges(repoInfo) {
+    const stars = repoInfo.stargazers_count || 0;
+    const forks = repoInfo.forks_count || 0;
+
+    console.log('🔄 Updating GitHub badges:', { stars, forks });
+
+    // Update GitHub stats in navigation
+    const starsCountNav = document.getElementById('stars-count');
+    if (starsCountNav) {
+      starsCountNav.textContent = `⭐ ${this.formatNumber(stars)}`;
+    } else {
+      console.warn("Element with ID 'stars-count' not found.");
+    }
+
+    const forksCountNav = document.getElementById('forks-count');
+    if (forksCountNav) {
+      forksCountNav.textContent = `🍴 ${this.formatNumber(forks)}`;
+    } else {
+      console.warn("Element with ID 'forks-count' not found.");
+    }
+
+    // Also update any other navigation stats elements
+    const navStarsElements = document.querySelectorAll('#nav-stars, .nav-stars');
+    navStarsElements.forEach(element => {
+      element.textContent = `⭐ ${this.formatNumber(stars)}`;
+    });
+
+    const navForksElements = document.querySelectorAll('#nav-forks, .nav-forks');
+    navForksElements.forEach(element => {
+      element.textContent = `🍴 ${this.formatNumber(forks)}`;
+    });
+  }
+
+  animateNumber(element, targetNumber, prefix = '') {
           <span class="contributor-name">${contributor.login}</span>
           <span class="contributor-contributions">${contributor.contributions} commits</span>
         </div>

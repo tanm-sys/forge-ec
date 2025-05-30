@@ -16,7 +16,17 @@ class ContactForm {
   }
 
   init() {
-    if (!this.form) return;
+    if (!this.form) {
+      console.warn("ContactForm: form element not found.");
+      return;
+    }
+    if (!this.submitButton) {
+      console.warn("ContactForm: submitButton element not found.");
+      // Form might still be somewhat usable if submitted via Enter key, but button interactions will fail.
+    }
+    if (!this.successMessage) {
+      console.warn("ContactForm: successMessage element not found. Success feedback will not be shown.");
+    }
 
     // Add event listeners
     this.form.addEventListener('submit', this.handleSubmit.bind(this));
@@ -266,29 +276,34 @@ Timestamp: ${new Date().toISOString()}
   }
 
   setLoading(loading) {
+    if (!this.submitButton) return; // Guard against null submitButton
+
     const submitText = this.submitButton.querySelector('.submit-text');
     const submitLoading = this.submitButton.querySelector('.submit-loading');
     const submitIcon = this.submitButton.querySelector('.submit-icon');
 
+    // It's possible these inner elements also might not exist if markup is changed
     if (loading) {
-      submitText.style.display = 'none';
-      submitIcon.style.display = 'none';
-      submitLoading.style.display = 'flex';
+      if (submitText) submitText.style.display = 'none';
+      if (submitIcon) submitIcon.style.display = 'none';
+      if (submitLoading) submitLoading.style.display = 'flex';
       this.submitButton.disabled = true;
     } else {
-      submitText.style.display = 'block';
-      submitIcon.style.display = 'block';
-      submitLoading.style.display = 'none';
+      if (submitText) submitText.style.display = 'block';
+      if (submitIcon) submitIcon.style.display = 'block';
+      if (submitLoading) submitLoading.style.display = 'none';
       this.submitButton.disabled = false;
     }
   }
 
   showSuccess() {
+    if (!this.successMessage) return; // Guard against null successMessage
+
     this.successMessage.style.display = 'flex';
 
     // Hide success message after 5 seconds
     setTimeout(() => {
-      this.successMessage.style.display = 'none';
+      if (this.successMessage) this.successMessage.style.display = 'none';
     }, 5000);
 
     // Scroll to success message

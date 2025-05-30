@@ -135,8 +135,10 @@ class InteractiveComponents {
       const step = steps[i];
       
       // Update UI
-      statusElement.textContent = `Step ${i + 1}: ${step.description}`;
-      stepDescription.textContent = step.description;
+      if (statusElement) statusElement.textContent = `Step ${i + 1}: ${step.description}`;
+      else console.warn("Element with ID 'exchange-status' not found.");
+      if (stepDescription) stepDescription.textContent = step.description;
+      else console.warn("Element with ID 'step-description' not found.");
       
       // Update step indicators
       stepIndicators.forEach((indicator, index) => {
@@ -173,9 +175,13 @@ class InteractiveComponents {
     const aliceKey = document.getElementById('alice-key');
     const bobKey = document.getElementById('bob-key');
     
-    [aliceKey, bobKey].forEach(key => {
-      key.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
-      key.style.animation = 'pulse 0.5s ease-in-out infinite alternate';
+    [aliceKey, bobKey].forEach(keyElem => {
+      if (keyElem) {
+        keyElem.style.background = 'linear-gradient(45deg, #3b82f6, #8b5cf6)';
+        keyElem.style.animation = 'pulse 0.5s ease-in-out infinite alternate';
+      } else {
+        console.warn(`Key element for Alice/Bob not found.`);
+      }
     });
   }
 
@@ -184,8 +190,10 @@ class InteractiveComponents {
     const bobPublic = document.getElementById('bob-public');
     
     // Simulate key computation with typewriter effect
-    await this.typewriterEffect(alicePublic, '04a1b2c3d4e5f6...');
-    await this.typewriterEffect(bobPublic, '049f8e7d6c5b4a...');
+    if (alicePublic) await this.typewriterEffect(alicePublic, '04a1b2c3d4e5f6...');
+    else console.warn("Element with ID 'alice-public' not found.");
+    if (bobPublic) await this.typewriterEffect(bobPublic, '049f8e7d6c5b4a...');
+    else console.warn("Element with ID 'bob-public' not found.");
   }
 
   async animateDataFlow(pathId) {
@@ -202,12 +210,24 @@ class InteractiveComponents {
     const sharedSecret = document.getElementById('shared-secret');
     const sharedText = document.getElementById('shared-text');
     
-    sharedSecret.style.opacity = '1';
-    sharedSecret.style.animation = 'pulseGlow 1s ease-in-out infinite alternate';
-    sharedText.style.opacity = '1';
+    if (sharedSecret) {
+      sharedSecret.style.opacity = '1';
+      sharedSecret.style.animation = 'pulseGlow 1s ease-in-out infinite alternate';
+    } else {
+      console.warn("Element with ID 'shared-secret' not found.");
+    }
+    if (sharedText) {
+      sharedText.style.opacity = '1';
+    } else {
+      console.warn("Element with ID 'shared-text' not found.");
+    }
   }
 
   async typewriterEffect(element, text) {
+    if (!element) {
+      console.warn('typewriterEffect called with null element');
+      return;
+    }
     element.textContent = '';
     for (let i = 0; i < text.length; i++) {
       element.textContent += text[i];
@@ -277,7 +297,11 @@ class InteractiveComponents {
     // Rotate wheel to selected position
     const rotation = index * 90;
     const curveWheel = document.getElementById('curve-wheel');
-    curveWheel.style.transform = `rotate(${rotation}deg)`;
+    if (curveWheel) {
+      curveWheel.style.transform = `rotate(${rotation}deg)`;
+    } else {
+      console.warn("Element with ID 'curve-wheel' not found.");
+    }
     
     // Update curve info
     this.updateCurveInfo(curveName);
@@ -298,9 +322,17 @@ class InteractiveComponents {
 
     const data = curveData[curveName];
     if (data) {
-      document.getElementById('curve-title').textContent = curveName.toUpperCase();
-      document.getElementById('field-value').textContent = data.field;
-      document.getElementById('order-value').textContent = data.order;
+      const curveTitleEl = document.getElementById('curve-title');
+      if (curveTitleEl) curveTitleEl.textContent = curveName.toUpperCase();
+      else console.warn("Element with ID 'curve-title' not found.");
+
+      const fieldValueEl = document.getElementById('field-value');
+      if (fieldValueEl) fieldValueEl.textContent = data.field;
+      else console.warn("Element with ID 'field-value' not found.");
+
+      const orderValueEl = document.getElementById('order-value');
+      if (orderValueEl) orderValueEl.textContent = data.order;
+      else console.warn("Element with ID 'order-value' not found.");
     }
   }
 

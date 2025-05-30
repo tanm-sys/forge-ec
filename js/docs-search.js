@@ -131,7 +131,15 @@ class DocsSearch {
   }
 
   init() {
-    if (!this.searchInput) return;
+    if (!this.searchInput) {
+      console.warn("DocsSearch: searchInput element not found.");
+      return;
+    }
+    if (!this.searchResults) {
+      // Although not strictly breaking if searchInput is present, good to note.
+      // Functionality like displayResults will implicitly handle it if it's null.
+      console.warn("DocsSearch: searchResults element not found. Results will not be displayed.");
+    }
 
     // Add event listeners
     this.searchInput.addEventListener('input', this.handleSearch.bind(this));
@@ -318,6 +326,8 @@ class DocsSearch {
   }
 
   displayResults(results) {
+    if (!this.searchResults) return; // Guard against null searchResults element
+
     if (results.length === 0) {
       this.searchResults.innerHTML = `
         <div class="search-result-item">
@@ -342,11 +352,11 @@ class DocsSearch {
   }
 
   showResults() {
-    this.searchResults.classList.add('show');
+    if (this.searchResults) this.searchResults.classList.add('show');
   }
 
   hideResults() {
-    this.searchResults.classList.remove('show');
+    if (this.searchResults) this.searchResults.classList.remove('show');
   }
 
   // Public method to add new documentation entries

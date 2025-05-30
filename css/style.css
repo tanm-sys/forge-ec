@@ -293,6 +293,12 @@ body {
   color: var(--color-primary);
 }
 
+.nav-link:focus {
+  color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .nav-link::after {
   content: '';
   position: absolute;
@@ -558,6 +564,14 @@ body {
 .cta-button.secondary:hover {
   background: var(--bg-glass-hover);
   transform: translateY(-2px);
+}
+
+.cta-button.secondary:focus {
+  background: var(--bg-glass-hover);
+  transform: translateY(-2px); /* Consistent with hover */
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-md); /* Add a subtle shadow on focus */
 }
 
 .btn-icon {
@@ -3205,6 +3219,13 @@ body {
   transform: translateY(-2px);
 }
 
+.social-link:focus {
+  color: var(--color-primary);
+  background: var(--bg-glass-hover);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .social-link svg {
   width: 20px;
   height: 20px;
@@ -3235,6 +3256,13 @@ body {
 
 .footer-link:hover {
   color: var(--color-primary);
+}
+
+.footer-link:focus {
+  color: var(--color-primary);
+  text-decoration: underline;
+  outline: 1px dashed var(--color-primary);
+  outline-offset: 1px;
 }
 
 .footer-bottom {

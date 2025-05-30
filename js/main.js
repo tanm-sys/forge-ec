@@ -148,6 +148,8 @@ class ForgeECApp {
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
       themeToggle.addEventListener('click', () => this.toggleTheme());
+    } else {
+      console.warn('Element with ID "theme-toggle" not found.');
     }
 
     // Mobile menu toggle with enhanced functionality
@@ -194,14 +196,17 @@ class ForgeECApp {
 
     // CTA buttons
     const getStartedBtn = document.getElementById('get-started-btn');
-    const liveDemoBtn = document.getElementById('live-demo-btn');
-
     if (getStartedBtn) {
       getStartedBtn.addEventListener('click', () => this.scrollToSection('docs'));
+    } else {
+      console.warn('Element with ID "get-started-btn" not found.');
     }
 
+    const liveDemoBtn = document.getElementById('live-demo-btn');
     if (liveDemoBtn) {
       liveDemoBtn.addEventListener('click', () => this.openLiveDemo());
+    } else {
+      console.warn('Element with ID "live-demo-btn" not found.');
     }
 
     // Copy buttons
