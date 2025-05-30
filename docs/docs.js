@@ -158,10 +158,23 @@ class DocsPortal {
   }
 
   hideLoadingScreen() {
+    // Use the global loading screen manager if available
+    if (window.LoadingScreenManager) {
+      window.LoadingScreenManager.hide('DocsPortal initialization complete');
+      this.isLoaded = true;
+      return;
+    }
+
+    // Fallback to direct hiding if global manager not available
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen && !this.isLoaded) {
       try {
         console.log('📚 Documentation portal loaded - hiding loading screen');
+        this.isLoaded = true;
+
+        // Set flag to prevent other mechanisms from interfering
+        window.loadingScreenHiddenByDocs = true;
+
         loadingScreen.style.opacity = '0';
         loadingScreen.style.pointerEvents = 'none';
         loadingScreen.style.transition = 'opacity 0.3s ease-out';
@@ -176,7 +189,6 @@ class DocsPortal {
               }
             }, 100);
           }
-          this.isLoaded = true;
         }, 300);
       } catch (error) {
         console.warn('Error hiding loading screen:', error);
@@ -186,6 +198,7 @@ class DocsPortal {
           loadingScreen.remove();
         }
         this.isLoaded = true;
+        window.loadingScreenHiddenByDocs = true;
       }
     }
   }
@@ -542,6 +555,149 @@ setTimeout(() => {
     }
   }
 }, 5000);
+
+// Global Loading Screen Manager
+class LoadingScreenManager {
+  constructor() {
+    this.isHidden = false;
+    this.hideReasons = [];
+    this.timeouts = [];
+    this.init();
+  }
+
+  init() {
+    // Clear any existing timeouts to prevent conflicts
+    this.clearAllTimeouts();
+
+    // Set up multiple fallback mechanisms
+    this.setupFallbackTimeouts();
+    this.setupEventListeners();
+
+    console.log('🔄 LoadingScreenManager initialized');
+  }
+
+  setupFallbackTimeouts() {
+    // Layer 1: Critical timeout (2 seconds) - fastest response
+    this.timeouts.push(setTimeout(() => this.hide('Critical timeout (2s)'), 2000));
+
+    // Layer 2: Standard timeout (5 seconds) - normal response
+    this.timeouts.push(setTimeout(() => this.hide('Standard timeout (5s)'), 5000));
+
+    // Layer 3: Maximum timeout (8 seconds) - absolute fallback
+    this.timeouts.push(setTimeout(() => this.hide('Maximum timeout (8s)'), 8000));
+  }
+
+  setupEventListeners() {
+    // Page load events
+    window.addEventListener('load', () => {
+      setTimeout(() => this.hide('Page load event'), 500);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => this.hide('DOM content loaded'), 1000);
+    });
+
+    // User interaction fallback
+    ['click', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+      document.addEventListener(event, () => {
+        this.hide('User interaction');
+      }, { once: true });
+    });
+
+    // Visibility change (tab switching)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        setTimeout(() => this.hide('Visibility change'), 200);
+      }
+    });
+
+    // Error handling
+    window.addEventListener('error', (event) => {
+      if (event.message && (
+        event.message.includes('message port closed') ||
+        event.message.includes('Extension context invalidated') ||
+        event.message.includes('runtime.lastError')
+      )) {
+        this.hide('Browser extension error detected');
+        return false;
+      }
+    });
+
+    window.addEventListener('unhandledrejection', () => {
+      setTimeout(() => this.hide('Unhandled promise rejection'), 300);
+    });
+  }
+
+  hide(reason) {
+    if (this.isHidden) return;
+
+    const loadingScreen = document.getElementById('loading-screen');
+    if (!loadingScreen) {
+      this.isHidden = true;
+      return;
+    }
+
+    try {
+      console.log(`🔄 Hiding loading screen: ${reason}`);
+      this.hideReasons.push(reason);
+      this.isHidden = true;
+
+      // Clear all timeouts to prevent multiple hide attempts
+      this.clearAllTimeouts();
+
+      // Set global flag
+      window.loadingScreenHidden = true;
+
+      // Hide with smooth transition
+      loadingScreen.style.opacity = '0';
+      loadingScreen.style.pointerEvents = 'none';
+      loadingScreen.style.transition = 'opacity 0.3s ease-out';
+
+      // Remove from DOM after transition
+      setTimeout(() => {
+        if (loadingScreen.parentNode) {
+          loadingScreen.style.display = 'none';
+          setTimeout(() => {
+            if (loadingScreen.parentNode) {
+              loadingScreen.remove();
+            }
+          }, 100);
+        }
+      }, 300);
+
+    } catch (error) {
+      console.warn('Error hiding loading screen:', error);
+      // Force hide even if there's an error
+      if (loadingScreen.parentNode) {
+        loadingScreen.style.display = 'none';
+        loadingScreen.remove();
+      }
+      this.isHidden = true;
+      window.loadingScreenHidden = true;
+    }
+  }
+
+  clearAllTimeouts() {
+    this.timeouts.forEach(timeout => clearTimeout(timeout));
+    this.timeouts = [];
+  }
+
+  forceHide() {
+    console.warn('🚨 Force hiding loading screen');
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+      loadingScreen.style.display = 'none';
+      if (loadingScreen.parentNode) {
+        loadingScreen.remove();
+      }
+    }
+    this.isHidden = true;
+    window.loadingScreenHidden = true;
+  }
+}
+
+// Initialize global loading screen manager immediately
+window.LoadingScreenManager = new LoadingScreenManager();
 
 // Export for potential external use
 window.DocsPortal = DocsPortal;

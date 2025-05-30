@@ -665,80 +665,64 @@ assert!(is_authentic);</code></pre>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="../docs.js"></script>
 
-    <!-- Enhanced Loading Screen Protection -->
+    <!-- Unified Loading Screen Management -->
     <script>
-        // Multiple layers of loading screen protection to prevent freezing
-        let loadingScreenHidden = false;
-
-        function hideLoadingScreen(reason) {
-            if (loadingScreenHidden) return;
-
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen && loadingScreen.style.display !== 'none') {
-                console.log(`🔄 Hiding loading screen: ${reason}`);
-                loadingScreenHidden = true;
-                loadingScreen.style.opacity = '0';
-                loadingScreen.style.pointerEvents = 'none';
-                setTimeout(function() {
-                    loadingScreen.style.display = 'none';
-                    if (loadingScreen.parentNode) {
-                        loadingScreen.remove();
-                    }
-                }, 300);
+        // Check if global LoadingScreenManager is available, otherwise use fallback
+        function initializeLoadingScreenProtection() {
+            // If docs.js LoadingScreenManager is available, it will handle everything
+            if (window.LoadingScreenManager) {
+                console.log('🔄 Using global LoadingScreenManager');
+                return;
             }
+
+            // Fallback protection if docs.js fails to load
+            console.log('🔄 Using fallback loading screen protection');
+
+            let fallbackHidden = false;
+            function fallbackHide(reason) {
+                if (fallbackHidden || window.loadingScreenHidden) return;
+
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                    console.log(`🔄 Fallback hiding loading screen: ${reason}`);
+                    fallbackHidden = true;
+                    window.loadingScreenHidden = true;
+
+                    loadingScreen.style.opacity = '0';
+                    loadingScreen.style.pointerEvents = 'none';
+                    loadingScreen.style.transition = 'opacity 0.3s ease-out';
+
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.style.display = 'none';
+                            setTimeout(() => {
+                                if (loadingScreen.parentNode) {
+                                    loadingScreen.remove();
+                                }
+                            }, 100);
+                        }
+                    }, 300);
+                }
+            }
+
+            // Fallback timeouts
+            setTimeout(() => fallbackHide('Fallback timeout (3s)'), 3000);
+            setTimeout(() => fallbackHide('Fallback timeout (6s)'), 6000);
+
+            // Fallback event listeners
+            window.addEventListener('load', () => setTimeout(() => fallbackHide('Fallback page load'), 500));
+            document.addEventListener('DOMContentLoaded', () => setTimeout(() => fallbackHide('Fallback DOM loaded'), 1000));
+
+            ['click', 'keydown', 'touchstart'].forEach(event => {
+                document.addEventListener(event, () => fallbackHide('Fallback user interaction'), { once: true });
+            });
         }
 
-        // Layer 1: Immediate timeout for critical failures (3 seconds)
-        setTimeout(() => hideLoadingScreen('Critical timeout (3s)'), 3000);
+        // Initialize immediately
+        initializeLoadingScreenProtection();
 
-        // Layer 2: Standard timeout (7 seconds)
-        setTimeout(() => hideLoadingScreen('Standard timeout (7s)'), 7000);
-
-        // Layer 3: Maximum timeout (12 seconds)
-        setTimeout(() => hideLoadingScreen('Maximum timeout (12s)'), 12000);
-
-        // Layer 4: Page load event
-        window.addEventListener('load', function() {
-            setTimeout(() => hideLoadingScreen('Page load event'), 1000);
-        });
-
-        // Layer 5: DOM content loaded event
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => hideLoadingScreen('DOM content loaded'), 2000);
-        });
-
-        // Layer 6: Visibility change (when user switches tabs and comes back)
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                setTimeout(() => hideLoadingScreen('Visibility change'), 500);
-            }
-        });
-
-        // Layer 7: User interaction fallback
-        ['click', 'keydown', 'touchstart'].forEach(event => {
-            document.addEventListener(event, function() {
-                setTimeout(() => hideLoadingScreen('User interaction'), 100);
-            }, { once: true });
-        });
-
-        // Layer 8: Browser extension error detection
-        window.addEventListener('error', function(event) {
-            if (event.message && (
-                event.message.includes('message port closed') ||
-                event.message.includes('Extension context invalidated') ||
-                event.message.includes('runtime.lastError')
-            )) {
-                // Browser extension error detected, hide loading screen immediately
-                hideLoadingScreen('Browser extension error detected');
-                return false; // Prevent error from propagating
-            }
-        });
-
-        // Layer 9: Unhandled promise rejection (Firebase failures)
-        window.addEventListener('unhandledrejection', function(event) {
-            console.warn('Unhandled promise rejection detected:', event.reason);
-            setTimeout(() => hideLoadingScreen('Unhandled promise rejection'), 500);
-        });
+        // Also try after a short delay in case docs.js loads later
+        setTimeout(initializeLoadingScreenProtection, 100);
     </script>
 </body>
 </html>
