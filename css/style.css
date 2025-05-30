@@ -148,7 +148,7 @@ body {
   z-index: 9999;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+  transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
 }
 
 .loading-screen.hidden {
@@ -192,7 +192,7 @@ body {
 .loading-letter {
   display: inline-block;
   opacity: 0;
-  animation: letterFadeIn 0.5s ease-out forwards;
+  animation: letterFadeIn 0.5s ease-in-out forwards;
 }
 
 .loading-letter:nth-child(1) { animation-delay: 0.1s; }
@@ -222,7 +222,8 @@ body {
   height: 100%;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 1) 100%);
   border-radius: var(--radius-full);
-  animation: progressFill 3s ease-out forwards;
+  transform-origin: left;
+  animation: progressFill 3s linear forwards;
 }
 
 /* ===== NAVIGATION ===== */
@@ -764,7 +765,8 @@ body {
 }
 
 @keyframes progressFill {
-  to { width: 100%; }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @keyframes bounce {
