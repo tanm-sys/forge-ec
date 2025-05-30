@@ -500,36 +500,71 @@ fn main() {
 
     <!-- Firebase Configuration -->
     <script type="module">
-        // Firebase CDN imports
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
-            authDomain: "forge-ec.firebaseapp.com",
-            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
-            projectId: "forge-ec",
-            storageBucket: "forge-ec.firebasestorage.app",
-            messagingSenderId: "436060720516",
-            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
-            measurementId: "G-1BVB7FLGRJ"
+        // Suppress browser extension errors that don't affect functionality
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            // Filter out known browser extension errors
+            if (message.includes('message port closed') ||
+                message.includes('Extension context invalidated') ||
+                message.includes('runtime.lastError')) {
+                return; // Suppress these harmless extension errors
+            }
+            originalConsoleError.apply(console, args);
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        try {
+            // Firebase CDN imports with timeout protection
+            const importTimeout = setTimeout(() => {
+                console.warn('Firebase import timeout - continuing without Firebase');
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            }, 5000);
 
-        // Make Firebase services globally available
-        window.firebaseApp = app;
-        window.firebaseDb = db;
-        window.firebaseAuth = auth;
-        window.firebaseInitialized = true;
+            Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js')
+            ]).then(([appModule, firestoreModule, authModule]) => {
+                clearTimeout(importTimeout);
 
-        // Dispatch ready event
-        window.dispatchEvent(new CustomEvent('firebaseReady'));
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+                    authDomain: "forge-ec.firebaseapp.com",
+                    databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+                    projectId: "forge-ec",
+                    storageBucket: "forge-ec.firebasestorage.app",
+                    messagingSenderId: "436060720516",
+                    appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+                    measurementId: "G-1BVB7FLGRJ"
+                };
+
+                // Initialize Firebase
+                const app = appModule.initializeApp(firebaseConfig);
+                const db = firestoreModule.getFirestore(app);
+                const auth = authModule.getAuth(app);
+
+                // Make Firebase services globally available
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseAuth = auth;
+                window.firebaseInitialized = true;
+
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+                console.log('✅ Firebase initialized successfully');
+            }).catch(error => {
+                clearTimeout(importTimeout);
+                console.warn('Firebase initialization failed:', error);
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            });
+        } catch (error) {
+            console.warn('Firebase setup failed:', error);
+            window.firebaseInitialized = false;
+            window.dispatchEvent(new CustomEvent('firebaseReady'));
+        }
     </script>
 
     <!-- Scripts -->
@@ -537,32 +572,65 @@ fn main() {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="../docs.js"></script>
 
-    <!-- Fallback loading screen timeout -->
+    <!-- Enhanced Loading Screen Protection -->
     <script>
-        // Ensure loading screen is hidden after maximum 10 seconds
-        setTimeout(function() {
+        // Multiple layers of loading screen protection to prevent freezing
+        let loadingScreenHidden = false;
+
+        function hideLoadingScreen(reason) {
+            if (loadingScreenHidden) return;
+
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen && loadingScreen.style.display !== 'none') {
-                console.warn('Loading screen timeout - hiding loading screen as fallback');
+                console.log(`🔄 Hiding loading screen: ${reason}`);
+                loadingScreenHidden = true;
                 loadingScreen.style.opacity = '0';
+                loadingScreen.style.pointerEvents = 'none';
                 setTimeout(function() {
                     loadingScreen.style.display = 'none';
+                    if (loadingScreen.parentNode) {
+                        loadingScreen.remove();
+                    }
                 }, 300);
             }
-        }, 10000);
+        }
 
-        // Also hide loading screen when page is fully loaded as additional fallback
+        // Layer 1: Immediate timeout for critical failures (3 seconds)
+        setTimeout(() => hideLoadingScreen('Critical timeout (3s)'), 3000);
+
+        // Layer 2: Standard timeout (7 seconds)
+        setTimeout(() => hideLoadingScreen('Standard timeout (7s)'), 7000);
+
+        // Layer 3: Maximum timeout (12 seconds)
+        setTimeout(() => hideLoadingScreen('Maximum timeout (12s)'), 12000);
+
+        // Layer 4: Page load event
         window.addEventListener('load', function() {
-            setTimeout(function() {
-                const loadingScreen = document.getElementById('loading-screen');
-                if (loadingScreen && loadingScreen.style.display !== 'none') {
-                    console.log('Page loaded - hiding loading screen as fallback');
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(function() {
-                        loadingScreen.style.display = 'none';
-                    }, 300);
-                }
-            }, 2000); // Wait 2 seconds after page load
+            setTimeout(() => hideLoadingScreen('Page load event'), 1000);
+        });
+
+        // Layer 5: DOM content loaded event
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => hideLoadingScreen('DOM content loaded'), 2000);
+        });
+
+        // Layer 6: Browser extension error detection
+        window.addEventListener('error', function(event) {
+            if (event.message && (
+                event.message.includes('message port closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('runtime.lastError')
+            )) {
+                // Browser extension error detected, hide loading screen immediately
+                hideLoadingScreen('Browser extension error detected');
+                return false; // Prevent error from propagating
+            }
+        });
+
+        // Layer 7: Unhandled promise rejection (Firebase failures)
+        window.addEventListener('unhandledrejection', function(event) {
+            console.warn('Unhandled promise rejection detected:', event.reason);
+            setTimeout(() => hideLoadingScreen('Unhandled promise rejection'), 500);
         });
     </script>
 </body>

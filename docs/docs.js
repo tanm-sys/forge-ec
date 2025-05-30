@@ -15,28 +15,58 @@ class DocsPortal {
 
   async init() {
     try {
-      // Initialize core functionality
-      this.updateLoadingProgress(10);
-      this.setupEventListeners();
+      console.log('📚 Initializing Forge EC Documentation Portal...');
 
-      this.updateLoadingProgress(30);
-      this.initializeTheme();
+      // Initialize core functionality with individual error handling
+      try {
+        this.updateLoadingProgress(10);
+        this.setupEventListeners();
+      } catch (error) {
+        console.warn('Event listeners setup failed:', error);
+      }
 
-      this.updateLoadingProgress(50);
-      this.setupScrollEffects();
+      try {
+        this.updateLoadingProgress(30);
+        this.initializeTheme();
+      } catch (error) {
+        console.warn('Theme initialization failed:', error);
+      }
 
-      this.updateLoadingProgress(70);
-      this.setupTableOfContents();
+      try {
+        this.updateLoadingProgress(50);
+        this.setupScrollEffects();
+      } catch (error) {
+        console.warn('Scroll effects setup failed:', error);
+      }
 
-      this.updateLoadingProgress(80);
-      this.setupCodeBlocks();
+      try {
+        this.updateLoadingProgress(70);
+        this.setupTableOfContents();
+      } catch (error) {
+        console.warn('Table of contents setup failed:', error);
+      }
 
-      this.updateLoadingProgress(90);
-      this.setupBookmarks();
+      try {
+        this.updateLoadingProgress(80);
+        this.setupCodeBlocks();
+      } catch (error) {
+        console.warn('Code blocks setup failed:', error);
+      }
+
+      try {
+        this.updateLoadingProgress(90);
+        this.setupBookmarks();
+      } catch (error) {
+        console.warn('Bookmarks setup failed:', error);
+      }
 
       // Initialize Firebase if available (with timeout)
-      this.updateLoadingProgress(95);
-      await this.initializeFirebaseWithTimeout();
+      try {
+        this.updateLoadingProgress(95);
+        await this.initializeFirebaseWithTimeout();
+      } catch (error) {
+        console.warn('Firebase initialization failed:', error);
+      }
 
       this.updateLoadingProgress(100);
 
@@ -45,25 +75,38 @@ class DocsPortal {
 
       console.log('📚 Forge EC Documentation Portal initialized successfully!');
     } catch (error) {
-      console.error('Error initializing documentation portal:', error);
-      // Still hide loading screen even if there's an error
+      console.error('Critical error initializing documentation portal:', error);
+      // Still hide loading screen even if there's a critical error
       this.hideLoadingScreen();
     }
   }
 
   async initializeFirebaseWithTimeout() {
     return new Promise((resolve) => {
+      let resolved = false;
+
+      const safeResolve = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
       // Set a timeout to ensure loading screen is hidden even if Firebase fails
       const timeout = setTimeout(() => {
         console.warn('Firebase initialization timeout - continuing without Firebase features');
-        resolve();
-      }, 3000); // 3 second timeout
+        safeResolve();
+      }, 2000); // Reduced to 2 seconds for faster loading
 
       // Check if Firebase is already initialized
       if (window.firebaseInitialized) {
         clearTimeout(timeout);
-        this.setupFirebaseFeatures();
-        resolve();
+        try {
+          this.setupFirebaseFeatures();
+        } catch (error) {
+          console.warn('Firebase features setup failed:', error);
+        }
+        safeResolve();
         return;
       }
 
@@ -71,8 +114,12 @@ class DocsPortal {
       const handleFirebaseReady = () => {
         clearTimeout(timeout);
         window.removeEventListener('firebaseReady', handleFirebaseReady);
-        this.setupFirebaseFeatures();
-        resolve();
+        try {
+          this.setupFirebaseFeatures();
+        } catch (error) {
+          console.warn('Firebase features setup failed:', error);
+        }
+        safeResolve();
       };
 
       window.addEventListener('firebaseReady', handleFirebaseReady);
@@ -83,10 +130,23 @@ class DocsPortal {
           clearTimeout(timeout);
           clearInterval(checkInterval);
           window.removeEventListener('firebaseReady', handleFirebaseReady);
-          this.setupFirebaseFeatures();
-          resolve();
+          try {
+            this.setupFirebaseFeatures();
+          } catch (error) {
+            console.warn('Firebase features setup failed:', error);
+          }
+          safeResolve();
         }
-      }, 100);
+      }, 50); // Check more frequently
+
+      // Additional safety timeout to prevent infinite waiting
+      setTimeout(() => {
+        clearTimeout(timeout);
+        clearInterval(checkInterval);
+        window.removeEventListener('firebaseReady', handleFirebaseReady);
+        console.warn('Firebase initialization abandoned - forcing resolution');
+        safeResolve();
+      }, 4000); // Absolute maximum wait time
     });
   }
 
@@ -99,14 +159,34 @@ class DocsPortal {
 
   hideLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-      setTimeout(() => {
+    if (loadingScreen && !this.isLoaded) {
+      try {
+        console.log('📚 Documentation portal loaded - hiding loading screen');
         loadingScreen.style.opacity = '0';
+        loadingScreen.style.pointerEvents = 'none';
+        loadingScreen.style.transition = 'opacity 0.3s ease-out';
+
         setTimeout(() => {
-          loadingScreen.style.display = 'none';
+          if (loadingScreen.parentNode) {
+            loadingScreen.style.display = 'none';
+            // Remove from DOM completely to prevent any interference
+            setTimeout(() => {
+              if (loadingScreen.parentNode) {
+                loadingScreen.remove();
+              }
+            }, 100);
+          }
           this.isLoaded = true;
         }, 300);
-      }, 500);
+      } catch (error) {
+        console.warn('Error hiding loading screen:', error);
+        // Force hide even if there's an error
+        if (loadingScreen.parentNode) {
+          loadingScreen.style.display = 'none';
+          loadingScreen.remove();
+        }
+        this.isLoaded = true;
+      }
     }
   }
 
@@ -434,8 +514,34 @@ class DocsPortal {
 
 // Initialize documentation portal when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  window.docsPortal = new DocsPortal();
+  try {
+    window.docsPortal = new DocsPortal();
+  } catch (error) {
+    console.error('Failed to initialize DocsPortal:', error);
+    // Emergency loading screen hide
+    setTimeout(() => {
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+        if (loadingScreen.parentNode) {
+          loadingScreen.remove();
+        }
+      }
+    }, 1000);
+  }
 });
+
+// Emergency fallback - hide loading screen after 5 seconds no matter what
+setTimeout(() => {
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen && loadingScreen.style.display !== 'none') {
+    console.warn('🚨 Emergency fallback: Force hiding loading screen');
+    loadingScreen.style.display = 'none';
+    if (loadingScreen.parentNode) {
+      loadingScreen.remove();
+    }
+  }
+}, 5000);
 
 // Export for potential external use
 window.DocsPortal = DocsPortal;
