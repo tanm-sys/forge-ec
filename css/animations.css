@@ -462,6 +462,53 @@
   will-change: auto;
 }
 
+/* Initial state for character animations */
+.animated-char {
+  display: inline-block; /* Allows transforms */
+  opacity: 0;
+  transform: translateY(20px);
+  /* Animation will be applied by JavaScript using WAAPI */
+}
+
+/* Quick Press Ripple Effect for Standard Buttons */
+@keyframes quickPressRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.5); /* Adjust scale as needed, relative to ripple's own size */
+    opacity: 0;
+  }
+}
+
+.quick-press-ripple-effect {
+  /* Styles are mostly set by JS, but ensure pointer-events if not set by JS always */
+  pointer-events: none; 
+  position: absolute; /* Ensure JS can override if needed but good default */
+  border-radius: 50%; /* Ensure JS can override if needed */
+}
+
+/* Old ripple-animation, if still used by .ripple elements via JS */
+@keyframes ripple-animation {
+    to {
+      transform: scale(4); /* This was the existing one for .ripple */
+      opacity: 0;
+    }
+}
+.ripple-effect { /* Class for the old .ripple elements if JS adds it */
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3); /* Default color from old JS */
+    transform: scale(0);
+    animation: ripple-animation 0.6s linear; /* Default duration from old JS */
+    pointer-events: none;
+}
+
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   *,

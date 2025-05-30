@@ -14,6 +14,7 @@ class AnimationController {
     this.setupHoverAnimations();
     this.setupClickAnimations();
     this.setupTypewriterEffects();
+    this.setupCharAnimations(); // New setup call
 
     // Listen for reduced motion preference changes
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
@@ -41,7 +42,8 @@ class AnimationController {
       '.animate-on-scroll',
       '.stagger-item',
       '.reveal-mask',
-      '.counter-animate'
+      '.counter-animate',
+      '.animate-title-by-char' // Add new class to observer targets
     ].join(', '));
 
     animatedElements.forEach(el => observer.observe(el));
@@ -69,12 +71,16 @@ class AnimationController {
       case 'typewriter':
         this.animateTypewriter(element);
         break;
+      case 'titleChars': // New animation type
+        this.animateTitleChars(element);
+        break;
       default:
         this.animateDefault(element);
     }
   }
 
   getAnimationType(element) {
+    if (element.classList.contains('animate-title-by-char')) return 'titleChars'; // Check for new class first
     if (element.classList.contains('stagger-item')) return 'stagger';
     if (element.classList.contains('reveal-mask')) return 'reveal';
     if (element.classList.contains('counter-animate')) return 'counter';
@@ -442,37 +448,13 @@ class AnimationController {
   }
 
   setupClickAnimations() {
-    // Ripple effects
-    const rippleElements = document.querySelectorAll('.ripple');
-
+    // Ripple effects (general .ripple class - this might be the old one, review if it's still used)
+    // This will be superseded or complemented by the new quick press ripple for standard buttons.
+    const rippleElements = document.querySelectorAll('.ripple'); 
     rippleElements.forEach(element => {
       element.addEventListener('click', (e) => {
-        if (this.isReducedMotion) return;
-
-        const rect = element.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const ripple = document.createElement('span');
-        ripple.className = 'ripple-effect';
-        ripple.style.cssText = `
-          position: absolute;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(0);
-          animation: ripple-animation 0.6s linear;
-          left: ${x - 10}px;
-          top: ${y - 10}px;
-          width: 20px;
-          height: 20px;
-          pointer-events: none;
-        `;
-
-        element.appendChild(ripple);
-
-        setTimeout(() => {
-          ripple.remove();
-        }, 600);
+        if (this.isReducedMotion || element.classList.contains('morph-button')) return; // Don't apply to morph buttons if they have their own
+        this.createQuickRipple(element, e, 'rgba(255, 255, 255, 0.3)', 'ripple-animation'); // Default ripple
       });
     });
 
@@ -480,20 +462,81 @@ class AnimationController {
     const buttons = document.querySelectorAll('button, .btn');
 
     buttons.forEach(button => {
-      button.addEventListener('mousedown', () => {
+      // Skip morph buttons if they have their own complex ripple/feedback
+      if (button.classList.contains('morph-button')) return;
+
+      button.addEventListener('mousedown', (e) => {
         if (this.isReducedMotion) return;
+        
+        // Scale effect
+        button.style.transition = 'transform 0.1s ease-out'; // Ensure quick transition for press
         button.style.transform = 'scale(0.95)';
+        
+        // Create and append quick press ripple
+        this.createQuickRipple(button, e);
       });
 
-      button.addEventListener('mouseup', () => {
+      const mouseUpOrLeaveHandler = () => {
+        button.style.transition = 'transform 0.15s ease-out'; // Slightly slower revert
         button.style.transform = 'scale(1)';
-      });
+      };
 
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'scale(1)';
+      button.addEventListener('mouseup', mouseUpOrLeaveHandler);
+      button.addEventListener('mouseleave', (e) => {
+        // Only revert scale if mouse button is not pressed (e.g. dragged out while pressed)
+        if (e.buttons === 0) {
+          mouseUpOrLeaveHandler();
+        }
       });
     });
   }
+
+  createQuickRipple(button, event, rippleColor = 'rgba(255, 255, 255, 0.4)', animationName = 'quickPressRipple') {
+    const rect = button.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Remove any existing ripples to prevent clutter if events fire rapidly
+    const existingRipple = button.querySelector('.quick-press-ripple-effect, .ripple-effect');
+    if (existingRipple) {
+      existingRipple.remove();
+    }
+
+    const ripple = document.createElement('span');
+    // Use a more specific class if 'ripple-effect' is used by the older system
+    ripple.className = animationName === 'quickPressRipple' ? 'quick-press-ripple-effect' : 'ripple-effect'; 
+    
+    let size = Math.max(rect.width, rect.height) * 1.5; // Ripple size based on button
+    if(animationName === 'ripple-animation') { // old .ripple class might expect fixed size
+        size = 20; // keep old fixed size for compatibility
+    }
+
+
+    ripple.style.cssText = `
+      position: absolute;
+      left: ${x}px;
+      top: ${y}px;
+      width: ${size}px; /* Dynamic size */
+      height: ${size}px; /* Dynamic size */
+      border-radius: 50%;
+      background: ${rippleColor};
+      transform: translate(-50%, -50%) scale(0); /* Start from center, scaled down */
+      animation: ${animationName} 0.3s ease-out forwards;
+      pointer-events: none;
+    `;
+    // Ensure button has position relative or absolute for ripple positioning
+    if (getComputedStyle(button).position === 'static') {
+        button.style.position = 'relative';
+    }
+    button.style.overflow = 'hidden'; // Contain ripple
+
+    button.appendChild(ripple);
+
+    setTimeout(() => {
+      ripple.remove();
+    }, 300); // Duration of quickPressRipple
+  }
+
 
   setupTypewriterEffects() {
     const typewriterElements = document.querySelectorAll('.typewriter-auto');
@@ -599,13 +642,13 @@ const advancedAnimationsCSS = `
     0% {
       width: 0;
       height: 0;
-      opacity: 1;
+      opacity: 0.6; /* Start a bit more subtle */
     }
-    50% {
-      opacity: 0.8;
+    70% { /* Hold opacity a bit longer, then fade fast */
+      opacity: 0.2;
     }
     100% {
-      width: 200px;
+      width: 200px; /* Keep size, could be made dynamic in JS later */
       height: 200px;
       opacity: 0;
     }
