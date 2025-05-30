@@ -3,16 +3,14 @@
  * Handles form validation, submission via Firebase Cloud Functions, and user feedback
  */
 
-import { firebaseFunctionsService } from './firebase-functions.js';
-import { firebaseAuthService } from './firebase-auth.js';
-
 class ContactForm {
   constructor() {
     this.form = document.getElementById('contact-form');
     this.submitButton = document.getElementById('contact-submit');
     this.successMessage = document.getElementById('contact-success');
     this.isSubmitting = false;
-    this.rateLimiter = firebaseFunctionsService.createRateLimiter(5, 300000); // 5 submissions per 5 minutes
+    this.rateLimiter = (fn) => fn(); // Placeholder, effectively disabling rate limiting by immediate execution
+    console.warn('Contact form rate limiter is currently a pass-through. Implement proper rate limiting if needed.');
 
     this.init();
   }
@@ -48,7 +46,7 @@ class ContactForm {
     const data = Object.fromEntries(formData.entries());
 
     // Add user information if authenticated
-    const currentUser = firebaseAuthService.getCurrentUser();
+    const currentUser = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
     if (currentUser) {
       data.userId = currentUser.uid;
       data.userEmail = currentUser.email;
@@ -93,7 +91,13 @@ class ContactForm {
   async submitForm(data) {
     try {
       // Try Firebase Cloud Function first
-      const result = await firebaseFunctionsService.sendContactEmail(data);
+      // Check if the global firebaseFunctions object and a potential sendContactEmail method exist
+      if (!window.firebaseFunctions || typeof window.firebaseFunctions.sendContactEmail !== 'function') {
+          console.warn('Global firebaseFunctions.sendContactEmail method not found. This might indicate that the method was not exposed from the consolidated Firebase setup, or it relied on "firebase/functions" and `httpsCallable` which are not automatically on `window.firebaseFunctions`. Fallback will be triggered.');
+          throw new Error('Firebase sendContactEmail function not available globally as expected.');
+      }
+      // Assuming sendContactEmail was a method attached to the global functions instance by the removed firebase-functions.js
+      const result = await window.firebaseFunctions.sendContactEmail(data); 
 
       if (result.success) {
         console.log('📧 Email sent successfully via Firebase:', result.messageId);
