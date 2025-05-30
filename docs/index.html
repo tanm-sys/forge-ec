@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Portal - Forge EC</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Complete documentation portal for Forge EC cryptography library. API reference, tutorials, security guidelines, and examples.">
+    <meta name="keywords" content="forge ec, documentation, rust, cryptography, API, tutorials, security">
+    <meta name="author" content="Tanmay Patil">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Documentation Portal - Forge EC">
+    <meta property="og:description" content="Complete documentation for Forge EC cryptography library">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/docs/">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="docs.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-text">Loading Documentation Portal...</div>
+            <div class="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar docs-navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="../index.html" class="brand-link">
+                    <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                    </svg>
+                    <span class="brand-text">Forge EC</span>
+                </a>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="../index.html" class="nav-link">Home</a>
+                <a href="../index.html#features" class="nav-link">Features</a>
+                <a href="../index.html#about" class="nav-link">About</a>
+                <a href="../index.html#docs" class="nav-link active">Documentation</a>
+                <a href="../index.html#examples" class="nav-link">Examples</a>
+                <a href="../index.html#community" class="nav-link">Community</a>
+                <a href="../index.html#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="auth-btn" id="auth-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Portal -->
+    <main class="docs-main">
+        <!-- Documentation Header -->
+        <div class="docs-header">
+            <div class="container">
+                <div class="docs-header-content">
+                    <h1 class="docs-title">Documentation Portal</h1>
+                    <p class="docs-subtitle">
+                        Comprehensive guides, API reference, and best practices for Forge EC cryptography library
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Categories -->
+        <div class="docs-content">
+            <div class="container">
+                <div class="docs-categories">
+                    <!-- Getting Started -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                            Getting Started
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Quick Start Guide</h4>
+                                <p class="doc-description">Get up and running with Forge EC in under 5 minutes</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">5 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="getting-started/quick-start.html" class="doc-link">
+                                    Start Tutorial
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14,2 14,8 20,8"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Installation Guide</h4>
+                                <p class="doc-description">Multiple installation methods and dependency management</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">3 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="getting-started/installation.html" class="doc-link">
+                                    View Guide
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Configuration</h4>
+                                <p class="doc-description">Customize Forge EC for your specific use case</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">8 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="getting-started/configuration.html" class="doc-link">
+                                    Configure
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Reference -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                            API Reference
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Signatures Module</h4>
+                                <p class="doc-description">ECDSA, EdDSA, and Schnorr signature implementations</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">15 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="api/signatures.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Encoding Module</h4>
+                                <p class="doc-description">Point compression, serialization, and format conversion</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">12 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="api/encoding.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 9V5a3 3 0 0 0-6 0v4M7 9h10l1 10H6L7 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Hashing Module</h4>
+                                <p class="doc-description">Hash-to-curve, HMAC, and cryptographic hash functions</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">10 min read</span>
+                                    <span class="doc-level advanced">Advanced</span>
+                                </div>
+                                <a href="api/hashing.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">RNG Module</h4>
+                                <p class="doc-description">Secure random number generation and entropy sources</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">8 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="api/rng.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security & Best Practices -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Security & Best Practices
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Security Guidelines</h4>
+                                <p class="doc-description">Essential security practices and common pitfalls to avoid</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">20 min read</span>
+                                    <span class="doc-level advanced">Advanced</span>
+                                </div>
+                                <a href="security/guidelines.html" class="doc-link">
+                                    Read Guide
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 15v5M12 4v5M8 12h8M3 12h2M19 12h2"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Constant-Time Operations</h4>
+                                <p class="doc-description">Understanding and implementing timing-attack resistant code</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">15 min read</span>
+                                    <span class="doc-level expert">Expert</span>
+                                </div>
+                                <a href="security/constant-time.html" class="doc-link">
+                                    Learn More
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 9V5a3 3 0 0 0-6 0v4M7 9h10l1 10H6L7 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Vulnerability Disclosure</h4>
+                                <p class="doc-description">How to responsibly report security vulnerabilities</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">5 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="security/vulnerability-disclosure.html" class="doc-link">
+                                    Report Issue
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../index.html#about">About</a>
+                        <a href="../index.html#community">Community</a>
+                        <a href="security/vulnerability-disclosure.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Firebase CDN imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+            authDomain: "forge-ec.firebaseapp.com",
+            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+            projectId: "forge-ec",
+            storageBucket: "forge-ec.firebasestorage.app",
+            messagingSenderId: "436060720516",
+            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+            measurementId: "G-1BVB7FLGRJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase services globally available
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        window.firebaseInitialized = true;
+
+        // Dispatch ready event
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+
+    <!-- Scripts -->
+    <script src="docs.js"></script>
+</body>
+</html>

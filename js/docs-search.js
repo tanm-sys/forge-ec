@@ -19,7 +19,7 @@ class DocsSearch {
         category: 'Getting Started',
         level: 'Beginner',
         keywords: ['quick', 'start', 'tutorial', 'begin', 'first', 'setup'],
-        url: '#quick-start'
+        url: 'docs/getting-started/quick-start.html'
       },
       {
         title: 'Installation Guide',
@@ -27,7 +27,7 @@ class DocsSearch {
         category: 'Getting Started',
         level: 'Beginner',
         keywords: ['install', 'cargo', 'dependencies', 'setup', 'add'],
-        url: '#installation'
+        url: 'docs/getting-started/installation.html'
       },
       {
         title: 'Configuration',
@@ -35,7 +35,7 @@ class DocsSearch {
         category: 'Getting Started',
         level: 'Intermediate',
         keywords: ['config', 'configure', 'settings', 'customize', 'features'],
-        url: '#configuration'
+        url: 'docs/getting-started/configuration.html'
       },
       {
         title: 'Signatures Module',
@@ -43,7 +43,7 @@ class DocsSearch {
         category: 'API Reference',
         level: 'Intermediate',
         keywords: ['ecdsa', 'eddsa', 'schnorr', 'signature', 'sign', 'verify'],
-        url: '#api-signatures'
+        url: 'docs/api/signatures.html'
       },
       {
         title: 'Encoding Module',
@@ -51,7 +51,7 @@ class DocsSearch {
         category: 'API Reference',
         level: 'Intermediate',
         keywords: ['encoding', 'compression', 'serialization', 'format', 'convert'],
-        url: '#api-encoding'
+        url: 'docs/api/encoding.html'
       },
       {
         title: 'Hashing Module',
@@ -59,7 +59,7 @@ class DocsSearch {
         category: 'API Reference',
         level: 'Advanced',
         keywords: ['hash', 'hmac', 'sha', 'curve', 'cryptographic'],
-        url: '#api-hashing'
+        url: 'docs/api/hashing.html'
       },
       {
         title: 'RNG Module',
@@ -67,7 +67,7 @@ class DocsSearch {
         category: 'API Reference',
         level: 'Intermediate',
         keywords: ['random', 'rng', 'entropy', 'secure', 'generation'],
-        url: '#api-rng'
+        url: 'docs/api/rng.html'
       },
       {
         title: 'Security Guidelines',
@@ -75,7 +75,7 @@ class DocsSearch {
         category: 'Security',
         level: 'Advanced',
         keywords: ['security', 'best', 'practices', 'pitfalls', 'safe', 'secure'],
-        url: '#security-guidelines'
+        url: 'docs/security/guidelines.html'
       },
       {
         title: 'Constant-Time Operations',
@@ -83,7 +83,7 @@ class DocsSearch {
         category: 'Security',
         level: 'Expert',
         keywords: ['constant', 'time', 'timing', 'attack', 'resistant', 'side-channel'],
-        url: '#constant-time'
+        url: 'docs/security/constant-time.html'
       },
       {
         title: 'Vulnerability Disclosure',
@@ -91,7 +91,7 @@ class DocsSearch {
         category: 'Security',
         level: 'Beginner',
         keywords: ['vulnerability', 'disclosure', 'report', 'security', 'responsible'],
-        url: '#vulnerability-disclosure'
+        url: 'docs/security/vulnerability-disclosure.html'
       },
       {
         title: 'ECDSA Examples',
