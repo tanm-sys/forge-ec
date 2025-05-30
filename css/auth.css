@@ -119,43 +119,11 @@
   display: block;
 }
 
-/* Social Auth */
-.social-auth {
-  margin-bottom: 24px;
-}
-
-.social-btn {
-  width: 100%;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.social-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.social-btn:last-child {
-  margin-bottom: 0;
-}
-
 /* Divider */
 .divider {
   position: relative;
   text-align: center;
-  margin: 24px 0;
+  margin: 16px 0 24px 0; /* Adjusted top margin */
   color: var(--color-text-secondary);
 }
 
@@ -339,10 +307,7 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .social-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.08);
-}
+/* Removed [data-theme="dark"] .social-btn as .social-btn is removed */
 
 [data-theme="dark"] .auth-tab {
   background: rgba(255, 255, 255, 0.03);
