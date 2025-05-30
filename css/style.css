@@ -263,6 +263,7 @@ body {
   font-size: var(--text-lg);
   color: var(--text-primary);
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .brand-logo {
@@ -471,6 +472,7 @@ body {
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
+  transition: color var(--transition-normal);
 }
 
 .highlight {
@@ -598,6 +600,7 @@ body {
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-secondary);
+  transition: color var(--transition-normal);
 }
 
 .copy-btn {
@@ -651,9 +654,10 @@ body {
   overflow-y: hidden;
   max-width: 100%;
   min-width: 0;
+  transition: color var(--transition-normal); /* Added for text color */
   /* Custom scrollbar for webkit browsers */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--bg-tertiary);
+  scrollbar-color: var(--color-primary) var(--bg-tertiary); /* These colors are theme-dependent already */
 }
 
 /* Custom scrollbar styles for code-content */
@@ -688,6 +692,7 @@ body {
   gap: var(--space-2);
   color: var(--text-secondary);
   animation: bounce 2s infinite;
+  transition: color var(--transition-normal);
 }
 
 .scroll-arrow {
@@ -704,6 +709,7 @@ body {
 .github-stats-section {
   padding: var(--space-20) 0;
   background: var(--bg-secondary);
+  transition: background-color var(--transition-normal);
 }
 
 .container {
@@ -751,6 +757,7 @@ body {
   font-size: var(--text-lg);
   color: var(--text-secondary);
   font-weight: 500;
+  transition: color var(--transition-normal);
 }
 
 /* ===== ANIMATIONS ===== */
@@ -840,6 +847,7 @@ body {
 .about-section {
   padding: var(--space-20) 0;
   background: var(--bg-secondary);
+  transition: background-color var(--transition-normal);
 }
 
 .subsection-title {
@@ -2683,6 +2691,7 @@ body {
 .installation-section {
   padding: var(--space-20) 0;
   background: var(--bg-secondary);
+  transition: background-color var(--transition-normal);
 }
 
 .installation-steps {
@@ -3128,8 +3137,9 @@ body {
 /* ===== FOOTER ===== */
 .footer {
   background: var(--bg-tertiary);
-  border-top: 1px solid var(--border-glass);
+  border-top: 1px solid var(--border-glass); /* border-glass uses theme vars that might change */
   padding: var(--space-16) 0 var(--space-8);
+  transition: background-color var(--transition-normal), border-top-color var(--transition-normal);
 }
 
 .footer-content {
