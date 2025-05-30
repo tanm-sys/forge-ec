@@ -161,8 +161,11 @@ class HeroCanvas {
 
       if (distance < 100) {
         const force = (100 - distance) / 100;
-        particle.vx += (dx / distance) * force * 0.01;
-        particle.vy += (dy / distance) * force * 0.01;
+        // Check if distance is not zero (or very close to zero)
+        if (distance > 0.001) { 
+          particle.vx += (dx / distance) * force * 0.01;
+          particle.vy += (dy / distance) * force * 0.01;
+        }
       }
 
       // Update position
