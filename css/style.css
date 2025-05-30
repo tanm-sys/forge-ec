@@ -299,6 +299,12 @@ body {
   outline-offset: 2px;
 }
 
+.nav-link:focus {
+  color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .nav-link::after {
   content: '';
   position: absolute;
