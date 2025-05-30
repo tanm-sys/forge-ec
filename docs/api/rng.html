@@ -255,3 +255,158 @@ fn secure_rng_example() -> Result<(), Box<dyn std::error::Error>> {
             </div>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../../index.html#about">About</a>
+                        <a href="../../index.html#community">Community</a>
+                        <a href="../security/guidelines.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Suppress browser extension errors that don't affect functionality
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            // Filter out known browser extension errors
+            if (message.includes('message port closed') ||
+                message.includes('Extension context invalidated') ||
+                message.includes('runtime.lastError')) {
+                return; // Suppress these harmless extension errors
+            }
+            originalConsoleError.apply(console, args);
+        };
+
+        try {
+            // Firebase CDN imports with timeout protection
+            const importTimeout = setTimeout(() => {
+                console.warn('Firebase import timeout - continuing without Firebase');
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            }, 5000);
+
+            Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js')
+            ]).then(([appModule, firestoreModule, authModule]) => {
+                clearTimeout(importTimeout);
+
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+                    authDomain: "forge-ec.firebaseapp.com",
+                    databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+                    projectId: "forge-ec",
+                    storageBucket: "forge-ec.firebasestorage.app",
+                    messagingSenderId: "436060720516",
+                    appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+                    measurementId: "G-1BVB7FLGRJ"
+                };
+
+                // Initialize Firebase
+                const app = appModule.initializeApp(firebaseConfig);
+                const db = firestoreModule.getFirestore(app);
+                const auth = authModule.getAuth(app);
+
+                // Make Firebase services globally available
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseAuth = auth;
+                window.firebaseInitialized = true;
+
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+                console.log('✅ Firebase initialized successfully');
+            }).catch(error => {
+                clearTimeout(importTimeout);
+                console.warn('Firebase initialization failed:', error);
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            });
+        } catch (error) {
+            console.warn('Firebase setup failed:', error);
+            window.firebaseInitialized = false;
+            window.dispatchEvent(new CustomEvent('firebaseReady'));
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="../docs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <!-- Unified Loading Screen Management -->
+    <script>
+        // Check if global LoadingScreenManager is available, otherwise use fallback
+        function initializeLoadingScreenProtection() {
+            // If docs.js LoadingScreenManager is available, it will handle everything
+            if (window.LoadingScreenManager) {
+                console.log('🔄 Using global LoadingScreenManager');
+                return;
+            }
+
+            // Fallback protection if docs.js fails to load
+            console.log('🔄 Using fallback loading screen protection');
+
+            let fallbackHidden = false;
+            function fallbackHide(reason) {
+                if (fallbackHidden || window.loadingScreenHidden) return;
+
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                    console.log(`🔄 Fallback hiding loading screen: ${reason}`);
+                    fallbackHidden = true;
+                    window.loadingScreenHidden = true;
+
+                    loadingScreen.style.opacity = '0';
+                    loadingScreen.style.pointerEvents = 'none';
+                    loadingScreen.style.transition = 'opacity 0.3s ease-out';
+
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.style.display = 'none';
+                            setTimeout(() => {
+                                if (loadingScreen.parentNode) {
+                                    loadingScreen.remove();
+                                }
+                            }, 100);
+                        }
+                    }, 300);
+                }
+            }
+
+            // Fallback timeouts
+            setTimeout(() => fallbackHide('Fallback timeout (3s)'), 3000);
+            setTimeout(() => fallbackHide('Fallback timeout (6s)'), 6000);
+
+            // Fallback event listeners
+            window.addEventListener('load', () => setTimeout(() => fallbackHide('Fallback page load'), 500));
+            document.addEventListener('DOMContentLoaded', () => setTimeout(() => fallbackHide('Fallback DOM loaded'), 1000));
+
+            ['click', 'keydown', 'touchstart'].forEach(event => {
+                document.addEventListener(event, () => fallbackHide('Fallback user interaction'), { once: true });
+            });
+        }
+
+        // Initialize immediately
+        initializeLoadingScreenProtection();
+
+        // Also try after a short delay in case docs.js loads later
+        setTimeout(initializeLoadingScreenProtection, 100);
+    </script>
+</body>
+</html>
