@@ -603,7 +603,7 @@ body {
 .copy-btn {
   width: 24px;
   height: 24px;
-  border: none;
+  border: 1px solid var(--border-glass); /* Added a subtle border */
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
@@ -613,7 +613,24 @@ body {
 
 .copy-btn:hover {
   color: var(--color-primary);
-  background: var(--bg-glass);
+  background: var(--bg-glass-hover); /* Slightly more interactive hover */
+}
+
+.copy-btn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  color: var(--color-primary);
+  background: var(--bg-glass-hover);
+}
+
+.copy-btn.copied-feedback {
+  background: var(--color-success);
+  color: white; /* Ensure text is readable on success background */
+  cursor: default;
+}
+
+.copy-btn.copied-feedback svg {
+  stroke: white; /* Make SVG checkmark white */
 }
 
 .copy-btn svg {
@@ -853,6 +870,11 @@ body {
 .mission-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
+}
+
+.step-card:focus-within {
+  border-color: var(--color-accent); /* Use accent color for focus, different from code block hover */
+  box-shadow: var(--shadow-lg), 0 0 0 2px var(--color-accent); /* Combine existing hover shadow with focus ring */
 }
 
 .mission-icon {
@@ -2670,6 +2692,15 @@ body {
   max-width: 100%;
 }
 
+/* Assuming .code-snippet is used within .step-card or similar context */
+/* If .code-snippet is globally used, this selector might need adjustment */
+.step-card .code-snippet:hover, 
+.installation-preview .code-block:hover { /* Also target hero section's code block */
+  box-shadow: var(--shadow-lg); 
+  border-color: var(--color-accent); /* Accent border on hover */
+}
+
+
 .step-card {
   display: flex;
   gap: var(--space-6);
@@ -2702,6 +2733,13 @@ body {
   justify-content: center;
   font-size: var(--text-xl);
   font-weight: 700;
+  transition: transform 0.2s ease-out, background 0.2s ease-out; /* Added transition */
+}
+
+.step-card:hover .step-number { /* Animate when the card is hovered */
+  transform: scale(1.1);
+  /* Consider a slightly brighter gradient or a subtle shadow if desired */
+  /* background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%); */
 }
 
 .step-content {
