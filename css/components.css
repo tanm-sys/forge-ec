@@ -405,7 +405,8 @@
   height: 100%;
   background: var(--gradient-primary);
   border-radius: var(--radius-full);
-  transition: width var(--transition-slow);
+  transition: transform var(--transition-slow); /* Changed from width to transform */
+  transform-origin: left; /* Added for scaleX */
   position: relative;
 }
 
@@ -422,7 +423,7 @@
     rgba(255, 255, 255, 0.3),
     transparent
   );
-  animation: progressShimmer 2s infinite;
+  animation: progressShimmer 2s linear infinite; /* Changed to linear */
 }
 
 @keyframes progressShimmer {
