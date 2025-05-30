@@ -356,8 +356,442 @@ fn secure_scalar_mult(scalar: &[u8], point: &Point) -> Point {
 }</code></pre>
                             </div>
                         </section>
+
+                        <section id="implementation" class="docs-section">
+                            <h2>Implementation Guidelines</h2>
+                            <p>
+                                Best practices for implementing constant-time operations in Forge EC applications.
+                            </p>
+
+                            <h3>Using Forge EC's Constant-Time Primitives</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Constant-Time Operations with Forge EC</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::{PrivateKey, PublicKey, Signature, subtle::ConstantTimeEq};
+
+fn secure_signature_verification() -> Result<bool, Box<dyn std::error::Error>> {
+    let message = b"Important message";
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Sign message
+    let signature = private_key.sign(message)?;
+
+    // ✅ SECURE: Constant-time verification
+    let is_valid = public_key.verify_constant_time(message, &signature)?;
+
+    // ✅ SECURE: Constant-time comparison of signatures
+    let expected_signature = private_key.sign(message)?;
+    let signatures_match = signature.ct_eq(&expected_signature).into();
+
+    Ok(is_valid && signatures_match)
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::{PrivateKey, PublicKey, Signature, subtle::ConstantTimeEq};
+
+fn secure_signature_verification() -> Result<bool, Box<dyn std::error::Error>> {
+    let message = b"Important message";
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Sign message
+    let signature = private_key.sign(message)?;
+
+    // ✅ SECURE: Constant-time verification
+    let is_valid = public_key.verify_constant_time(message, &signature)?;
+
+    // ✅ SECURE: Constant-time comparison of signatures
+    let expected_signature = private_key.sign(message)?;
+    let signatures_match = signature.ct_eq(&expected_signature).into();
+
+    Ok(is_valid && signatures_match)
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="verification" class="docs-section">
+                            <h2>Verification Techniques</h2>
+                            <p>
+                                Methods to verify that your implementations are truly constant-time.
+                            </p>
+
+                            <h3>Testing for Timing Leaks</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Timing Analysis Test</span>
+                                    <button class="copy-btn" data-copy='use std::time::Instant;
+use forge_ec::{PrivateKey, subtle::ConstantTimeEq};
+
+#[cfg(test)]
+mod timing_tests {
+    use super::*;
+
+    #[test]
+    fn test_constant_time_comparison() {
+        let key1 = PrivateKey::new();
+        let key2 = PrivateKey::new();
+
+        let mut times_equal = Vec::new();
+        let mut times_different = Vec::new();
+
+        // Test equal keys
+        for _ in 0..1000 {
+            let start = Instant::now();
+            let _ = key1.to_bytes().ct_eq(&key1.to_bytes());
+            times_equal.push(start.elapsed().as_nanos());
+        }
+
+        // Test different keys
+        for _ in 0..1000 {
+            let start = Instant::now();
+            let _ = key1.to_bytes().ct_eq(&key2.to_bytes());
+            times_different.push(start.elapsed().as_nanos());
+        }
+
+        // Statistical analysis
+        let avg_equal: f64 = times_equal.iter().sum::<u128>() as f64 / times_equal.len() as f64;
+        let avg_different: f64 = times_different.iter().sum::<u128>() as f64 / times_different.len() as f64;
+
+        // Times should be statistically similar
+        let difference_ratio = (avg_equal - avg_different).abs() / avg_equal.max(avg_different);
+        assert!(difference_ratio < 0.1, "Timing difference too large: {}", difference_ratio);
+    }
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use std::time::Instant;
+use forge_ec::{PrivateKey, subtle::ConstantTimeEq};
+
+#[cfg(test)]
+mod timing_tests {
+    use super::*;
+
+    #[test]
+    fn test_constant_time_comparison() {
+        let key1 = PrivateKey::new();
+        let key2 = PrivateKey::new();
+
+        let mut times_equal = Vec::new();
+        let mut times_different = Vec::new();
+
+        // Test equal keys
+        for _ in 0..1000 {
+            let start = Instant::now();
+            let _ = key1.to_bytes().ct_eq(&key1.to_bytes());
+            times_equal.push(start.elapsed().as_nanos());
+        }
+
+        // Test different keys
+        for _ in 0..1000 {
+            let start = Instant::now();
+            let _ = key1.to_bytes().ct_eq(&key2.to_bytes());
+            times_different.push(start.elapsed().as_nanos());
+        }
+
+        // Statistical analysis
+        let avg_equal: f64 = times_equal.iter().sum::<u128>() as f64 / times_equal.len() as f64;
+        let avg_different: f64 = times_different.iter().sum::<u128>() as f64 / times_different.len() as f64;
+
+        // Times should be statistically similar
+        let difference_ratio = (avg_equal - avg_different).abs() / avg_equal.max(avg_different);
+        assert!(difference_ratio < 0.1, "Timing difference too large: {}", difference_ratio);
+    }
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="examples" class="docs-section">
+                            <h2>Complete Examples</h2>
+                            <p>
+                                Real-world examples of constant-time implementations.
+                            </p>
+
+                            <h3>Secure Authentication System</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Constant-Time Authentication</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::{PrivateKey, PublicKey, Signature, subtle::ConstantTimeEq};
+use std::collections::HashMap;
+
+pub struct SecureAuthenticator {
+    users: HashMap<String, PublicKey>,
+}
+
+impl SecureAuthenticator {
+    pub fn new() -> Self {
+        Self {
+            users: HashMap::new(),
+        }
+    }
+
+    pub fn register_user(&mut self, username: String, public_key: PublicKey) {
+        self.users.insert(username, public_key);
+    }
+
+    // ✅ SECURE: Constant-time authentication
+    pub fn authenticate(&self, username: &str, message: &[u8], signature: &Signature) -> bool {
+        // Always perform verification, even if user doesn't exist
+        let dummy_key = PublicKey::default();
+        let (key_to_use, user_exists) = match self.users.get(username) {
+            Some(key) => (key, true),
+            None => (&dummy_key, false),
+        };
+
+        // Always verify signature (constant-time)
+        let signature_valid = key_to_use
+            .verify_constant_time(message, signature)
+            .unwrap_or(false);
+
+        // Return result only if both user exists and signature is valid
+        user_exists && signature_valid
+    }
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::{PrivateKey, PublicKey, Signature, subtle::ConstantTimeEq};
+use std::collections::HashMap;
+
+pub struct SecureAuthenticator {
+    users: HashMap<String, PublicKey>,
+}
+
+impl SecureAuthenticator {
+    pub fn new() -> Self {
+        Self {
+            users: HashMap::new(),
+        }
+    }
+
+    pub fn register_user(&mut self, username: String, public_key: PublicKey) {
+        self.users.insert(username, public_key);
+    }
+
+    // ✅ SECURE: Constant-time authentication
+    pub fn authenticate(&self, username: &str, message: &[u8], signature: &Signature) -> bool {
+        // Always perform verification, even if user doesn't exist
+        let dummy_key = PublicKey::default();
+        let (key_to_use, user_exists) = match self.users.get(username) {
+            Some(key) => (key, true),
+            None => (&dummy_key, false),
+        };
+
+        // Always verify signature (constant-time)
+        let signature_valid = key_to_use
+            .verify_constant_time(message, signature)
+            .unwrap_or(false);
+
+        // Return result only if both user exists and signature is valid
+        user_exists && signature_valid
+    }
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="best-practices" class="docs-section">
+                            <h2>Best Practices</h2>
+                            <p>
+                                Essential guidelines for maintaining constant-time security.
+                            </p>
+
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Constant-Time Checklist:</strong>
+                                    <ul>
+                                        <li>✅ Use Forge EC's built-in constant-time operations</li>
+                                        <li>✅ Avoid conditional branches on secret data</li>
+                                        <li>✅ Use constant-time comparison functions</li>
+                                        <li>✅ Implement dummy operations for timing consistency</li>
+                                        <li>✅ Test for timing leaks with statistical analysis</li>
+                                        <li>✅ Clear sensitive data from memory securely</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <h3>Common Pitfalls to Avoid</h3>
+                            <ul class="docs-list">
+                                <li><strong>Early returns:</strong> Never return early based on secret data</li>
+                                <li><strong>Conditional operations:</strong> Avoid if/else branches on secrets</li>
+                                <li><strong>Variable-time algorithms:</strong> Use constant-time alternatives</li>
+                                <li><strong>Memory access patterns:</strong> Ensure consistent memory access</li>
+                                <li><strong>Compiler optimizations:</strong> Be aware of optimization effects</li>
+                            </ul>
+                        </section>
                     </article>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../../index.html#about">About</a>
+                        <a href="../../index.html#community">Community</a>
+                        <a href="guidelines.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Suppress browser extension errors that don't affect functionality
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            // Filter out known browser extension errors
+            if (message.includes('message port closed') ||
+                message.includes('Extension context invalidated') ||
+                message.includes('runtime.lastError')) {
+                return; // Suppress these harmless extension errors
+            }
+            originalConsoleError.apply(console, args);
+        };
+
+        try {
+            // Firebase CDN imports with timeout protection
+            const importTimeout = setTimeout(() => {
+                console.warn('Firebase import timeout - continuing without Firebase');
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            }, 5000);
+
+            Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js')
+            ]).then(([appModule, firestoreModule, authModule]) => {
+                clearTimeout(importTimeout);
+
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+                    authDomain: "forge-ec.firebaseapp.com",
+                    databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+                    projectId: "forge-ec",
+                    storageBucket: "forge-ec.firebasestorage.app",
+                    messagingSenderId: "436060720516",
+                    appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+                    measurementId: "G-1BVB7FLGRJ"
+                };
+
+                // Initialize Firebase
+                const app = appModule.initializeApp(firebaseConfig);
+                const db = firestoreModule.getFirestore(app);
+                const auth = authModule.getAuth(app);
+
+                // Make Firebase services globally available
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseAuth = auth;
+                window.firebaseInitialized = true;
+
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+                console.log('✅ Firebase initialized successfully');
+            }).catch(error => {
+                clearTimeout(importTimeout);
+                console.warn('Firebase initialization failed:', error);
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            });
+        } catch (error) {
+            console.warn('Firebase setup failed:', error);
+            window.firebaseInitialized = false;
+            window.dispatchEvent(new CustomEvent('firebaseReady'));
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="../docs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <!-- Unified Loading Screen Management -->
+    <script>
+        // Check if global LoadingScreenManager is available, otherwise use fallback
+        function initializeLoadingScreenProtection() {
+            // If docs.js LoadingScreenManager is available, it will handle everything
+            if (window.LoadingScreenManager) {
+                console.log('🔄 Using global LoadingScreenManager');
+                return;
+            }
+
+            // Fallback protection if docs.js fails to load
+            console.log('🔄 Using fallback loading screen protection');
+
+            let fallbackHidden = false;
+            function fallbackHide(reason) {
+                if (fallbackHidden || window.loadingScreenHidden) return;
+
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                    console.log(`🔄 Fallback hiding loading screen: ${reason}`);
+                    fallbackHidden = true;
+                    window.loadingScreenHidden = true;
+
+                    loadingScreen.style.opacity = '0';
+                    loadingScreen.style.pointerEvents = 'none';
+                    loadingScreen.style.transition = 'opacity 0.3s ease-out';
+
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.style.display = 'none';
+                            setTimeout(() => {
+                                if (loadingScreen.parentNode) {
+                                    loadingScreen.remove();
+                                }
+                            }, 100);
+                        }
+                    }, 300);
+                }
+            }
+
+            // Fallback timeouts
+            setTimeout(() => fallbackHide('Fallback timeout (3s)'), 3000);
+            setTimeout(() => fallbackHide('Fallback timeout (6s)'), 6000);
+
+            // Fallback event listeners
+            window.addEventListener('load', () => setTimeout(() => fallbackHide('Fallback page load'), 500));
+            document.addEventListener('DOMContentLoaded', () => setTimeout(() => fallbackHide('Fallback DOM loaded'), 1000));
+
+            ['click', 'keydown', 'touchstart'].forEach(event => {
+                document.addEventListener(event, () => fallbackHide('Fallback user interaction'), { once: true });
+            });
+        }
+
+        // Initialize immediately
+        initializeLoadingScreenProtection();
+
+        // Also try after a short delay in case docs.js loads later
+        setTimeout(initializeLoadingScreenProtection, 100);
+    </script>
+</body>
+</html>
