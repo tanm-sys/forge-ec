@@ -23,10 +23,10 @@ class ForgeECApp {
     this.setupNavigation();
     this.setupAnimations();
 
-    // Setup auth related functionality
-    this.createAuthModal(); // Ensure modal is created
-    this.setupAuthEventListeners(); // Setup general event listeners for auth
-    this.updateAuthUI(); // Check initial auth state from localStorage
+    // Setup auth related functionality (REMOVED)
+    // this.createAuthModal(); 
+    // this.setupAuthEventListeners(); 
+    // this.updateAuthUI(); 
 
     // Load external data
     await this.loadGitHubData();
@@ -40,9 +40,9 @@ class ForgeECApp {
     console.log('🦀 Forge EC website initialized successfully!');
   }
 
-  createAuthModal() {
+  // createAuthModal() { // ENTIRE METHOD REMOVED / COMMENTED OUT
     // Prevent duplicate modal creation
-    const existingModal = document.getElementById('auth-modal');
+    // const existingModal = document.getElementById('auth-modal');
     if (existingModal) {
       console.log('🔄 Auth modal already exists, skipping creation');
       return;
@@ -119,9 +119,9 @@ class ForgeECApp {
       </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('✅ Auth modal created successfully');
-  }
+    // document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // console.log('✅ Auth modal created successfully');
+  // }
 
   getCurrentSection() {
     const hash = window.location.hash.substring(1);
@@ -223,100 +223,98 @@ class ForgeECApp {
     document.addEventListener('keydown', (e) => this.handleKeyboard(e));
   }
 
-  setupAuthEventListeners() {
+  // setupAuthEventListeners() { // ENTIRE METHOD REMOVED / COMMENTED OUT
     // Prevent multiple event listener registrations
-    if (this.authEventListenersSetup) {
-      console.log('🔄 Auth event listeners already setup, skipping...');
-      return;
-    }
+    // if (this.authEventListenersSetup) {
+    //   console.log('🔄 Auth event listeners already setup, skipping...');
+    //   return;
+    // }
 
-    console.log('🎯 Setting up authentication event listeners...');
+    // console.log('🎯 Setting up authentication event listeners...');
 
     // Create a single delegated event listener for all auth-related clicks
-    this.authClickHandler = (e) => {
-      try {
+    // this.authClickHandler = (e) => {
+    //   try {
         // Auth trigger button
-        if (e.target.matches('#auth-trigger') || e.target.closest('#auth-trigger')) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🔐 Auth trigger clicked');
-          this.showAuthModal();
-          return;
-        }
+        // if (e.target.matches('#auth-trigger') || e.target.closest('#auth-trigger')) {
+        //   e.preventDefault();
+        //   e.stopPropagation();
+        //   console.log('🔐 Auth trigger clicked');
+        //   this.showAuthModal();
+        //   return;
+        // }
 
         // Modal close events
-        if (e.target.matches('#auth-modal-close')) {
-          e.preventDefault();
-          this.hideAuthModal();
-          return;
-        }
+        // if (e.target.matches('#auth-modal-close')) {
+        //   e.preventDefault();
+        //   this.hideAuthModal();
+        //   return;
+        // }
 
-        if (e.target.matches('#auth-modal') && !e.target.closest('.modal-content')) {
-          e.preventDefault();
-          this.hideAuthModal();
-          return;
-        }
+        // if (e.target.matches('#auth-modal') && !e.target.closest('.modal-content')) {
+        //   e.preventDefault();
+        //   this.hideAuthModal();
+        //   return;
+        // }
 
         // Tab switching
-        if (e.target.matches('.auth-tab')) {
-          e.preventDefault();
-          this.switchAuthTab(e.target.dataset.tab);
-          return;
-        }
+        // if (e.target.matches('.auth-tab')) {
+        //   e.preventDefault();
+        //   this.switchAuthTab(e.target.dataset.tab);
+        //   return;
+        // }
 
         // Social auth buttons are removed, so no listeners for them.
 
         // Forgot password link
-        if (e.target.matches('#forgot-password')) {
-          e.preventDefault();
-          this.handleForgotPassword();
-          return;
-        }
+        // if (e.target.matches('#forgot-password')) {
+        //   e.preventDefault();
+        //   this.handleForgotPassword();
+        //   return;
+        // }
 
         // User menu events
-        if (e.target.matches('#user-menu-btn') || e.target.closest('#user-menu-btn')) {
-          e.preventDefault();
-          this.toggleUserMenu();
-          return;
-        }
+        // if (e.target.matches('#user-menu-btn') || e.target.closest('#user-menu-btn')) {
+        //   e.preventDefault();
+        //   this.toggleUserMenu();
+        //   return;
+        // }
 
-        if (e.target.matches('#user-signout') || e.target.closest('#user-signout')) {
-          e.preventDefault();
-          this.handleSignOut();
-          return;
-        }
-      } catch (error) {
-        console.error('Error in auth click handler:', error);
-      }
-    };
+        // if (e.target.matches('#user-signout') || e.target.closest('#user-signout')) {
+        //   e.preventDefault();
+        //   this.handleSignOut();
+        //   return;
+        // }
+    //   } catch (error) {
+    //     console.error('Error in auth click handler:', error);
+    //   }
+    // };
 
     // Form submission handler
-    this.authSubmitHandler = (e) => {
-      try {
-        if (e.target.matches('#email-signin-form')) {
-          e.preventDefault();
-          this.handleEmailSignIn(e);
-          return;
-        }
+    // this.authSubmitHandler = (e) => {
+    //   try {
+    //     if (e.target.matches('#email-signin-form')) {
+    //       e.preventDefault();
+    //       this.handleEmailSignIn(e);
+    //       return;
+    //     }
 
-        if (e.target.matches('#email-signup-form')) {
-          e.preventDefault();
-          this.handleEmailSignUp(e);
-          return;
-        }
-      } catch (error) {
-        console.error('Error in auth submit handler:', error);
-      }
-    };
+    //     if (e.target.matches('#email-signup-form')) {
+    //       e.preventDefault();
+    //       this.handleEmailSignUp(e);
+    //       return;
+    //     }
+    //   } catch (error) {
+    //     console.error('Error in auth submit handler:', error);
+    //   }
+    // };
 
     // Register event listeners
-    document.addEventListener('click', this.authClickHandler);
-    document.addEventListener('submit', this.authSubmitHandler);
-
-    // Mark as setup to prevent duplicates
-    this.authEventListenersSetup = true;
-    console.log('✅ Auth event listeners setup complete');
-  }
+    // document.removeEventListener('click', this.authClickHandler); // Clean up if previously attached
+    // document.removeEventListener('submit', this.authSubmitHandler); // Clean up if previously attached
+    // this.authEventListenersSetup = false; // Reset setup flag
+    // console.log('Auth event listeners REMOVED');
+  // }
 
   initializeTheme() {
     // Check for saved theme or system preference
@@ -759,235 +757,21 @@ class ForgeECApp {
     }
   }
 
-  // Authentication Methods
-  showAuthModal() {
-    try {
-      console.log('🔐 Showing authentication modal...');
-
-      // Prevent multiple modal openings
-      if (this.isAuthModalOpen) {
-        console.log('🔄 Auth modal already open, skipping...');
-        return;
-      }
-
-      const modal = document.getElementById('auth-modal');
-      if (!modal) {
-        console.warn('⚠️ Auth modal not found, creating...');
-        this.createAuthModal();
-        // Try again after creation
-        setTimeout(() => this.showAuthModal(), 100);
-        return;
-      }
-
-      // Set loading state
-      this.isAuthModalOpen = true;
-
-      // Show modal with smooth animation
-      requestAnimationFrame(() => {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
-        // Add fade-in animation
-        modal.style.opacity = '0';
-        requestAnimationFrame(() => {
-          modal.style.transition = 'opacity 0.3s ease';
-          modal.style.opacity = '1';
-        });
-
-        console.log('✅ Auth modal displayed successfully');
-      });
-    } catch (error) {
-      console.error('❌ Error showing auth modal:', error);
-      this.isAuthModalOpen = false;
-    }
-  }
-
-  hideAuthModal() {
-    try {
-      console.log('🔐 Hiding authentication modal...');
-
-      const modal = document.getElementById('auth-modal');
-      if (modal) {
-        // Add fade-out animation
-        modal.style.transition = 'opacity 0.3s ease';
-        modal.style.opacity = '0';
-
-        setTimeout(() => {
-          modal.style.display = 'none';
-          document.body.style.overflow = '';
-          this.isAuthModalOpen = false;
-          console.log('✅ Auth modal hidden successfully');
-        }, 300);
-      } else {
-        this.isAuthModalOpen = false;
-      }
-    } catch (error) {
-      console.error('❌ Error hiding auth modal:', error);
-      this.isAuthModalOpen = false;
-    }
-  }
-
-  switchAuthTab(tab) {
-    const tabs = document.querySelectorAll('.auth-tab');
-    const forms = document.querySelectorAll('.auth-form');
-
-    tabs.forEach(t => t.classList.remove('active'));
-    forms.forEach(f => f.classList.remove('active'));
-
-    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-    document.getElementById(`${tab}-form`).classList.add('active');
-  }
-
-  async handleGoogleSignIn() {
-    // Firebase specific logic removed
-    this.showAuthFeedback('Google Sign-In is currently not available.', 'info');
-    console.log('🔐 Google Sign-In clicked (feature disabled)');
-  }
-
-  async handleGitHubSignIn() {
-    // Firebase specific logic removed
-    this.showAuthFeedback('GitHub Sign-In is currently not available.', 'info');
-    console.log('🔐 GitHub Sign-In clicked (feature disabled)');
-  }
-
-  async handleEmailSignIn(e) {
-    const email = document.getElementById('signin-email').value;
-    const password = document.getElementById('signin-password').value;
-
-    if (!email || !password) {
-      this.handleAuthError('Please enter both email and password.');
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
-    const user = users.find(u => u.email === email);
-
-    if (!user || user.password !== password) { // IMPORTANT: Never store/compare plain text passwords in a real app!
-      this.handleAuthError('Invalid email or password.');
-      return;
-    }
-
-    localStorage.setItem('forgeECCurrentUser', JSON.stringify({ email: user.email, name: user.name }));
-    this.currentUser = { email: user.email, name: user.name };
-    this.updateAuthUI();
-    this.hideAuthModal();
-    this.showAuthFeedback('Signed in successfully!', 'success');
-    console.log('👤 User signed in:', user.email);
-  }
-
-  async handleEmailSignUp(e) {
-    const name = document.getElementById('signup-name').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-
-    if (!name || !email || !password) {
-      this.handleAuthError('Please fill in all fields.');
-      return;
-    }
-    if (password.length < 6) {
-      this.handleAuthError('Password must be at least 6 characters.');
-      return;
-    }
-
-    let users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
-    if (users.find(u => u.email === email)) {
-      this.handleAuthError('Email already in use.');
-      return;
-    }
-
-    const newUser = { name, email, password }; // IMPORTANT: Never store plain text passwords in a real app!
-    users.push(newUser);
-    localStorage.setItem('forgeECUsers', JSON.stringify(users));
-
-    localStorage.setItem('forgeECCurrentUser', JSON.stringify({ email: newUser.email, name: newUser.name }));
-    this.currentUser = { email: newUser.email, name: newUser.name };
-    this.updateAuthUI();
-    this.hideAuthModal();
-    this.showAuthFeedback('Account created successfully!', 'success');
-    console.log('👤 User account created:', newUser.email);
-  }
-
-  async handleForgotPassword() {
-    this.showAuthFeedback('Password reset is not available in this version.', 'info');
-    console.log('🔐 Password reset clicked (feature disabled)');
-  }
-
-  async handleSignOut() {
-    localStorage.removeItem('forgeECCurrentUser');
-    this.currentUser = null;
-    this.updateAuthUI();
-    this.showAuthFeedback('Signed out successfully', 'info');
-    console.log('👤 User signed out');
-  }
-
-  updateAuthUI() {
-    const storedUser = localStorage.getItem('forgeECCurrentUser');
-    if (storedUser) {
-      this.currentUser = JSON.parse(storedUser);
-    } else {
-      this.currentUser = null;
-    }
-
-    const authTrigger = document.getElementById('auth-trigger');
-    const userMenuTrigger = document.getElementById('user-menu-trigger');
-
-    if (this.currentUser) {
-      if (authTrigger) authTrigger.style.display = 'none';
-      if (userMenuTrigger) {
-        userMenuTrigger.style.display = 'flex';
-        this.updateUserProfile();
-      }
-    } else {
-      if (authTrigger) authTrigger.style.display = 'block';
-      if (userMenuTrigger) userMenuTrigger.style.display = 'none';
-    }
-  }
-
-  updateUserProfile() {
-    const user = this.currentUser;
-    if (!user) return;
-
-    const userInfo = document.querySelector('#user-menu-trigger .user-info');
-    if (userInfo) {
-      userInfo.innerHTML = `
-        <img src="/assets/default-avatar.png" alt="${user.name || user.email}" class="user-avatar">
-        <span class="user-name">${user.name || user.email}</span>
-      `;
-    }
-  }
-
-  toggleUserMenu() {
-    // This will be implemented when user menu is added
-    console.log('User menu toggle');
-  }
-
-  handleAuthError(errorMessage) {
-    // Simplified error handling
-    let message = typeof errorMessage === 'string' ? errorMessage : 'An authentication error occurred. Please try again.';
-    this.showAuthFeedback(message, 'error');
-    console.error('🚨 Authentication Error:', message);
-  }
-
-  showAuthFeedback(message, type = 'info') {
-    // Create or update feedback element
-    let feedback = document.getElementById('auth-feedback');
-
-    if (!feedback) {
-      feedback = document.createElement('div');
-      feedback.id = 'auth-feedback';
-      feedback.className = 'auth-feedback';
-      document.body.appendChild(feedback);
-    }
-
-    feedback.className = `auth-feedback ${type}`;
-    feedback.textContent = message;
-    feedback.style.display = 'block';
-
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-      feedback.style.display = 'none';
-    }, 5000);
-  }
+  // Authentication Methods (REMOVED / COMMENTED OUT)
+  // showAuthModal() { ... }
+  // hideAuthModal() { ... }
+  // switchAuthTab(tab) { ... }
+  // async handleGoogleSignIn() { ... }
+  // async handleGitHubSignIn() { ... }
+  // async handleEmailSignIn(e) { ... }
+  // async handleEmailSignUp(e) { ... }
+  // async handleForgotPassword() { ... }
+  // async handleSignOut() { ... }
+  // updateAuthUI() { ... }
+  // updateUserProfile() { ... }
+  // toggleUserMenu() { ... }
+  // handleAuthError(errorMessage) { ... }
+  // showAuthFeedback(message, type = 'info') { ... }
 
   // Fallback/Demo auth methods are now replaced by localStorage logic
   // setupFallbackAuth() and handleFallbackAuth() are no longer needed.
@@ -1001,11 +785,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export for use in other modules
 window.ForgeECApp = ForgeECApp;
 
-// Global function to show Auth modal (no longer Firebase specific)
-window.showAuthModal = function() {
-  if (window.forgeECApp && typeof window.forgeECApp.showAuthModal === 'function') {
-    window.forgeECApp.showAuthModal();
-  } else {
-    console.warn('Forge EC App not initialized or auth modal not available');
-  }
-};
+// Global function to show Auth modal (REMOVED / COMMENTED OUT)
+// window.showAuthModal = function() {
+//   if (window.forgeECApp && typeof window.forgeECApp.showAuthModal === 'function') {
+//     window.forgeECApp.showAuthModal();
+//   } else {
+//     console.warn('Forge EC App not initialized or auth modal not available');
+//   }
+// };
