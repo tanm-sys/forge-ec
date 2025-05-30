@@ -421,3 +421,293 @@ println!("Ed25519 signature verified successfully!");</code></pre>
                                 </div>
                             </div>
                         </section>
+
+                        <section id="schnorr" class="docs-section">
+                            <h2>Schnorr Signatures</h2>
+                            <p>
+                                Schnorr signatures provide excellent security properties and are used in Bitcoin's Taproot upgrade.
+                                They offer key aggregation and batch verification capabilities.
+                            </p>
+
+                            <h3>Basic Schnorr Implementation</h3>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Schnorr Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::signatures::schnorr::*;
+use forge_ec::curves::secp256k1::Secp256k1;
+
+// Generate Schnorr keypair
+let private_key = PrivateKey::<Secp256k1>::new();
+let public_key = private_key.public_key();
+
+// Message to sign
+let message = b"Hello, Schnorr!";
+
+// Create Schnorr signature
+let signature = private_key.sign(message)?;
+
+// Verify signature
+let is_valid = public_key.verify(message, &signature)?;
+assert!(is_valid);
+
+println!("Schnorr signature verified successfully!");'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::signatures::schnorr::*;
+use forge_ec::curves::secp256k1::Secp256k1;
+
+// Generate Schnorr keypair
+let private_key = PrivateKey::<Secp256k1>::new();
+let public_key = private_key.public_key();
+
+// Message to sign
+let message = b"Hello, Schnorr!";
+
+// Create Schnorr signature
+let signature = private_key.sign(message)?;
+
+// Verify signature
+let is_valid = public_key.verify(message, &signature)?;
+assert!(is_valid);
+
+println!("Schnorr signature verified successfully!");</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="key-management" class="docs-section">
+                            <h2>Key Management</h2>
+                            <p>
+                                Proper key management is essential for cryptographic security. Forge EC provides
+                                secure key generation, serialization, and storage utilities.
+                            </p>
+
+                            <h3>Key Generation</h3>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Secure Key Generation</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::signatures::ecdsa::PrivateKey;
+use forge_ec::curves::secp256k1::Secp256k1;
+use forge_ec::rng::SecureRng;
+
+// Use cryptographically secure RNG
+let mut rng = SecureRng::new();
+let private_key = PrivateKey::<Secp256k1>::generate(&mut rng);
+
+// Derive public key
+let public_key = private_key.public_key();
+
+// Secure serialization
+let private_bytes = private_key.to_secure_bytes();
+let public_bytes = public_key.to_bytes();'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::signatures::ecdsa::PrivateKey;
+use forge_ec::curves::secp256k1::Secp256k1;
+use forge_ec::rng::SecureRng;
+
+// Use cryptographically secure RNG
+let mut rng = SecureRng::new();
+let private_key = PrivateKey::<Secp256k1>::generate(&mut rng);
+
+// Derive public key
+let public_key = private_key.public_key();
+
+// Secure serialization
+let private_bytes = private_key.to_secure_bytes();
+let public_bytes = public_key.to_bytes();</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="error-handling" class="docs-section">
+                            <h2>Error Handling</h2>
+                            <p>
+                                Forge EC provides comprehensive error handling for all signature operations.
+                                Always handle errors appropriately in production code.
+                            </p>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Error Handling Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::signatures::ecdsa::*;
+use forge_ec::errors::*;
+
+fn safe_signature_verification(
+    public_key: &PublicKey,
+    message: &[u8],
+    signature: &Signature
+) -> Result<bool, SignatureError> {
+    match public_key.verify(message, signature) {
+        Ok(is_valid) => {
+            if is_valid {
+                println!("✅ Signature verification successful");
+            } else {
+                println!("❌ Signature verification failed");
+            }
+            Ok(is_valid)
+        }
+        Err(e) => {
+            eprintln!("Error during verification: {}", e);
+            Err(e)
+        }
+    }
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::signatures::ecdsa::*;
+use forge_ec::errors::*;
+
+fn safe_signature_verification(
+    public_key: &PublicKey,
+    message: &[u8],
+    signature: &Signature
+) -> Result<bool, SignatureError> {
+    match public_key.verify(message, signature) {
+        Ok(is_valid) => {
+            if is_valid {
+                println!("✅ Signature verification successful");
+            } else {
+                println!("❌ Signature verification failed");
+            }
+            Ok(is_valid)
+        }
+        Err(e) => {
+            eprintln!("Error during verification: {}", e);
+            Err(e)
+        }
+    }
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="security" class="docs-section">
+                            <h2>Security Notes</h2>
+                            <p>
+                                Important security considerations when using digital signatures:
+                            </p>
+
+                            <div class="warning-box">
+                                <div class="warning-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </div>
+                                <div class="warning-content">
+                                    <strong>Security Guidelines:</strong>
+                                    <ul>
+                                        <li>Never reuse nonces in signature generation</li>
+                                        <li>Always use cryptographically secure random number generators</li>
+                                        <li>Protect private keys with appropriate access controls</li>
+                                        <li>Validate all inputs before processing</li>
+                                        <li>Use constant-time operations to prevent timing attacks</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../../index.html#about">About</a>
+                        <a href="../../index.html#community">Community</a>
+                        <a href="../security/vulnerability-disclosure.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Firebase CDN imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+            authDomain: "forge-ec.firebaseapp.com",
+            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+            projectId: "forge-ec",
+            storageBucket: "forge-ec.firebasestorage.app",
+            messagingSenderId: "436060720516",
+            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+            measurementId: "G-1BVB7FLGRJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase services globally available
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        window.firebaseInitialized = true;
+
+        // Dispatch ready event
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="../docs.js"></script>
+
+    <!-- Fallback loading screen timeout -->
+    <script>
+        // Ensure loading screen is hidden after maximum 10 seconds
+        setTimeout(function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                console.warn('Loading screen timeout - hiding loading screen as fallback');
+                loadingScreen.style.opacity = '0';
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                }, 300);
+            }
+        }, 10000);
+
+        // Also hide loading screen when page is fully loaded as additional fallback
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('Page loaded - hiding loading screen as fallback');
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(function() {
+                        loadingScreen.style.display = 'none';
+                    }, 300);
+                }
+            }, 2000); // Wait 2 seconds after page load
+        });
+    </script>
+</body>
+</html>

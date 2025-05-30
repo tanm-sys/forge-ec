@@ -399,3 +399,264 @@ println!("Public key: {}", public_hex);</code></pre>
                                 </div>
                             </div>
                         </section>
+
+                        <section id="signing" class="docs-section">
+                            <h2>Digital Signatures</h2>
+                            <p>
+                                Create digital signatures to prove authenticity and integrity of your data:
+                            </p>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Signing Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::ecdsa::*;
+use forge_ec::curves::secp256k1::*;
+
+fn sign_message(private_key: &PrivateKey, message: &[u8]) -> Result<Signature, SignError> {
+    // Hash the message (SHA-256 is used internally)
+    let signature = private_key.sign(message)?;
+
+    println!("Message signed successfully");
+    println!("Signature: {}", signature.to_hex());
+
+    Ok(signature)
+}
+
+// Usage
+let private_key = PrivateKey::new();
+let message = b"Important document content";
+let signature = sign_message(&private_key, message)?;'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::ecdsa::*;
+use forge_ec::curves::secp256k1::*;
+
+fn sign_message(private_key: &PrivateKey, message: &[u8]) -> Result<Signature, SignError> {
+    // Hash the message (SHA-256 is used internally)
+    let signature = private_key.sign(message)?;
+
+    println!("Message signed successfully");
+    println!("Signature: {}", signature.to_hex());
+
+    Ok(signature)
+}
+
+// Usage
+let private_key = PrivateKey::new();
+let message = b"Important document content";
+let signature = sign_message(&private_key, message)?;</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="verification" class="docs-section">
+                            <h2>Signature Verification</h2>
+                            <p>
+                                Verify digital signatures to ensure data authenticity:
+                            </p>
+
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">Verification Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::ecdsa::*;
+
+fn verify_signature(
+    public_key: &PublicKey,
+    message: &[u8],
+    signature: &Signature
+) -> Result<bool, VerifyError> {
+    let is_valid = public_key.verify(message, signature)?;
+
+    if is_valid {
+        println!("✅ Signature is valid - message is authentic");
+    } else {
+        println!("❌ Signature is invalid - message may be tampered");
+    }
+
+    Ok(is_valid)
+}
+
+// Usage
+let is_authentic = verify_signature(&public_key, message, &signature)?;
+assert!(is_authentic);'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::ecdsa::*;
+
+fn verify_signature(
+    public_key: &PublicKey,
+    message: &[u8],
+    signature: &Signature
+) -> Result<bool, VerifyError> {
+    let is_valid = public_key.verify(message, signature)?;
+
+    if is_valid {
+        println!("✅ Signature is valid - message is authentic");
+    } else {
+        println!("❌ Signature is invalid - message may be tampered");
+    }
+
+    Ok(is_valid)
+}
+
+// Usage
+let is_authentic = verify_signature(&public_key, message, &signature)?;
+assert!(is_authentic);</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="next-steps" class="docs-section">
+                            <h2>Next Steps</h2>
+                            <p>
+                                Congratulations! You've successfully created your first Forge EC application. Here's what to explore next:
+                            </p>
+
+                            <div class="next-steps-grid">
+                                <div class="next-step-card glass-enhanced">
+                                    <div class="step-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14,2 14,8 20,8"/>
+                                        </svg>
+                                    </div>
+                                    <h3>Installation Guide</h3>
+                                    <p>Learn about advanced installation options and feature flags</p>
+                                    <a href="installation.html" class="step-link">Read Guide →</a>
+                                </div>
+
+                                <div class="next-step-card glass-enhanced">
+                                    <div class="step-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <circle cx="12" cy="12" r="3"/>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                        </svg>
+                                    </div>
+                                    <h3>Configuration</h3>
+                                    <p>Customize Forge EC for your specific use case and requirements</p>
+                                    <a href="configuration.html" class="step-link">Configure →</a>
+                                </div>
+
+                                <div class="next-step-card glass-enhanced">
+                                    <div class="step-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                        </svg>
+                                    </div>
+                                    <h3>API Reference</h3>
+                                    <p>Explore the complete API documentation for all modules</p>
+                                    <a href="../api/signatures.html" class="step-link">Browse API →</a>
+                                </div>
+
+                                <div class="next-step-card glass-enhanced">
+                                    <div class="step-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        </svg>
+                                    </div>
+                                    <h3>Security Guidelines</h3>
+                                    <p>Learn best practices for secure cryptographic implementations</p>
+                                    <a href="../security/guidelines.html" class="step-link">Learn Security →</a>
+                                </div>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../../index.html#about">About</a>
+                        <a href="../../index.html#community">Community</a>
+                        <a href="../security/vulnerability-disclosure.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Firebase CDN imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+            authDomain: "forge-ec.firebaseapp.com",
+            databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+            projectId: "forge-ec",
+            storageBucket: "forge-ec.firebasestorage.app",
+            messagingSenderId: "436060720516",
+            appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+            measurementId: "G-1BVB7FLGRJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase services globally available
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        window.firebaseInitialized = true;
+
+        // Dispatch ready event
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="../docs.js"></script>
+
+    <!-- Fallback loading screen timeout -->
+    <script>
+        // Ensure loading screen is hidden after maximum 10 seconds
+        setTimeout(function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                console.warn('Loading screen timeout - hiding loading screen as fallback');
+                loadingScreen.style.opacity = '0';
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                }, 300);
+            }
+        }, 10000);
+
+        // Also hide loading screen when page is fully loaded as additional fallback
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && loadingScreen.style.display !== 'none') {
+                    console.log('Page loaded - hiding loading screen as fallback');
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(function() {
+                        loadingScreen.style.display = 'none';
+                    }, 300);
+                }
+            }, 2000); // Wait 2 seconds after page load
+        });
+    </script>
+</body>
+</html>

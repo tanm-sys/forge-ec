@@ -14,34 +14,80 @@ class DocsPortal {
   }
 
   async init() {
-    // Initialize core functionality
-    this.updateLoadingProgress(10);
-    this.setupEventListeners();
+    try {
+      // Initialize core functionality
+      this.updateLoadingProgress(10);
+      this.setupEventListeners();
 
-    this.updateLoadingProgress(30);
-    this.initializeTheme();
+      this.updateLoadingProgress(30);
+      this.initializeTheme();
 
-    this.updateLoadingProgress(50);
-    this.setupScrollEffects();
+      this.updateLoadingProgress(50);
+      this.setupScrollEffects();
 
-    this.updateLoadingProgress(70);
-    this.setupTableOfContents();
+      this.updateLoadingProgress(70);
+      this.setupTableOfContents();
 
-    this.updateLoadingProgress(80);
-    this.setupCodeBlocks();
+      this.updateLoadingProgress(80);
+      this.setupCodeBlocks();
 
-    this.updateLoadingProgress(90);
-    this.setupBookmarks();
+      this.updateLoadingProgress(90);
+      this.setupBookmarks();
 
-    // Initialize Firebase if available
-    if (window.firebaseInitialized) {
-      this.setupFirebaseFeatures();
+      // Initialize Firebase if available (with timeout)
+      this.updateLoadingProgress(95);
+      await this.initializeFirebaseWithTimeout();
+
+      this.updateLoadingProgress(100);
+
+      // Hide loading screen
+      this.hideLoadingScreen();
+
+      console.log('📚 Forge EC Documentation Portal initialized successfully!');
+    } catch (error) {
+      console.error('Error initializing documentation portal:', error);
+      // Still hide loading screen even if there's an error
+      this.hideLoadingScreen();
     }
+  }
 
-    // Hide loading screen
-    this.hideLoadingScreen();
-    
-    console.log('📚 Forge EC Documentation Portal initialized successfully!');
+  async initializeFirebaseWithTimeout() {
+    return new Promise((resolve) => {
+      // Set a timeout to ensure loading screen is hidden even if Firebase fails
+      const timeout = setTimeout(() => {
+        console.warn('Firebase initialization timeout - continuing without Firebase features');
+        resolve();
+      }, 3000); // 3 second timeout
+
+      // Check if Firebase is already initialized
+      if (window.firebaseInitialized) {
+        clearTimeout(timeout);
+        this.setupFirebaseFeatures();
+        resolve();
+        return;
+      }
+
+      // Listen for Firebase ready event
+      const handleFirebaseReady = () => {
+        clearTimeout(timeout);
+        window.removeEventListener('firebaseReady', handleFirebaseReady);
+        this.setupFirebaseFeatures();
+        resolve();
+      };
+
+      window.addEventListener('firebaseReady', handleFirebaseReady);
+
+      // Also check periodically in case the event was missed
+      const checkInterval = setInterval(() => {
+        if (window.firebaseInitialized) {
+          clearTimeout(timeout);
+          clearInterval(checkInterval);
+          window.removeEventListener('firebaseReady', handleFirebaseReady);
+          this.setupFirebaseFeatures();
+          resolve();
+        }
+      }, 100);
+    });
   }
 
   updateLoadingProgress(progress) {
