@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Guide - Forge EC Documentation</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Complete configuration guide for Forge EC. Learn how to customize the library for your specific use case and optimize performance.">
+    <meta name="keywords" content="forge ec, rust, configuration, features, optimization, setup">
+    <meta name="author" content="Tanmay Patil">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Configuration Guide - Forge EC Documentation">
+    <meta property="og:description" content="Customize Forge EC for your specific use case">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/docs/getting-started/configuration.html">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/animations.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="../docs.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+    
+    <!-- Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-text">Loading Configuration Guide...</div>
+            <div class="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar docs-navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="../../index.html" class="brand-link">
+                    <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                    </svg>
+                    <span class="brand-text">Forge EC</span>
+                </a>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="../../index.html" class="nav-link">Home</a>
+                <a href="../../index.html#features" class="nav-link">Features</a>
+                <a href="../../index.html#about" class="nav-link">About</a>
+                <a href="../index.html" class="nav-link active">Documentation</a>
+                <a href="../../index.html#examples" class="nav-link">Examples</a>
+                <a href="../../index.html#community" class="nav-link">Community</a>
+                <a href="../../index.html#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="auth-btn" id="auth-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Content -->
+    <main class="docs-main">
+        <!-- Documentation Header -->
+        <div class="docs-header">
+            <div class="container">
+                <div class="docs-header-content">
+                    <div class="docs-meta">
+                        <span class="docs-category">Getting Started</span>
+                        <span class="docs-level intermediate">Intermediate</span>
+                        <span class="docs-time">8 min read</span>
+                    </div>
+                    <h1 class="docs-title">Configuration Guide</h1>
+                    <p class="docs-subtitle">
+                        Customize Forge EC for your specific use case. Learn about feature flags, 
+                        performance optimization, and environment-specific configurations.
+                    </p>
+                    <div class="docs-actions">
+                        <button class="bookmark-btn" id="bookmark-btn" aria-label="Bookmark this page">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Content -->
+        <div class="docs-content">
+            <div class="container">
+                <div class="docs-layout">
+                    <!-- Table of Contents -->
+                    <aside class="docs-sidebar">
+                        <div class="toc-container glass-enhanced">
+                            <h3 class="toc-title">Table of Contents</h3>
+                            <nav class="toc" id="toc">
+                                <ul class="toc-list">
+                                    <li class="toc-item">
+                                        <a href="#overview" class="toc-link">Configuration Overview</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#feature-flags" class="toc-link">Feature Flags</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#environment-config" class="toc-link">Environment Configuration</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#performance" class="toc-link">Performance Optimization</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#security-config" class="toc-link">Security Configuration</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#examples" class="toc-link">Configuration Examples</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#troubleshooting" class="toc-link">Troubleshooting</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <article class="docs-article">
+                        <section id="overview" class="docs-section">
+                            <h2>Configuration Overview</h2>
+                            <p>
+                                Forge EC provides extensive configuration options to optimize the library for your specific use case. 
+                                Whether you're building for embedded systems, web applications, or high-performance servers, 
+                                proper configuration ensures optimal performance and security.
+                            </p>
+
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Configuration Principles:</strong>
+                                    <ul>
+                                        <li>Enable only the features you need to minimize attack surface</li>
+                                        <li>Choose appropriate curves for your security requirements</li>
+                                        <li>Configure memory management for your environment</li>
+                                        <li>Optimize for either performance or memory usage</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="feature-flags" class="docs-section">
+                            <h2>Feature Flags</h2>
+                            <p>
+                                Forge EC uses Cargo feature flags to enable optional functionality. 
+                                This allows you to include only the components you need, reducing binary size and compilation time.
+                            </p>
+
+                            <h3>Core Features</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Core Features</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = { version = "0.1.0", default-features = false, features = ["std"] }
+
+# Core features:
+# - "std": Standard library support (recommended)
+# - "alloc": Allocation support for no_std environments
+# - "zeroize": Secure memory clearing'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = { version = "0.1.0", default-features = false, features = ["std"] }
+
+# Core features:
+# - "std": Standard library support (recommended)
+# - "alloc": Allocation support for no_std environments  
+# - "zeroize": Secure memory clearing</code></pre>
+                            </div>
+                            <h3>Cryptographic Features</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Cryptographic Features</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "ecdsa",      # ECDSA signatures
+        "eddsa",      # EdDSA signatures (Ed25519)
+        "schnorr",    # Schnorr signatures
+        "ecdh",       # Elliptic Curve Diffie-Hellman
+        "hash2curve", # Hash-to-curve (RFC 9380)
+    ]
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "ecdsa",      # ECDSA signatures
+        "eddsa",      # EdDSA signatures (Ed25519)
+        "schnorr",    # Schnorr signatures
+        "ecdh",       # Elliptic Curve Diffie-Hellman
+        "hash2curve", # Hash-to-curve (RFC 9380)
+    ]
+}</code></pre>
+                            </div>
+
+                            <h3>Serialization and Platform Features</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Platform Features</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "serde",      # Serialization support
+        "wasm",       # WebAssembly compatibility
+        "parallel",   # Parallel computation support
+        "rand",       # Random number generation
+    ]
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "serde",      # Serialization support
+        "wasm",       # WebAssembly compatibility
+        "parallel",   # Parallel computation support
+        "rand",       # Random number generation
+    ]
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="environment-config" class="docs-section">
+                            <h2>Environment Configuration</h2>
+                            <p>
+                                Different deployment environments require different configurations.
+                                Here are optimized configurations for common scenarios.
+                            </p>
+
+                            <h3>Embedded Systems (no_std)</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Embedded Configuration</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    default-features = false,
+    features = [
+        "alloc",      # Heap allocation support
+        "zeroize",    # Secure memory clearing
+        "ecdsa",      # Minimal signature support
+    ]
+}
+
+# Optional: Custom allocator for embedded
+[dependencies.linked_list_allocator]
+version = "0.10"
+optional = true'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    default-features = false,
+    features = [
+        "alloc",      # Heap allocation support
+        "zeroize",    # Secure memory clearing
+        "ecdsa",      # Minimal signature support
+    ]
+}
+
+# Optional: Custom allocator for embedded
+[dependencies.linked_list_allocator]
+version = "0.10"
+optional = true</code></pre>
+                            </div>
+
+                            <h3>Web Applications (WASM)</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - WASM Configuration</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "wasm",       # WebAssembly support
+        "serde",      # JSON serialization
+        "ecdsa",      # Web-compatible signatures
+        "eddsa",      # Ed25519 for modern web
+        "rand",       # Browser-compatible RNG
+    ]
+}
+
+[dependencies.wasm-bindgen]
+version = "0.2"
+
+[dependencies.js-sys]
+version = "0.3"'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "wasm",       # WebAssembly support
+        "serde",      # JSON serialization
+        "ecdsa",      # Web-compatible signatures
+        "eddsa",      # Ed25519 for modern web
+        "rand",       # Browser-compatible RNG
+    ]
+}
+
+[dependencies.wasm-bindgen]
+version = "0.2"
+
+[dependencies.js-sys]
+version = "0.3"</code></pre>
+                            </div>
+
+                            <h3>High-Performance Servers</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Server Configuration</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "std",        # Full standard library
+        "parallel",   # Multi-threading support
+        "ecdsa",      # ECDSA signatures
+        "eddsa",      # EdDSA signatures
+        "schnorr",    # Schnorr signatures
+        "ecdh",       # Key exchange
+        "hash2curve", # Advanced hashing
+        "serde",      # Serialization
+        "zeroize",    # Security
+    ]
+}
+
+[dependencies.rayon]
+version = "1.7"  # For parallel processing'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "std",        # Full standard library
+        "parallel",   # Multi-threading support
+        "ecdsa",      # ECDSA signatures
+        "eddsa",      # EdDSA signatures
+        "schnorr",    # Schnorr signatures
+        "ecdh",       # Key exchange
+        "hash2curve", # Advanced hashing
+        "serde",      # Serialization
+        "zeroize",    # Security
+    ]
+}
+
+[dependencies.rayon]
+version = "1.7"  # For parallel processing</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="performance" class="docs-section">
+                            <h2>Performance Optimization</h2>
+                            <p>
+                                Optimize Forge EC performance based on your specific requirements and constraints.
+                            </p>
+
+                            <h3>Compiler Optimizations</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Release Profile</span>
+                                    <button class="copy-btn" data-copy='[profile.release]
+opt-level = 3          # Maximum optimization
+lto = true             # Link-time optimization
+codegen-units = 1      # Single codegen unit for better optimization
+panic = "abort"        # Smaller binary size
+strip = true           # Remove debug symbols
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true           # Keep debug info for profiling'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[profile.release]
+opt-level = 3          # Maximum optimization
+lto = true             # Link-time optimization
+codegen-units = 1      # Single codegen unit for better optimization
+panic = "abort"        # Smaller binary size
+strip = true           # Remove debug symbols
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true           # Keep debug info for profiling</code></pre>
+                            </div>
+
+                            <h3>Runtime Configuration</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">main.rs - Performance Configuration</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::{Config, CurveType, OptimizationLevel};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Configure for maximum performance
+    let config = Config::builder()
+        .curve(CurveType::Secp256k1)
+        .optimization_level(OptimizationLevel::Speed)
+        .enable_parallel_processing(true)
+        .precompute_tables(true)
+        .build()?;
+
+    // Initialize with configuration
+    forge_ec::init_with_config(config)?;
+
+    // Your cryptographic operations here...
+    Ok(())
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::{Config, CurveType, OptimizationLevel};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Configure for maximum performance
+    let config = Config::builder()
+        .curve(CurveType::Secp256k1)
+        .optimization_level(OptimizationLevel::Speed)
+        .enable_parallel_processing(true)
+        .precompute_tables(true)
+        .build()?;
+
+    // Initialize with configuration
+    forge_ec::init_with_config(config)?;
+
+    // Your cryptographic operations here...
+    Ok(())
+}</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="security-config" class="docs-section">
+                            <h2>Security Configuration</h2>
+                            <p>
+                                Configure Forge EC for maximum security in production environments.
+                            </p>
+
+                            <h3>Memory Security</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">main.rs - Secure Memory Configuration</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::{Config, SecurityLevel, MemoryProtection};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Configure for maximum security
+    let config = Config::builder()
+        .security_level(SecurityLevel::Maximum)
+        .memory_protection(MemoryProtection::Enabled)
+        .constant_time_operations(true)
+        .secure_random_source(true)
+        .build()?;
+
+    // Initialize with security configuration
+    forge_ec::init_with_config(config)?;
+
+    // Enable memory protection
+    forge_ec::enable_memory_protection()?;
+
+    Ok(())
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::{Config, SecurityLevel, MemoryProtection};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Configure for maximum security
+    let config = Config::builder()
+        .security_level(SecurityLevel::Maximum)
+        .memory_protection(MemoryProtection::Enabled)
+        .constant_time_operations(true)
+        .secure_random_source(true)
+        .build()?;
+
+    // Initialize with security configuration
+    forge_ec::init_with_config(config)?;
+
+    // Enable memory protection
+    forge_ec::enable_memory_protection()?;
+
+    Ok(())
+}</code></pre>
+                            </div>
+
+                            <div class="warning-box">
+                                <div class="warning-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </div>
+                                <div class="warning-content">
+                                    <strong>Security Considerations:</strong>
+                                    <ul>
+                                        <li>Always enable constant-time operations in production</li>
+                                        <li>Use secure memory clearing (zeroize feature)</li>
+                                        <li>Validate all inputs before cryptographic operations</li>
+                                        <li>Use hardware random number generators when available</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="examples" class="docs-section">
+                            <h2>Configuration Examples</h2>
+                            <p>
+                                Complete configuration examples for common use cases.
+                            </p>
+
+                            <h3>Blockchain Application</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - Blockchain Configuration</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "std",
+        "ecdsa",      # Bitcoin/Ethereum signatures
+        "schnorr",    # Bitcoin Taproot
+        "hash2curve", # BLS signatures
+        "serde",      # Transaction serialization
+        "parallel",   # Block validation
+        "zeroize",    # Key security
+    ]
+}
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    features = [
+        "std",
+        "ecdsa",      # Bitcoin/Ethereum signatures
+        "schnorr",    # Bitcoin Taproot
+        "hash2curve", # BLS signatures
+        "serde",      # Transaction serialization
+        "parallel",   # Block validation
+        "zeroize",    # Key security
+    ]
+}
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1</code></pre>
+                            </div>
+
+                            <h3>IoT Device</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Cargo.toml - IoT Configuration</span>
+                                    <button class="copy-btn" data-copy='[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    default-features = false,
+    features = [
+        "alloc",      # Minimal heap usage
+        "ecdsa",      # Lightweight signatures
+        "zeroize",    # Security
+    ]
+}
+
+[profile.release]
+opt-level = "s"   # Optimize for size
+lto = true
+panic = "abort"
+strip = true'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-toml">[dependencies]
+forge-ec = {
+    version = "0.1.0",
+    default-features = false,
+    features = [
+        "alloc",      # Minimal heap usage
+        "ecdsa",      # Lightweight signatures
+        "zeroize",    # Security
+    ]
+}
+
+[profile.release]
+opt-level = "s"   # Optimize for size
+lto = true
+panic = "abort"
+strip = true</code></pre>
+                            </div>
+                        </section>
+
+                        <section id="troubleshooting" class="docs-section">
+                            <h2>Troubleshooting</h2>
+                            <p>
+                                Common configuration issues and their solutions.
+                            </p>
+
+                            <h3>Compilation Issues</h3>
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Feature Conflicts:</strong>
+                                    <p>If you encounter feature conflicts, ensure you're not enabling incompatible features:</p>
+                                    <ul>
+                                        <li><code>std</code> and <code>no_std</code> are mutually exclusive</li>
+                                        <li><code>wasm</code> requires specific target configuration</li>
+                                        <li><code>parallel</code> requires <code>std</code> feature</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <h3>Performance Issues</h3>
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Optimization Tips:</strong>
+                                    <ul>
+                                        <li>Enable LTO for release builds</li>
+                                        <li>Use <code>opt-level = 3</code> for maximum performance</li>
+                                        <li>Consider <code>codegen-units = 1</code> for better optimization</li>
+                                        <li>Profile your application to identify bottlenecks</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <h3>Memory Issues</h3>
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Memory Management:</strong>
+                                    <ul>
+                                        <li>Use <code>alloc</code> feature for no_std environments</li>
+                                        <li>Enable <code>zeroize</code> for secure memory clearing</li>
+                                        <li>Consider custom allocators for embedded systems</li>
+                                        <li>Monitor memory usage in constrained environments</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Forge EC. Built with ❤️ by <a href="https://github.com/tanm-sys" target="_blank">Tanmay Patil</a></p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-links">
+                        <a href="../../index.html#about">About</a>
+                        <a href="../../index.html#community">Community</a>
+                        <a href="../security/guidelines.html">Security</a>
+                        <a href="https://github.com/tanm-sys/forge-ec" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Configuration -->
+    <script type="module">
+        // Suppress browser extension errors that don't affect functionality
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            // Filter out known browser extension errors
+            if (message.includes('message port closed') ||
+                message.includes('Extension context invalidated') ||
+                message.includes('runtime.lastError')) {
+                return; // Suppress these harmless extension errors
+            }
+            originalConsoleError.apply(console, args);
+        };
+
+        try {
+            // Firebase CDN imports with timeout protection
+            const importTimeout = setTimeout(() => {
+                console.warn('Firebase import timeout - continuing without Firebase');
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            }, 5000);
+
+            Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js'),
+                import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js')
+            ]).then(([appModule, firestoreModule, authModule]) => {
+                clearTimeout(importTimeout);
+
+                // Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDBG9YcnodA8Lhpwb3wOoyp93VcqXygcrQ",
+                    authDomain: "forge-ec.firebaseapp.com",
+                    databaseURL: "https://forge-ec-default-rtdb.firebaseio.com",
+                    projectId: "forge-ec",
+                    storageBucket: "forge-ec.firebasestorage.app",
+                    messagingSenderId: "436060720516",
+                    appId: "1:436060720516:web:4c4ac16371db82fcfd61d1",
+                    measurementId: "G-1BVB7FLGRJ"
+                };
+
+                // Initialize Firebase
+                const app = appModule.initializeApp(firebaseConfig);
+                const db = firestoreModule.getFirestore(app);
+                const auth = authModule.getAuth(app);
+
+                // Make Firebase services globally available
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseAuth = auth;
+                window.firebaseInitialized = true;
+
+                // Dispatch ready event
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+                console.log('✅ Firebase initialized successfully');
+            }).catch(error => {
+                clearTimeout(importTimeout);
+                console.warn('Firebase initialization failed:', error);
+                window.firebaseInitialized = false;
+                window.dispatchEvent(new CustomEvent('firebaseReady'));
+            });
+        } catch (error) {
+            console.warn('Firebase setup failed:', error);
+            window.firebaseInitialized = false;
+            window.dispatchEvent(new CustomEvent('firebaseReady'));
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="../docs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <!-- Enhanced Loading Screen Protection -->
+    <script>
+        // Multiple layers of loading screen protection to prevent freezing
+        let loadingScreenHidden = false;
+
+        function hideLoadingScreen(reason) {
+            if (loadingScreenHidden) return;
+
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                console.log(`🔄 Hiding loading screen: ${reason}`);
+                loadingScreenHidden = true;
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.pointerEvents = 'none';
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                    if (loadingScreen.parentNode) {
+                        loadingScreen.remove();
+                    }
+                }, 300);
+            }
+        }
+
+        // Layer 1: Immediate timeout for critical failures (3 seconds)
+        setTimeout(() => hideLoadingScreen('Critical timeout (3s)'), 3000);
+
+        // Layer 2: Standard timeout (7 seconds)
+        setTimeout(() => hideLoadingScreen('Standard timeout (7s)'), 7000);
+
+        // Layer 3: Maximum timeout (12 seconds)
+        setTimeout(() => hideLoadingScreen('Maximum timeout (12s)'), 12000);
+
+        // Layer 4: Page load event
+        window.addEventListener('load', function() {
+            setTimeout(() => hideLoadingScreen('Page load event'), 1000);
+        });
+
+        // Layer 5: DOM content loaded event
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => hideLoadingScreen('DOM content loaded'), 2000);
+        });
+
+        // Layer 6: Visibility change (when user switches tabs and comes back)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(() => hideLoadingScreen('Visibility change'), 500);
+            }
+        });
+
+        // Layer 7: User interaction fallback
+        ['click', 'keydown', 'touchstart'].forEach(event => {
+            document.addEventListener(event, function() {
+                setTimeout(() => hideLoadingScreen('User interaction'), 100);
+            }, { once: true });
+        });
+
+        // Layer 8: Browser extension error detection
+        window.addEventListener('error', function(event) {
+            if (event.message && (
+                event.message.includes('message port closed') ||
+                event.message.includes('Extension context invalidated') ||
+                event.message.includes('runtime.lastError')
+            )) {
+                // Browser extension error detected, hide loading screen immediately
+                hideLoadingScreen('Browser extension error detected');
+                return false; // Prevent error from propagating
+            }
+        });
+
+        // Layer 9: Unhandled promise rejection (Firebase failures)
+        window.addEventListener('unhandledrejection', function(event) {
+            console.warn('Unhandled promise rejection detected:', event.reason);
+            setTimeout(() => hideLoadingScreen('Unhandled promise rejection'), 500);
+        });
+    </script>
+</body>
+</html>

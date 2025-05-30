@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hashing Module - Forge EC API Reference</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Complete API reference for Forge EC Hashing module. Hash-to-curve, HMAC, and cryptographic hash functions with RFC 9380 compliance.">
+    <meta name="keywords" content="forge ec, hashing, hash-to-curve, HMAC, RFC 9380, rust, API">
+    <meta name="author" content="Tanmay Patil">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Hashing Module - Forge EC API Reference">
+    <meta property="og:description" content="Hash-to-curve, HMAC, and cryptographic hash functions API">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forge-ec.dev/docs/api/hashing.html">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/animations.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    <link rel="stylesheet" href="../docs.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+    
+    <!-- Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-text">Loading Hashing API Reference...</div>
+            <div class="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar docs-navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="../../index.html" class="brand-link">
+                    <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                    </svg>
+                    <span class="brand-text">Forge EC</span>
+                </a>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="../../index.html" class="nav-link">Home</a>
+                <a href="../../index.html#features" class="nav-link">Features</a>
+                <a href="../../index.html#about" class="nav-link">About</a>
+                <a href="../index.html" class="nav-link active">Documentation</a>
+                <a href="../../index.html#examples" class="nav-link">Examples</a>
+                <a href="../../index.html#community" class="nav-link">Community</a>
+                <a href="../../index.html#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="auth-btn" id="auth-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Content -->
+    <main class="docs-main">
+        <!-- Documentation Header -->
+        <div class="docs-header">
+            <div class="container">
+                <div class="docs-header-content">
+                    <div class="docs-meta">
+                        <span class="docs-category">API Reference</span>
+                        <span class="docs-level advanced">Advanced</span>
+                        <span class="docs-time">10 min read</span>
+                    </div>
+                    <h1 class="docs-title">Hashing Module</h1>
+                    <p class="docs-subtitle">
+                        Hash-to-curve, HMAC, and cryptographic hash functions with RFC 9380 compliance. 
+                        Secure hashing primitives for elliptic curve cryptography.
+                    </p>
+                    <div class="docs-actions">
+                        <button class="bookmark-btn" id="bookmark-btn" aria-label="Bookmark this page">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Content -->
+        <div class="docs-content">
+            <div class="container">
+                <div class="docs-layout">
+                    <!-- Table of Contents -->
+                    <aside class="docs-sidebar">
+                        <div class="toc-container glass-enhanced">
+                            <h3 class="toc-title">Table of Contents</h3>
+                            <nav class="toc" id="toc">
+                                <ul class="toc-list">
+                                    <li class="toc-item">
+                                        <a href="#overview" class="toc-link">Overview</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#hash-to-curve" class="toc-link">Hash-to-Curve (RFC 9380)</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#hmac" class="toc-link">HMAC Functions</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#hash-functions" class="toc-link">Hash Functions</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#key-derivation" class="toc-link">Key Derivation</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#domain-separation" class="toc-link">Domain Separation</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#examples" class="toc-link">Examples</a>
+                                    </li>
+                                    <li class="toc-item">
+                                        <a href="#security" class="toc-link">Security Considerations</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <article class="docs-article">
+                        <section id="overview" class="docs-section">
+                            <h2>Overview</h2>
+                            <p>
+                                The Hashing module provides cryptographically secure hash functions, hash-to-curve 
+                                implementations compliant with RFC 9380, HMAC functions, and key derivation utilities. 
+                                All functions are designed for constant-time operation and resistance to side-channel attacks.
+                            </p>
+
+                            <div class="info-box">
+                                <div class="info-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="info-content">
+                                    <strong>Key Features:</strong>
+                                    <ul>
+                                        <li>RFC 9380 compliant hash-to-curve implementation</li>
+                                        <li>Constant-time HMAC operations</li>
+                                        <li>Multiple hash function support (SHA-256, SHA-512, BLAKE3)</li>
+                                        <li>Secure key derivation functions (HKDF, PBKDF2)</li>
+                                        <li>Domain separation for security</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="hash-to-curve" class="docs-section">
+                            <h2>Hash-to-Curve (RFC 9380)</h2>
+                            <p>
+                                RFC 9380 compliant hash-to-curve implementation for mapping arbitrary data to elliptic curve points.
+                            </p>
+
+                            <h3>Basic Hash-to-Curve</h3>
+                            <div class="code-block-container">
+                                <div class="code-block-header">
+                                    <span class="code-block-title">Hash-to-Curve Example</span>
+                                    <button class="copy-btn" data-copy='use forge_ec::{Point, hashing::hash_to_curve};
+
+fn hash_to_curve_example() -> Result<(), Box<dyn std::error::Error>> {
+    // Hash arbitrary data to a curve point
+    let message = b"Hello, Forge EC!";
+    let domain_separator = b"FORGE_EC_DEMO";
+    
+    // Hash to curve point (RFC 9380 compliant)
+    let point = hash_to_curve(message, domain_separator)?;
+    println!("Hashed to point: {:?}", point);
+
+    // The same input always produces the same point
+    let point2 = hash_to_curve(message, domain_separator)?;
+    assert_eq!(point, point2);
+
+    // Different domain separator produces different point
+    let point3 = hash_to_curve(message, b"DIFFERENT_DOMAIN")?;
+    assert_ne!(point, point3);
+
+    Ok(())
+}'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <pre><code class="language-rust">use forge_ec::{Point, hashing::hash_to_curve};
+
+fn hash_to_curve_example() -> Result<(), Box<dyn std::error::Error>> {
+    // Hash arbitrary data to a curve point
+    let message = b"Hello, Forge EC!";
+    let domain_separator = b"FORGE_EC_DEMO";
+    
+    // Hash to curve point (RFC 9380 compliant)
+    let point = hash_to_curve(message, domain_separator)?;
+    println!("Hashed to point: {:?}", point);
+
+    // The same input always produces the same point
+    let point2 = hash_to_curve(message, domain_separator)?;
+    assert_eq!(point, point2);
+
+    // Different domain separator produces different point
+    let point3 = hash_to_curve(message, b"DIFFERENT_DOMAIN")?;
+    assert_ne!(point, point3);
+
+    Ok(())
+}</code></pre>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </main>
