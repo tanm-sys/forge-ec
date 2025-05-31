@@ -38,12 +38,13 @@ class AnimationController {
     }, observerOptions);
 
     // Observe elements with animation classes
+    // .stagger-item is removed from direct observation; it's handled by its container.
     const animatedElements = document.querySelectorAll([
-      '.animate-on-scroll',
-      '.stagger-item',
+      '.animate-on-scroll', // This will be the main trigger
+      // '.stagger-item', // Removed: Handled by container
       '.reveal-mask',
       '.counter-animate',
-      '.animate-title-by-char' // Add new class to observer targets
+      '.animate-title-by-char'
     ].join(', '));
 
     animatedElements.forEach(el => observer.observe(el));
@@ -53,15 +54,28 @@ class AnimationController {
   triggerAnimation(element, ratio) {
     if (this.isReducedMotion) return;
 
+    // If an element is a stagger-item and its container is already animating/animated,
+    // it might be handled by the container's stagger logic.
+    // However, the primary model is that containers are animated, and they handle their children.
+    // This check prevents direct animation of stagger-items if they are somehow still observed.
+    if (element.classList.contains('stagger-item') && !element.classList.contains('stagger-container')) {
+        // Check if parent is already doing stagger, if so, item might not need individual trigger.
+        // For simplicity, we assume stagger-items are not independently animated if part of a container.
+        if (element.parentElement.classList.contains('stagger-container-animating')) return;
+    }
+
     const animationType = this.getAnimationType(element);
 
     switch (animationType) {
+      case 'staggerContainer': // New type for the container
+        this.animateStagger(element); // Call animateStagger on the container
+        break;
       case 'fadeInUp':
         this.animateFadeInUp(element);
         break;
-      case 'stagger':
-        this.animateStagger(element);
-        break;
+      // case 'stagger': // This case should ideally not be hit for individual items if container handles it
+      //   // this.animateStagger(element); // This was problematic
+      //   break;
       case 'reveal':
         this.animateReveal(element);
         break;
@@ -80,47 +94,96 @@ class AnimationController {
   }
 
   getAnimationType(element) {
-    if (element.classList.contains('animate-title-by-char')) return 'titleChars'; // Check for new class first
-    if (element.classList.contains('stagger-item')) return 'stagger';
+    if (element.classList.contains('animate-title-by-char')) return 'titleChars';
+    // Check for stagger-container on an animate-on-scroll element
+    if (element.classList.contains('animate-on-scroll') && element.classList.contains('stagger-container')) return 'staggerContainer';
+    // if (element.classList.contains('stagger-item')) return 'stagger'; // Avoid this for individual items
     if (element.classList.contains('reveal-mask')) return 'reveal';
     if (element.classList.contains('counter-animate')) return 'counter';
     if (element.classList.contains('typewriter')) return 'typewriter';
-    return 'fadeInUp';
+    // Default for .animate-on-scroll if no other type matches
+    if (element.classList.contains('animate-on-scroll')) return 'fadeInUp';
+    return 'default'; // Fallback for any other observed elements if any
+  }
+
+  animateTitleChars(element) {
+    if (this.isReducedMotion || element.classList.contains('chars-animated')) return;
+    element.classList.add('chars-animated'); // Mark as processed
+
+    const text = element.textContent.trim();
+    element.innerHTML = ''; // Clear original text
+
+    text.split('').forEach((char, index) => {
+      const span = document.createElement('span');
+      span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space for spaces
+      span.style.display = 'inline-block';
+      span.style.opacity = '0';
+      span.style.transform = 'translateY(20px) scale(0.8)';
+      // More sophisticated animation could vary X/Y/rotation slightly
+      span.style.transition = 'opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Faster
+      span.style.transitionDelay = `${index * 0.02}s`; // Faster stagger delay
+      element.appendChild(span);
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { // Double rAF for some browsers to ensure transition picks up
+          span.style.opacity = '1';
+          span.style.transform = 'translateY(0) scale(1)';
+        });
+      });
+    });
+     // Add a class to indicate the parent has had its chars animated, for potential parent-level styling
+    element.classList.add('title-chars-processed');
   }
 
   animateFadeInUp(element) {
     if (element.classList.contains('animated')) return;
 
-    element.style.opacity = '0';
-    element.style.transform = 'translateY(30px)';
-    element.style.transition = 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    const delay = parseInt(element.dataset.animationDelay, 10) || 0;
 
-    requestAnimationFrame(() => {
-      element.style.opacity = '1';
-      element.style.transform = 'translateY(0)';
-      element.classList.add('animated');
-    });
+    setTimeout(() => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(30px)';
+      element.style.transition = 'opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
+      requestAnimationFrame(() => {
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+        element.classList.add('animated');
+      });
+    }, delay);
   }
 
-  animateStagger(element) {
-    const parent = element.closest('.stagger-container') || element.parentElement;
-    const items = parent.querySelectorAll('.stagger-item');
+  animateStagger(containerElement) { // Parameter is now the container
+    if (containerElement.classList.contains('stagger-container-animating') || containerElement.classList.contains('animated')) return;
 
-    items.forEach((item, index) => {
-      if (item.classList.contains('animated')) return;
+    const delay = parseInt(containerElement.dataset.animationDelay, 10) || 0;
 
-      setTimeout(() => {
+    setTimeout(() => {
+      containerElement.classList.add('stagger-container-animating');
+      // Mark container itself as animated if it's also an animate-on-scroll element
+      // This ensures it doesn't re-trigger its own separate 'fadeInUp' if it was also a generic animate-on-scroll
+      if (containerElement.classList.contains('animate-on-scroll')) {
+        containerElement.classList.add('animated');
+      }
+
+      const items = containerElement.querySelectorAll('.stagger-item');
+      items.forEach((item, index) => {
+        if (item.classList.contains('animated')) return; // Skip if somehow already animated
+
+        // Apply initial styles for animation
         item.style.opacity = '0';
         item.style.transform = 'translateY(30px)';
-        item.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        item.style.transition = 'opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        item.style.transitionDelay = `${index * 100}ms`; // Stagger delay for each item
 
         requestAnimationFrame(() => {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
-          item.classList.add('animated');
+          item.classList.add('animated'); // Mark item as animated
         });
-      }, index * 100);
-    });
+      });
+    }, delay);
   }
 
   animateReveal(element) {
@@ -226,18 +289,22 @@ class AnimationController {
 
     // Parallax effects
     const parallaxElements = document.querySelectorAll('.parallax');
-    parallaxElements.forEach(element => {
-      const speed = parseFloat(element.dataset.speed) || 0.5;
-      const yPos = -(scrollY * speed);
-      element.style.transform = `translateY(${yPos}px)`;
-    });
+    if (parallaxElements.length > 0) {
+      parallaxElements.forEach(element => {
+        const speed = parseFloat(element.dataset.speed) || 0.5;
+        const yPos = -(scrollY * speed);
+        element.style.transform = `translateY(${yPos}px)`;
+      });
+    } // else { console.log("No .parallax elements found for scroll animation."); }
 
     // Progress bars based on scroll
     const progressBars = document.querySelectorAll('.scroll-progress');
-    progressBars.forEach(bar => {
-      const progress = (scrollY / (document.body.scrollHeight - windowHeight)) * 100;
-      bar.style.width = `${Math.min(progress, 100)}%`;
-    });
+    if (progressBars.length > 0) {
+      progressBars.forEach(bar => {
+        const progress = (scrollY / (document.body.scrollHeight - windowHeight)) * 100;
+        bar.style.width = `${Math.min(progress, 100)}%`;
+      });
+    } // else { console.log("No .scroll-progress elements found for scroll animation."); }
   }
 
   setupHoverAnimations() {
@@ -247,18 +314,20 @@ class AnimationController {
     // Morphing Blob Button System
     this.setupMorphingButtons();
 
-    // Tilt effects (existing)
-    this.setupTiltEffects();
+    // Tilt effects (existing) - Commented out as .tilt elements are not used in current HTML
+    // this.setupTiltEffects();
   }
 
   setupAdvancedMagneticEffects() {
     const magneticElements = document.querySelectorAll('.magnetic');
+    if (magneticElements.length === 0) return; // No elements to setup
     const magneticRadius = 100; // 100px magnetic field radius
 
     magneticElements.forEach(element => {
       // Add magnetic field indicator
       element.style.position = 'relative';
-      element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      // Apply a more comprehensive initial transition
+      element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 150ms ease-out, box-shadow 150ms ease-out';
 
       // Enhanced magnetic interaction
       const handleMouseMove = (e) => {
@@ -275,7 +344,7 @@ class AnimationController {
         if (distance < magneticRadius) {
           // Calculate magnetic force (stronger when closer)
           const force = Math.max(0, (magneticRadius - distance) / magneticRadius);
-          const magneticStrength = force * 0.3; // Adjust magnetic strength
+          const magneticStrength = force * 0.25; // Slightly reduced strength
 
           const moveX = deltaX * magneticStrength;
           const moveY = deltaY * magneticStrength;
@@ -304,7 +373,9 @@ class AnimationController {
 
         // Restore normal transition after spring-back
         setTimeout(() => {
-          element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          // element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          // Restore comprehensive transition
+          element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 150ms ease-out, box-shadow 150ms ease-out';
         }, 300);
       };
 
@@ -321,6 +392,9 @@ class AnimationController {
   }
 
   applyMagneticField(sourceElement, mouseX, mouseY, force) {
+    // PERF: Querying all .magnetic elements on every mousemove of any magnetic element can be costly
+    // if there are many such elements. Consider optimizing if performance issues arise,
+    // e.g., by caching these elements or using a more spatially-aware query.
     const nearbyElements = document.querySelectorAll('.magnetic');
     const fieldRadius = 150;
 
@@ -421,44 +495,42 @@ class AnimationController {
   }
 
   setupTiltEffects() {
-    // Tilt effects
-    const tiltElements = document.querySelectorAll('.tilt');
-
-    tiltElements.forEach(element => {
-      element.addEventListener('mousemove', (e) => {
-        if (this.isReducedMotion) return;
-
-        const rect = element.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        const rotateX = (y - centerY) / centerY * -10;
-        const rotateY = (x - centerX) / centerX * 10;
-
-        element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      });
-
-      element.addEventListener('mouseleave', () => {
-        element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-      });
-    });
+    // Tilt effects - Commented out as .tilt elements are not used in current HTML
+    // const tiltElements = document.querySelectorAll('.tilt');
+    // if (tiltElements.length > 0) {
+    //   tiltElements.forEach(element => {
+    //     element.addEventListener('mousemove', (e) => {
+    //       if (this.isReducedMotion) return;
+    //       const rect = element.getBoundingClientRect();
+    //       const x = e.clientX - rect.left;
+    //       const y = e.clientY - rect.top;
+    //       const centerX = rect.width / 2;
+    //       const centerY = rect.height / 2;
+    //       const rotateX = (y - centerY) / centerY * -10;
+    //       const rotateY = (x - centerX) / centerX * 10;
+    //       element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    //     });
+    //     element.addEventListener('mouseleave', () => {
+    //       element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+    //     });
+    //   });
+    // } // else { console.log("No .tilt elements found for setupTiltEffects."); }
   }
 
   setupClickAnimations() {
     // Ripple effects (general .ripple class - this might be the old one, review if it's still used)
     // This will be superseded or complemented by the new quick press ripple for standard buttons.
-    const rippleElements = document.querySelectorAll('.ripple'); 
-    rippleElements.forEach(element => {
-      element.addEventListener('click', (e) => {
-        if (this.isReducedMotion || element.classList.contains('morph-button')) return; // Don't apply to morph buttons if they have their own
-        this.createQuickRipple(element, e, 'rgba(255, 255, 255, 0.3)', 'ripple-animation'); // Default ripple
+    const rippleElements = document.querySelectorAll('.ripple');
+    if (rippleElements.length > 0) {
+      rippleElements.forEach(element => {
+        element.addEventListener('click', (e) => {
+          if (this.isReducedMotion || element.classList.contains('morph-button')) return; // Don't apply to morph buttons if they have their own
+          this.createQuickRipple(element, e, 'rgba(255, 255, 255, 0.3)', 'ripple-animation'); // Default ripple
+        });
       });
-    });
+    } // else { console.log("No general .ripple elements found for click animations."); }
 
-    // Button press effects
+    // Button press effects (new system)
     const buttons = document.querySelectorAll('button, .btn');
 
     buttons.forEach(button => {
@@ -596,10 +668,13 @@ class AnimationController {
   updateAnimationsForAccessibility() {
     if (this.isReducedMotion) {
       // Disable all animations
+      // NOTE: This primarily affects CSS animations/transitions that USE these variables.
+      // JS-driven animations check this.isReducedMotion directly.
+      // CSS keyframe animations defined in advancedAnimationsCSS do not currently use these variables.
       document.documentElement.style.setProperty('--animation-duration', '0.01ms');
       document.documentElement.style.setProperty('--transition-duration', '0.01ms');
 
-      // Remove animation classes
+      // Remove animation classes and set final states for common scroll animations
       const animatedElements = document.querySelectorAll('.animate-on-scroll, .stagger-item');
       animatedElements.forEach(element => {
         element.style.opacity = '1';
