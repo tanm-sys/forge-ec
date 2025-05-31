@@ -270,62 +270,75 @@ class GitHubAPI {
 
     // Update stars count with data-target override
     const starsElements = document.querySelectorAll('#repo-stars, #stars-count, .stars-count');
-    starsElements.forEach(element => {
-      // Override the hardcoded data-target value
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', stars);
-      }
-      this.animateNumber(element, stars, element.id === 'stars-count' ? '⭐ ' : '');
-    });
+    if (starsElements.length > 0) {
+      starsElements.forEach(element => {
+        if (element.hasAttribute('data-target')) {
+          element.setAttribute('data-target', stars);
+        }
+        this.animateNumber(element, stars, (element.id === 'stars-count' || element.classList.contains('stars-count')) ? '⭐ ' : '');
+      });
+    } else {
+      console.warn("No elements found for general star counts (e.g., #repo-stars, #stars-count).");
+    }
 
     // Update forks count with data-target override
     const forksElements = document.querySelectorAll('#repo-forks, #forks-count, .forks-count');
-    forksElements.forEach(element => {
-      // Override the hardcoded data-target value
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', forks);
-      }
-      this.animateNumber(element, forks, element.id === 'forks-count' ? '🍴 ' : '');
-    });
+    if (forksElements.length > 0) {
+      forksElements.forEach(element => {
+        if (element.hasAttribute('data-target')) {
+          element.setAttribute('data-target', forks);
+        }
+        this.animateNumber(element, forks, (element.id === 'forks-count' || element.classList.contains('forks-count')) ? '🍴 ' : '');
+      });
+    } else {
+      console.warn("No elements found for general fork counts (e.g., #repo-forks, #forks-count).");
+    }
 
     // Update watchers count
-    const watchersElements = document.querySelectorAll('#repo-watchers');
-    watchersElements.forEach(element => {
-      this.animateNumber(element, watchers);
-    });
+    const watchersElement = document.getElementById('repo-watchers');
+    if (watchersElement) {
+      this.animateNumber(watchersElement, watchers);
+    } else {
+      console.warn("Element with ID 'repo-watchers' not found. Skipping watchers update.");
+    }
 
     // Update repository description
-    const descriptionElements = document.querySelectorAll('.repo-description');
-    descriptionElements.forEach(element => {
-      element.textContent = repoInfo.description || 'Modern Rust library for secure, high-performance elliptic curve cryptography';
-    });
+    const descriptionElement = document.querySelector('.repo-description');
+    if (descriptionElement) {
+      descriptionElement.textContent = repoInfo.description || 'Modern Rust library for secure, high-performance elliptic curve cryptography';
+    } else {
+      console.warn("Element with class '.repo-description' not found. Skipping description update.");
+    }
 
     // Update last updated
-    const updatedElements = document.querySelectorAll('.repo-updated');
-    updatedElements.forEach(element => {
+    const updatedElement = document.querySelector('.repo-updated');
+    if (updatedElement) {
       const updatedDate = new Date(repoInfo.updated_at);
-      element.textContent = `Updated ${this.formatRelativeTime(updatedDate)}`;
-    });
+      updatedElement.textContent = `Updated ${this.formatRelativeTime(updatedDate)}`;
+    } else {
+      console.warn("Element with class '.repo-updated' not found. Skipping last updated time.");
+    }
   }
 
   updateContributorStats(contributors) {
-    const contributorCount = contributors.length || 1;
-    console.log('🔄 Updating contributor stats:', contributorCount);
+    const contributorCount = Array.isArray(contributors) ? contributors.length : 0;
+    console.log('🔄 Updating contributor stats:', contributorCount > 0 ? contributorCount : ' (no data or fallback)');
 
-    const contributorsElements = document.querySelectorAll('#repo-contributors');
-    contributorsElements.forEach(element => {
-      // Override the hardcoded data-target value
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', contributorCount);
+    const contributorsElement = document.getElementById('repo-contributors');
+    if (contributorsElement) {
+      if (contributorsElement.hasAttribute('data-target')) {
+        contributorsElement.setAttribute('data-target', contributorCount || 1); // Use 1 for animation if 0
       }
-      this.animateNumber(element, contributorCount);
-    });
+      this.animateNumber(contributorsElement, contributorCount || 1); // Animate to at least 1 if 0 for visual
+    } else {
+      console.warn("Element with ID 'repo-contributors' not found.");
+    }
 
-    // Update contributors list if element exists
-    const contributorsList = document.querySelector('.contributors-list');
-    if (contributorsList) {
-      if (contributors.length > 0) {
-        contributorsList.innerHTML = contributors.slice(0, 10).map(contributor => `
+    // Update contributors list in Community section
+    const contributorsListCommunity = document.getElementById('contributors-list'); // Assuming #contributors-list is the correct ID
+    if (contributorsListCommunity) {
+      if (contributorCount > 0) {
+        contributorsListCommunity.innerHTML = contributors.slice(0, 10).map(contributor => `
           <div class="contributor-item" title="${contributor.login}">
             <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar">
             <span class="contributor-name">${contributor.login}</span>
@@ -333,17 +346,16 @@ class GitHubAPI {
           </div>
         `).join('');
       } else {
-        // Optionally clear or hide if no contributors
-        // contributorsList.innerHTML = '<p>No contributors data available.</p>';
+        contributorsListCommunity.innerHTML = '<div class="contributor-placeholder"><div class="placeholder-text">No contributor data available.</div></div>';
       }
     } else {
-      console.warn("Element with class '.contributors-list' not found.");
+      console.warn("Element with ID 'contributors-list' (Community section) not found.");
     }
 
     // Update About page contributors section
     const aboutContributors = document.getElementById('about-contributors');
     if (aboutContributors) {
-      if (contributors.length > 0) {
+      if (contributorCount > 0) {
         aboutContributors.innerHTML = contributors.slice(0, 8).map(contributor => `
           <div class="contributor-item" title="${contributor.login} - ${contributor.contributions} contributions">
             <img src="${contributor.avatar_url}" alt="${contributor.login}" class="contributor-avatar" loading="lazy">
@@ -351,30 +363,30 @@ class GitHubAPI {
           </div>
         `).join('');
       } else {
-        // Optionally clear or hide
-        // aboutContributors.innerHTML = '<p>No contributors data available.</p>';
+        aboutContributors.innerHTML = '<div class="contributor-placeholder"><div class="placeholder-text">No contributor data available.</div></div>';
       }
     } else {
-      console.warn("Element with ID 'about-contributors' not found.");
+      console.warn("Element with ID 'about-contributors' (About section) not found.");
     }
   }
 
   updateCommitStatsWithTotal(totalCommits, recentCommits) {
-    console.log('🔄 Updating commit stats:', totalCommits);
+    console.log('🔄 Updating commit stats:', totalCommits > 0 ? totalCommits : ' (no data or fallback)');
 
-    const commitsElements = document.querySelectorAll('#repo-commits');
-    commitsElements.forEach(element => {
-      // Override the hardcoded data-target value
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', totalCommits);
+    const commitsElement = document.getElementById('repo-commits');
+    if (commitsElement) {
+      if (commitsElement.hasAttribute('data-target')) {
+        commitsElement.setAttribute('data-target', totalCommits);
       }
-      this.animateNumber(element, totalCommits);
-    });
+      this.animateNumber(commitsElement, totalCommits);
+    } else {
+      console.warn("Element with ID 'repo-commits' not found.");
+    }
 
     // Update recent commits if element exists
-    const recentCommitsList = document.querySelector('.recent-commits');
+    const recentCommitsList = document.querySelector('.recent-commits'); // Class selector
     if (recentCommitsList) {
-      if (recentCommits.length > 0) {
+      if (Array.isArray(recentCommits) && recentCommits.length > 0) {
         recentCommitsList.innerHTML = recentCommits.slice(0, 5).map(commit => `
           <div class="commit-item">
             <div class="commit-message">${commit.commit.message.split('\n')[0]}</div>
@@ -385,47 +397,59 @@ class GitHubAPI {
           </div>
         `).join('');
       } else {
-        // Optionally clear or hide if no recent commits
-        // recentCommitsList.innerHTML = '<p>No recent commits to display.</p>';
+        recentCommitsList.innerHTML = '<p>No recent commit data available.</p>';
       }
     } else {
-      console.warn("Element with class '.recent-commits' not found.");
+      console.warn("Element with class '.recent-commits' not found. Skipping recent commits update.");
     }
   }
-
-
 
   updateGitHubBadges(repoInfo) {
     const stars = repoInfo.stargazers_count || 0;
     const forks = repoInfo.forks_count || 0;
 
-    console.log('🔄 Updating GitHub badges:', { stars, forks });
+    console.log('🔄 Updating GitHub badges in navbar:', { stars, forks });
 
-    // Update GitHub stats in navigation
+    // Update GitHub stats in navigation (these are the primary ones in index.html)
     const starsCountNav = document.getElementById('stars-count');
     if (starsCountNav) {
       starsCountNav.textContent = `⭐ ${this.formatNumber(stars)}`;
     } else {
-      console.warn("Element with ID 'stars-count' not found.");
+      console.warn("Navbar element with ID 'stars-count' not found.");
     }
 
     const forksCountNav = document.getElementById('forks-count');
     if (forksCountNav) {
       forksCountNav.textContent = `🍴 ${this.formatNumber(forks)}`;
     } else {
-      console.warn("Element with ID 'forks-count' not found.");
+      console.warn("Navbar element with ID 'forks-count' not found.");
     }
 
-    // Also update any other navigation stats elements
+    // The following selectors seem redundant given the above, but we'll keep the checks.
+    // If these are intended for different locations, the HTML needs to be updated.
     const navStarsElements = document.querySelectorAll('#nav-stars, .nav-stars');
-    navStarsElements.forEach(element => {
-      element.textContent = `⭐ ${this.formatNumber(stars)}`;
-    });
+    if (navStarsElements.length > 0) {
+      navStarsElements.forEach(element => {
+        // Avoid double-updating if #stars-count also has .nav-stars class
+        if (element.id !== 'stars-count') {
+          element.textContent = `⭐ ${this.formatNumber(stars)}`;
+        }
+      });
+    } else {
+        // console.warn("No elements found for #nav-stars or .nav-stars."); // Too noisy if stars-count is the only one
+    }
+
 
     const navForksElements = document.querySelectorAll('#nav-forks, .nav-forks');
-    navForksElements.forEach(element => {
-      element.textContent = `🍴 ${this.formatNumber(forks)}`;
-    });
+    if (navForksElements.length > 0) {
+      navForksElements.forEach(element => {
+        if (element.id !== 'forks-count') {
+          element.textContent = `🍴 ${this.formatNumber(forks)}`;
+        }
+      });
+    } else {
+        // console.warn("No elements found for #nav-forks or .nav-forks."); // Too noisy if forks-count is the only one
+    }
   }
 
   animateNumber(element, targetNumber, prefix = '') {
@@ -497,48 +521,58 @@ class GitHubAPI {
     // Show fallback data when GitHub API is unavailable
     // Using more realistic current estimates for the forge-ec repository
     const fallbackData = {
-      stars: 15,
-      forks: 3,
-      contributors: 2,
-      commits: 85
+      stars: 15, // Example fallback
+      forks: 3,  // Example fallback
+      contributors: 2, // Example fallback
+      commits: 85 // Example fallback
     };
 
-    console.log('⚠️ GitHub API unavailable, using fallback data:', fallbackData);
+    console.log('⚠️ GitHub API unavailable or error, using fallback data:', fallbackData);
 
     // Update with fallback data and override data-target attributes
     const starsElements = document.querySelectorAll('#repo-stars, #stars-count, .stars-count');
-    starsElements.forEach(element => {
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', fallbackData.stars);
-      }
-      this.animateNumber(element, fallbackData.stars, element.id === 'stars-count' ? '⭐ ' : '');
-    });
+    if (starsElements.length > 0) {
+      starsElements.forEach(element => {
+        if (element.hasAttribute('data-target')) {
+          element.setAttribute('data-target', fallbackData.stars);
+        }
+        this.animateNumber(element, fallbackData.stars, (element.id === 'stars-count' || element.classList.contains('stars-count')) ? '⭐ ' : '');
+      });
+    }
 
     const forksElements = document.querySelectorAll('#repo-forks, #forks-count, .forks-count');
-    forksElements.forEach(element => {
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', fallbackData.forks);
-      }
-      this.animateNumber(element, fallbackData.forks, element.id === 'forks-count' ? '🍴 ' : '');
-    });
+    if (forksElements.length > 0) {
+      forksElements.forEach(element => {
+        if (element.hasAttribute('data-target')) {
+          element.setAttribute('data-target', fallbackData.forks);
+        }
+        this.animateNumber(element, fallbackData.forks, (element.id === 'forks-count' || element.classList.contains('forks-count')) ? '🍴 ' : '');
+      });
+    }
 
-    const contributorsElements = document.querySelectorAll('#repo-contributors');
-    contributorsElements.forEach(element => {
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', fallbackData.contributors);
+    const contributorsElement = document.getElementById('repo-contributors');
+    if (contributorsElement) {
+      if (contributorsElement.hasAttribute('data-target')) {
+        contributorsElement.setAttribute('data-target', fallbackData.contributors);
       }
-      this.animateNumber(element, fallbackData.contributors);
-    });
+      this.animateNumber(contributorsElement, fallbackData.contributors);
+    }
 
-    const commitsElements = document.querySelectorAll('#repo-commits');
-    commitsElements.forEach(element => {
-      if (element.hasAttribute('data-target')) {
-        element.setAttribute('data-target', fallbackData.commits);
+    const commitsElement = document.getElementById('repo-commits');
+    if (commitsElement) {
+      if (commitsElement.hasAttribute('data-target')) {
+        commitsElement.setAttribute('data-target', fallbackData.commits);
       }
-      this.animateNumber(element, fallbackData.commits);
-    });
+      this.animateNumber(commitsElement, fallbackData.commits);
+    }
+    // Fallback for other elements if they were critical
+     const contributorsListCommunity = document.getElementById('contributors-list');
+    if (contributorsListCommunity) contributorsListCommunity.innerHTML = '<div class="contributor-placeholder"><div class="placeholder-text">Displaying fallback data.</div></div>';
+    const aboutContributors = document.getElementById('about-contributors');
+    if (aboutContributors) aboutContributors.innerHTML = '<div class="contributor-placeholder"><div class="placeholder-text">Displaying fallback data.</div></div>';
 
-    console.log('📊 Using fallback GitHub data');
+
+    console.log('📊 Displaying fallback GitHub data due to API issues.');
   }
 
   // Method to refresh data

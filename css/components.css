@@ -142,9 +142,11 @@
   box-shadow: var(--shadow-md);
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  outline: none; /* Ensure custom focus is primary indicator */
 }
 
 .btn-secondary {
@@ -155,9 +157,12 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
   background: var(--bg-glass-hover);
   transform: translateY(-1px);
+  border-color: var(--border-glass-hover, var(--border-glass)); /* Ensure border also reacts for focus */
+  outline: none; /* Ensure custom focus is primary indicator */
 }
 
 .btn-outline {
@@ -166,9 +171,11 @@
   border: 2px solid var(--color-primary);
 }
 
-.btn-outline:hover {
+.btn-outline:hover,
+.btn-outline:focus-visible {
   background: var(--color-primary);
   color: white;
+  outline: none; /* Ensure custom focus is primary indicator */
 }
 
 .btn-ghost {
@@ -177,9 +184,11 @@
   border: 1px solid transparent;
 }
 
-.btn-ghost:hover {
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
   background: var(--bg-glass);
   border-color: var(--border-glass);
+  outline: none; /* Ensure custom focus is primary indicator */
 }
 
 .btn-sm {
