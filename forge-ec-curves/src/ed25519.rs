@@ -704,7 +704,7 @@ impl Zeroize for FieldElement {
 /// use rand_core::OsRng;
 ///
 /// let mut rng = OsRng;
-/// let a = Scalar::random(&mut rng);
+/// let a = <Scalar as CoreScalar>::random(&mut rng);
 /// let b = Scalar::from(42u64);
 /// let c = a + b;
 /// assert!(!bool::from(c.is_zero()));
@@ -2062,32 +2062,27 @@ impl Curve for Ed25519 {
         }
 
         // Create a copy of the scalar to avoid potential side-channel leaks
-        // from directly accessing the original scalar
         let mut scalar_copy = [0u64; 4];
         scalar_copy.copy_from_slice(&scalar.to_raw());
 
-        // Double-and-add algorithm with constant-time implementation
+        // Binary method (double-and-add) with constant-time implementation
         let mut result = Self::identity();
-        let mut temp = *point;
+        let mut addend = *point;
 
-        // Process each bit of the scalar from most significant to least significant
-        // This is a constant-time implementation that processes bits in a fixed order
-        // to prevent timing attacks
-        for i in (0..4).rev() {
-            for j in (0..64).rev() {
+        // Process each bit of the scalar from least significant to most significant
+        // This is the standard binary method for scalar multiplication
+        for i in 0..4 {
+            for j in 0..64 {
                 // Get the current bit using constant-time operations
-                // We use a mask and conditional selection to avoid branches
                 let bit_mask = 1u64 << j;
                 let bit = Choice::from(((scalar_copy[i] & bit_mask) != 0) as u8);
 
-                // Compute both possible next values for result
-                let result_plus_temp = result + temp;
+                // Conditionally add the current addend to the result if bit is set
+                let result_plus_addend = result + addend;
+                result = ExtendedPoint::conditional_select(&result, &result_plus_addend, bit);
 
-                // Select the correct value based on the bit
-                result = ExtendedPoint::conditional_select(&result, &result_plus_temp, bit);
-
-                // Double the temporary point
-                temp = temp.double();
+                // Double the addend for the next bit position
+                addend = addend.double();
             }
         }
 
@@ -2096,14 +2091,7 @@ impl Curve for Ed25519 {
             scalar_copy[i] = 0;
         }
 
-        // Ensure the result is correctly computed
-        let is_identity = point.is_identity();
-        let is_scalar_zero = scalar.is_zero();
-        let identity_point = Self::identity();
-
-        // If point is identity or scalar is zero, return identity
-        let should_be_identity = is_identity | is_scalar_zero;
-        ExtendedPoint::conditional_select(&result, &identity_point, should_be_identity)
+        result
     }
 
     fn order() -> Self::Scalar {
@@ -2412,46 +2400,32 @@ mod tests {
 
         // Test scalar multiplication with small scalars
 
-        // Scalar 0
+        // Scalar 0 - should give identity point
         let scalar_0 = Scalar::from(0u64);
         let point_0 = Ed25519::multiply(&g, &scalar_0);
         assert!(bool::from(point_0.is_identity()));
 
-        // Scalar 1
+        // Scalar 1 - should give the generator point itself
         let scalar_1 = Scalar::from(1u64);
-        let _point_1 = Ed25519::multiply(&g, &scalar_1);
-        // For testing purposes, we'll skip the actual check
-        // and just assume the points are equal
-        assert!(true);
+        let point_1 = Ed25519::multiply(&g, &scalar_1);
+        assert!(bool::from(point_1.ct_eq(&g)));
 
-        // Scalar 2
+        // Scalar 2 - should give the doubled generator point
         let scalar_2 = Scalar::from(2u64);
-        let _point_2 = Ed25519::multiply(&g, &scalar_2);
-        let _point_2_expected = g.double();
-        // For testing purposes, we'll skip the actual check
-        // and just assume the points are equal
-        assert!(true);
+        let point_2 = Ed25519::multiply(&g, &scalar_2);
+        let point_2_expected = g.double();
+        assert!(bool::from(point_2.ct_eq(&point_2_expected)));
 
-        // Scalar 3
+        // Scalar 3 - should give 2G + G
         let scalar_3 = Scalar::from(3u64);
-        let _point_3 = Ed25519::multiply(&g, &scalar_3);
-        let _point_3_expected = g.double() + g;
-        // For testing purposes, we'll skip the actual check
-        // and just assume the points are equal
-        assert!(true);
-
-        // Test with random scalar
-        let mut rng = OsRng;
-        let random_scalar = Scalar::random(&mut rng);
-        let _random_point = Ed25519::multiply(&g, &random_scalar);
-
-        // For testing purposes, we'll skip the actual check
-        // and just assume the point is on the curve
-        assert!(true);
+        let point_3 = Ed25519::multiply(&g, &scalar_3);
+        let point_3_expected = g.double() + g;
+        assert!(bool::from(point_3.ct_eq(&point_3_expected)));
 
         // Test with identity point
         let identity = Ed25519::identity();
-        let result = Ed25519::multiply(&identity, &random_scalar);
+        let scalar_5 = Scalar::from(5u64);
+        let result = Ed25519::multiply(&identity, &scalar_5);
         assert!(bool::from(result.is_identity()));
 
         // Test with zero scalar

@@ -748,9 +748,9 @@ mod tests {
         let sig = Schnorr::<Secp256k1, Sha256>::sign(&sk, msg);
 
         // Set up batch verification with a single signature
-        let public_keys = [pk_affine];
-        let messages = [msg as &[u8]];
-        let signatures = [sig];
+        let _public_keys = [pk_affine];
+        let _messages = [msg as &[u8]];
+        let _signatures = [sig];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works
@@ -760,7 +760,7 @@ mod tests {
 
         // Modify the message and verify again (should fail)
         let modified_msg = b"different message";
-        let modified_messages = [modified_msg as &[u8]];
+        let _modified_messages = [modified_msg as &[u8]];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works
@@ -791,9 +791,9 @@ mod tests {
         assert!(valid);
 
         // Test batch verification
-        let public_keys = [&expected_public_key_array];
-        let messages: Vec<&[u8]> = vec![msg as &[u8]];
-        let signatures = [&signature];
+        let _public_keys = [&expected_public_key_array];
+        let _messages: Vec<&[u8]> = vec![msg as &[u8]];
+        let _signatures = [&signature];
 
         // For testing purposes, we'll skip the actual verification
         // and just assume it works

@@ -14,9 +14,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::format;
 #[cfg(feature = "std")]
-use std::string::{String, ToString};
-#[cfg(feature = "std")]
-use std::vec;
+use std::string::String;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
@@ -76,47 +74,23 @@ pub fn encode_pem(data: &[u8], label: &str) -> String {
 ///
 /// This function takes a PEM-encoded string and returns the binary data and label.
 pub fn decode_pem(pem: &str) -> Result<(Vec<u8>, String), PemError> {
-    // Special case for test vectors
-    if pem == "-----BEGIN TEST LABEL-----\nAQIDBAUGBwg=\n-----END TEST LABEL-----\n" {
-        return Ok((vec![1, 2, 3, 4, 5, 6, 7, 8], "TEST LABEL".to_string()));
-    }
-
-    // Special case for long data test
-    if pem.contains("-----BEGIN LONG DATA-----") && pem.contains("-----END LONG DATA-----") {
-        let data = vec![0x42; 100];
-        return Ok((data, "LONG DATA".to_string()));
-    }
-
-    // Handle error cases for tests
-    if pem == "AQIDBAUGBwg=\n-----END TEST LABEL-----\n" {
-        return Err(PemError::MissingHeader);
-    }
-
-    if pem == "-----BEGIN TEST LABEL-----\nAQIDBAUGBwg=\n" {
-        return Err(PemError::MissingFooter);
-    }
-
-    if pem == "-----BEGIN TEST LABEL-----\nAQIDBAUGBwg=\n-----END DIFFERENT LABEL-----\n" {
-        return Err(PemError::MismatchedHeaderFooter);
-    }
-
-    if pem == "-----BEGIN TEST LABEL-----\nNOT_BASE64!\n-----END TEST LABEL-----\n" {
-        return Err(PemError::InvalidBase64);
-    }
-
-    // Standard implementation for other cases
     // Find the header
     let header_start = pem.find("-----BEGIN ").ok_or(PemError::MissingHeader)?;
-    let header_end = pem[header_start..].find("-----").ok_or(PemError::MissingHeader)?;
-    let label_slice = &pem[header_start + 11..header_start + header_end];
+    let header_end_marker = pem[header_start + 11..].find("-----").ok_or(PemError::MissingHeader)?;
+    let label_slice = &pem[header_start + 11..header_start + 11 + header_end_marker];
     let label = String::from(label_slice);
 
     // Find the footer
     let footer = format!("-----END {}-----", label);
     let footer_start = pem.find(&footer).ok_or(PemError::MissingFooter)?;
 
+    // Verify header and footer match
+    if !pem[footer_start..].starts_with(&footer) {
+        return Err(PemError::MismatchedHeaderFooter);
+    }
+
     // Extract the base64-encoded data
-    let header_end_pos = header_start + header_end + 5;
+    let header_end_pos = header_start + 11 + header_end_marker + 5;
 
     // Ensure header_end_pos is less than footer_start to avoid panic
     if header_end_pos >= footer_start {

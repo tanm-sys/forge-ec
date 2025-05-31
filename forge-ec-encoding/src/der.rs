@@ -51,8 +51,6 @@ impl BitString {
 
 /// ASN.1 DER encoded ECDSA signature.
 #[derive(Clone, Debug, Eq, PartialEq)]
-// TODO: Fix Sequence derive macro
-// #[derive(Sequence)]
 pub struct EcdsaSignature<'a> {
     /// R value
     pub r: &'a [u8],
@@ -187,8 +185,6 @@ impl<'a> EcdsaSignature<'a> {
 
 /// ASN.1 DER encoded EC public key.
 #[derive(Clone, Debug, Eq, PartialEq)]
-// TODO: Fix Sequence derive macro
-// #[derive(Sequence)]
 pub struct EcPublicKey {
     /// Algorithm identifier
     pub algorithm: EcdsaAlgorithmIdentifier,
@@ -405,20 +401,14 @@ impl EcPublicKey {
 
 /// ASN.1 DER encoded EC private key.
 #[derive(Clone, Debug, Eq, PartialEq)]
-// TODO: Fix Sequence derive macro
-// #[derive(Sequence)]
 pub struct EcPrivateKey<'a> {
     /// Version (must be 1)
     pub version: u8,
     /// Private key data
     pub private_key: &'a [u8],
-    /// Curve OID
-    // TODO: Fix ASN.1 attributes
-    // #[asn1(context_specific = "0", optional = "true", tag_mode = "EXPLICIT")]
+    /// Curve OID (context-specific tag 0, optional, explicit)
     pub parameters: Option<ObjectIdentifier>,
-    /// Public key
-    // TODO: Fix ASN.1 attributes
-    // #[asn1(context_specific = "1", optional = "true", tag_mode = "EXPLICIT")]
+    /// Public key (context-specific tag 1, optional, explicit)
     pub public_key: Option<BitString>,
 }
 
@@ -657,8 +647,6 @@ impl<'a> EcPrivateKey<'a> {
 
 /// ASN.1 DER algorithm identifier for ECDSA.
 #[derive(Clone, Debug, Eq, PartialEq)]
-// TODO: Fix Sequence derive macro
-// #[derive(Sequence)]
 pub struct EcdsaAlgorithmIdentifier {
     /// Algorithm OID (1.2.840.10045.2.1 for ecPublicKey)
     pub algorithm: ObjectIdentifier,
