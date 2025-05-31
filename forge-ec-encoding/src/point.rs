@@ -531,30 +531,58 @@ mod tests {
 
     #[test]
     fn test_compressed_encoding() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Test basic compressed point encoding functionality
+        // TODO: Implement proper compressed point encoding tests
+        let generator_projective = Secp256k1::generator();
+        let generator_affine = Secp256k1::to_affine(&generator_projective);
+        let compressed = CompressedPoint::<Secp256k1>::from_affine(&generator_affine);
+        let bytes = compressed.to_bytes();
+
+        // Check that we get a valid compressed point format
+        assert!(bytes[0] == 0x02 || bytes[0] == 0x03, "Compressed point should start with 0x02 or 0x03");
+        assert_eq!(bytes.len(), 33, "Compressed point should be 33 bytes");
     }
 
     #[test]
     fn test_uncompressed_encoding() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Test basic uncompressed point encoding functionality
+        // TODO: Implement proper uncompressed point encoding tests
+        let generator_projective = Secp256k1::generator();
+        let generator_affine = Secp256k1::to_affine(&generator_projective);
+        let uncompressed = UncompressedPoint::<Secp256k1>::from_affine(&generator_affine);
+        let bytes = uncompressed.to_bytes();
+
+        // Check that we get a valid uncompressed point format
+        assert_eq!(bytes[0], 0x04, "Uncompressed point should start with 0x04");
+        assert_eq!(bytes.len(), 65, "Uncompressed point should be 65 bytes");
     }
 
     #[test]
     fn test_sec1_compressed() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Test SEC1 compressed point encoding
+        // TODO: Implement proper SEC1 compressed encoding tests
+        let generator_projective = Secp256k1::generator();
+        let generator_affine = Secp256k1::to_affine(&generator_projective);
+        let compressed = CompressedPoint::<Secp256k1>::from_affine(&generator_affine);
+
+        // Test that we can convert to and from bytes
+        let bytes = compressed.to_bytes();
+        let decoded = CompressedPoint::<Secp256k1>::from_bytes(&bytes);
+        assert!(bool::from(decoded.is_some()), "Should be able to decode valid compressed point");
     }
 
     #[test]
     fn test_sec1_uncompressed() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        // Test SEC1 uncompressed point encoding
+        // TODO: Implement proper SEC1 uncompressed encoding tests
+        let generator_projective = Secp256k1::generator();
+        let generator_affine = Secp256k1::to_affine(&generator_projective);
+        let uncompressed = UncompressedPoint::<Secp256k1>::from_affine(&generator_affine);
+
+        // Test that we can convert to and from bytes
+        let bytes = uncompressed.to_bytes();
+        let decoded = UncompressedPoint::<Secp256k1>::from_bytes(&bytes);
+        assert!(bool::from(decoded.is_some()), "Should be able to decode valid uncompressed point");
     }
 
     #[test]

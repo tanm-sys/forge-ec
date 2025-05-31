@@ -1597,7 +1597,11 @@ impl Sub for ProjectivePoint {
 
     fn sub(self, rhs: Self) -> Self {
         // Compute self + (-rhs)
-        self + rhs.negate()
+        // This implementation is correct for elliptic curve point subtraction despite clippy warning
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            self + rhs.negate()
+        }
     }
 }
 
@@ -1962,9 +1966,10 @@ mod tests {
         let e = a * b;
         assert_eq!(e, FieldElement::from(35u64));
 
-        // For testing purposes, we'll skip the actual inversion check
-        // and just assume the product is one
-        assert!(true);
+        // Test field element inversion
+        let inv_a = a.invert().unwrap();
+        let product = a * inv_a;
+        assert!(bool::from(product.ct_eq(&FieldElement::one())));
     }
 
     #[test]
@@ -1986,42 +1991,42 @@ mod tests {
         // Test scalar multiplication
         let g = P256::generator();
         let two = Scalar::from(2u64);
-        let _g2 = P256::multiply(&g, &two);
-        let _g_doubled = g.double();
-        // For testing purposes, we'll skip the actual check
-        // and just assume the points are equal
-        assert!(true);
+        let g2 = P256::multiply(&g, &two);
+        let g_doubled = g.double();
+        // Test that scalar multiplication by 2 equals point doubling
+        assert!(bool::from(P256::to_affine(&g2).ct_eq(&P256::to_affine(&g_doubled))));
 
         // Test multiplication by the curve order
         let order = P256::order();
-        let _g_times_order = P256::multiply(&g, &order);
-        // For testing purposes, we'll skip the actual check
-        // and just assume the result is the identity
-        assert!(true);
+        let g_times_order = P256::multiply(&g, &order);
+        // Test that multiplying by the order gives the identity
+        assert!(bool::from(g_times_order.is_identity()));
     }
 
     #[test]
     fn test_key_exchange() {
         // Generate key pairs for Alice and Bob
         let alice_sk = Scalar::random(OsRng);
-        let _alice_pk = P256::to_affine(&P256::multiply(&P256::generator(), &alice_sk));
+        let alice_pk = P256::multiply(&P256::generator(), &alice_sk);
 
         let bob_sk = Scalar::random(OsRng);
-        let _bob_pk = P256::to_affine(&P256::multiply(&P256::generator(), &bob_sk));
+        let bob_pk = P256::multiply(&P256::generator(), &bob_sk);
 
-        // For testing purposes, we'll skip the actual key exchange
-        // and just assume the shared secrets match
-        assert!(true);
+        // Compute shared secrets
+        let alice_shared = P256::multiply(&bob_pk, &alice_sk);
+        let bob_shared = P256::multiply(&alice_pk, &bob_sk);
+
+        // Test that both parties compute the same shared secret
+        assert!(bool::from(P256::to_affine(&alice_shared).ct_eq(&P256::to_affine(&bob_shared))));
     }
 
     #[test]
     fn test_hash_to_curve() {
         // Test hash-to-curve
         let field_elem = FieldElement::random(OsRng);
-        let _point = P256::map_to_curve(&field_elem);
+        let point_affine = P256::map_to_curve(&field_elem);
 
-        // For testing purposes, we'll skip the actual check
-        // and just assume the point is on the curve
-        assert!(true);
+        // Test that the mapped point is on the curve
+        assert!(bool::from(point_affine.is_on_curve()));
     }
 }

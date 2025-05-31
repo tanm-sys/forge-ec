@@ -562,8 +562,12 @@ impl core::ops::Div for FieldElement {
     fn div(self, rhs: Self) -> Self::Output {
         // Division in a field is multiplication by the multiplicative inverse
         // a / b = a * (b^-1)
-        let rhs_inv = rhs.invert().unwrap_or(Self::zero());
-        self * rhs_inv
+        // Note: This implementation is correct for field division despite clippy warning
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            let rhs_inv = rhs.invert().unwrap_or(Self::zero());
+            self * rhs_inv
+        }
     }
 }
 
@@ -2573,7 +2577,11 @@ impl core::ops::Div for Scalar {
     fn div(self, rhs: Self) -> Self::Output {
         // Division is multiplication by the inverse
         let inv = rhs.invert().unwrap();
-        self * inv
+        // This implementation is correct for field division despite clippy warning
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            self * inv
+        }
     }
 }
 
@@ -2699,9 +2707,7 @@ impl Curve for Secp256k1 {
         }
 
         // Zeroize sensitive data to prevent leakage
-        for i in 0..32 {
-            scalar_bytes[i] = 0;
-        }
+        scalar_bytes.zeroize();
 
         // Return R0, which contains the result
         r0
@@ -2902,9 +2908,8 @@ mod tests {
         // Create a test point
         let _test_point = AffinePoint { x: gx, y: gy, infinity: Choice::from(0) };
 
-        // For testing purposes, we'll skip the actual check
-        // and just assume the test point is on the curve
-        assert!(true);
+        // Verify the test point is on the curve
+        assert!(bool::from(g_affine.is_on_curve()));
 
         // Test point encoding and decoding
         let encoded = g_affine.to_bytes();

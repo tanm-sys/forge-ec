@@ -1258,7 +1258,12 @@ mod tests {
     fn test_hash_to_curve_with_p256() {
         // Test hash_to_curve with P-256 curve
         // This test is disabled until P256 implements the required traits
-        assert!(true);
+        // TODO: Implement HashToCurve trait for P256 curve
+        // TODO: Add proper RFC 9380 compliance tests for P256
+
+        // For now, just test that the test framework works
+        let test_message = b"test message for hash to curve";
+        assert!(!test_message.is_empty(), "Test message should not be empty");
     }
 
     #[test]

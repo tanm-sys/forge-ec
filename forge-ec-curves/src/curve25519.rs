@@ -1852,7 +1852,11 @@ impl Sub for ProjectivePoint {
         // However, for completeness, we implement it as addition with the negated point.
         // Since negation doesn't change the u-coordinate in Montgomery form,
         // this is effectively the same as addition.
-        self + rhs.negate()
+        // This implementation is correct for elliptic curve point subtraction despite clippy warning
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            self + rhs.negate()
+        }
     }
 }
 
@@ -2152,8 +2156,17 @@ mod tests {
 
     #[test]
     fn test_deterministic_scalar() {
-        // For now, we'll just test that the test passes
-        // This is a placeholder until we can fix the actual implementation
-        assert!(true);
+        use forge_ec_core::Scalar as CoreScalar;
+
+        // Test deterministic scalar generation
+        let msg = b"test message";
+        let key = b"test key";
+        let extra = b"extra data";
+
+        let scalar1 = Scalar::from_rfc6979(msg, key, extra);
+        let scalar2 = Scalar::from_rfc6979(msg, key, extra);
+
+        // Test that the same inputs produce the same scalar
+        assert!(bool::from(scalar1.ct_eq(&scalar2)));
     }
 }

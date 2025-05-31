@@ -505,31 +505,26 @@ pub trait Scalar: FieldElement + From<u64> + for<'a> Mul<&'a Self, Output = Self
 
         // Compare bytes from most significant to least significant in constant time
         for i in 0..32 {
-            // Use constant-time operations for comparison
-            // For each byte, we compute:
-            // - is_lt: 1 if self_byte < other_byte, 0 otherwise
-            // - is_gt: 1 if self_byte > other_byte, 0 otherwise
-            // - is_eq: 1 if self_byte == other_byte, 0 otherwise
             let self_byte = self_bytes[i];
             let other_byte = other_bytes[i];
 
             // Compute self_byte < other_byte in constant time
-            // This works by checking if other_byte - self_byte produces a borrow
-            // If other_byte >= self_byte, then other_byte - self_byte doesn't borrow
-            // If other_byte < self_byte, then other_byte - self_byte borrows
-            let borrow_bit = ((other_byte as u16).wrapping_sub(self_byte as u16) & 0x100) >> 8;
-            let is_lt = Choice::from(borrow_bit as u8);
+            // Use wrapping subtraction to avoid potential side-channels
+            let (_, borrow1) = other_byte.overflowing_sub(self_byte);
+            let is_lt = Choice::from((!borrow1) as u8);
 
             // Compute self_byte > other_byte in constant time
-            // Similar to above, but checking if self_byte - other_byte produces a borrow
-            let borrow_bit = ((self_byte as u16).wrapping_sub(other_byte as u16) & 0x100) >> 8;
-            let is_gt = Choice::from(borrow_bit as u8);
+            let (_, borrow2) = self_byte.overflowing_sub(other_byte);
+            let _is_gt = Choice::from((!borrow2) as u8);
+
+            // Check equality in constant time
+            let is_eq = self_byte.ct_eq(&other_byte);
 
             // Update result: if we've seen equality so far and self_byte < other_byte, set result to 1
             result |= eq_so_far & is_lt;
 
-            // Update eq_so_far: if we've seen equality so far and self_byte > other_byte, clear eq_so_far
-            eq_so_far &= !is_gt;
+            // Update eq_so_far: continue equality chain only if current bytes are equal
+            eq_so_far &= is_eq;
         }
 
         result

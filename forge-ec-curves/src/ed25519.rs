@@ -1938,7 +1938,11 @@ impl Sub for ExtendedPoint {
 
     fn sub(self, rhs: Self) -> Self {
         // Subtraction is defined as addition with the negated point
-        self + rhs.negate()
+        // This implementation is correct for elliptic curve point subtraction despite clippy warning
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            self + rhs.negate()
+        }
     }
 }
 
@@ -2087,9 +2091,7 @@ impl Curve for Ed25519 {
         }
 
         // Zeroize sensitive data to prevent leakage
-        for i in 0..4 {
-            scalar_copy[i] = 0;
-        }
+        scalar_copy.zeroize();
 
         result
     }

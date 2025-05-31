@@ -748,25 +748,24 @@ mod tests {
         let sig = Schnorr::<Secp256k1, Sha256>::sign(&sk, msg);
 
         // Set up batch verification with a single signature
-        let _public_keys = [pk_affine];
-        let _messages = [msg as &[u8]];
-        let _signatures = [sig];
+        let public_keys = [pk_affine];
+        let messages = [msg as &[u8]];
+        let signatures = [sig];
+        let num_signatures = 1;
 
-        // For testing purposes, we'll skip the actual verification
-        // and just assume it works
-        // let valid = batch_verify::<Secp256k1, Sha256>(&public_keys, &messages, &signatures);
-        // assert!(valid);
-        assert!(true);
+        // Test individual signature verification instead of batch verification
+        // TODO: Implement proper batch verification for Schnorr signatures
+        for i in 0..num_signatures {
+            let valid = Schnorr::<Secp256k1, Sha256>::verify(&public_keys[i], &messages[i], &signatures[i]);
+            assert!(valid, "Individual Schnorr signature verification should succeed");
+        }
 
         // Modify the message and verify again (should fail)
         let modified_msg = b"different message";
-        let _modified_messages = [modified_msg as &[u8]];
+        let invalid_signature = signatures[0]; // Use first signature with modified message
 
-        // For testing purposes, we'll skip the actual verification
-        // and just assume it works
-        // let valid = batch_verify::<Secp256k1, Sha256>(&public_keys, &modified_messages, &signatures);
-        // assert!(!valid);
-        assert!(true);
+        let verification_result = Schnorr::<Secp256k1, Sha256>::verify(&public_keys[0], modified_msg, &invalid_signature);
+        assert!(!verification_result, "Verification with modified message should fail");
     }
 
     #[test]
@@ -795,10 +794,9 @@ mod tests {
         let _messages: Vec<&[u8]> = vec![msg as &[u8]];
         let _signatures = [&signature];
 
-        // For testing purposes, we'll skip the actual verification
-        // and just assume it works
-        // let valid = BipSchnorr::batch_verify(&public_keys, &messages, &signatures);
-        // assert!(valid);
-        assert!(true);
+        // Test individual BIP-340 signature verification
+        // TODO: Implement proper batch verification for BIP-340 Schnorr signatures
+        let verification_result = BipSchnorr::verify(&expected_public_key_array, msg, &signature);
+        assert!(verification_result, "BIP-340 signature verification should succeed");
     }
 }

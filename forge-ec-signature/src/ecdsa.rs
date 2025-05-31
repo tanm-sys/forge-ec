@@ -469,8 +469,23 @@ mod tests {
     #[test]
     #[ignore]
     fn test_batch_verify() {
-        // This test is temporarily disabled
-        assert!(true);
+        // This test is temporarily disabled - batch verification needs implementation
+        // TODO: Implement proper batch verification for ECDSA signatures
+        // For now, just test that individual verification works
+        use rand_core::OsRng;
+        use forge_ec_curves::secp256k1::Secp256k1;
+
+        let mut rng = OsRng;
+        let private_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let public_key_projective = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
+        let public_key = Secp256k1::to_affine(&public_key_projective);
+
+        let message = b"test message for batch verification";
+        let signature = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, message);
+
+        // Test individual verification works
+        let verification_result = Ecdsa::<Secp256k1, Sha256>::verify(&public_key, message, &signature);
+        assert!(verification_result, "ECDSA signature verification should succeed");
     }
 
     #[test]
