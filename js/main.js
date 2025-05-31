@@ -107,24 +107,36 @@ class ForgeECApp {
         }
       }
     } catch (error) {
-      console.warn('⚠️ Firebase initialization failed, continuing with fallback:', error.message);
+      console.warn(`⚠️ Firebase initialization failed: ${error.message}. Falling back to localStorage authentication. Some features may be limited.`);
       this.firebaseInitialized = false;
       // Still create auth modal for UI consistency, but without Firebase functionality
-      this.createAuthModal();
+      this.createAuthModal(); // Ensure modal is created for fallback
       this.setupFallbackAuth();
     }
   }
 
   setupFirebaseAuth() {
     // Initialize Firebase Authentication
-    this.initializeAuth();
-    this.createAuthModal();
-    this.setupAuthEventListeners();
+    if (this.firebaseInitialized && window.firebaseAuth) {
+      this.initializeAuth();
+      this.createAuthModal(); // Create modal if not already created
+      this.setupAuthEventListeners(); // Setup listeners for Firebase auth
+    } else {
+      console.log('Firebase not initialized, Firebase Auth setup skipped.');
+      // Fallback auth should have already been set up by initializeFirebase
+      // but ensure modal and listeners are ready for localStorage auth
+      if (!document.getElementById('auth-modal')) {
+        this.createAuthModal();
+      }
+      this.setupAuthEventListeners(); // Ensure listeners are setup for fallback
+    }
   }
 
   async initializeAuth() {
     if (!window.firebaseAuth) {
-      console.warn('Firebase Auth not available');
+      console.warn('Firebase Auth service (window.firebaseAuth) is not available. Firebase auth features will be disabled.');
+      this.authModule = null;
+      // No need to call setupFallbackAuth here as initializeFirebase handles it
       return;
     }
 
@@ -134,7 +146,7 @@ class ForgeECApp {
 
       const authModulePromise = import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js');
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Auth module load timeout')), 5000);
+        setTimeout(() => reject(new Error('Auth module load timeout')), 5000); // 5-second timeout
       });
 
       const authModule = await Promise.race([authModulePromise, timeoutPromise]);
@@ -145,20 +157,22 @@ class ForgeECApp {
       try {
         authModule.onAuthStateChanged(window.firebaseAuth, (user) => {
           this.currentUser = user;
-          this.updateAuthUI();
+          this.updateAuthUI(); // This will handle UI for both Firebase and fallback users
 
           if (user) {
-            console.log('👤 User signed in:', user.email);
+            console.log('👤 Firebase user signed in:', user.email);
           } else {
-            console.log('👤 User signed out');
+            console.log('👤 Firebase user signed out or no user.');
           }
         });
       } catch (listenerError) {
-        console.warn('Failed to set up auth state listener:', listenerError);
+        console.warn('⚠️ Failed to set up Firebase auth state listener:', listenerError);
+        // Potentially fallback or notify user if this is critical
       }
     } catch (error) {
-      console.warn('Failed to load Firebase Auth module:', error);
+      console.warn('⚠️ Failed to load Firebase Auth module:', error);
       this.authModule = null;
+      // Fallback to localStorage auth should be handled by initializeFirebase
     }
   }
 
@@ -783,10 +797,105 @@ class ForgeECApp {
     }, 2000);
   }
 
+  createLiveDemoModal() {
+    // Prevent duplicate modal creation
+    const existingModal = document.getElementById('live-demo-modal');
+    if (existingModal) {
+      return existingModal;
+    }
+
+    const modalId = 'live-demo-modal';
+    const titleId = 'live-demo-modal-title';
+
+    const modalHTML = `
+      <div id="${modalId}" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
+        <div class="modal-content glass-enhanced">
+          <div class="modal-header">
+            <h3 class="modal-title" id="${titleId}">Forge EC - Live Demo</h3>
+            <button class="modal-close" id="live-demo-modal-close" aria-label="Close live demo modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Interactive live demo coming soon!</p>
+            <p>Explore our code examples in the <a href="#examples" id="live-demo-examples-link">Examples section</a> for now.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const newModal = document.getElementById('live-demo-modal');
+
+    // Add event listener for the close button
+    const closeButton = newModal.querySelector('#live-demo-modal-close');
+    closeButton.addEventListener('click', () => this.closeLiveDemoModal());
+
+    // Add event listener for the examples link to also close the modal
+    const examplesLink = newModal.querySelector('#live-demo-examples-link');
+    examplesLink.addEventListener('click', () => this.closeLiveDemoModal());
+
+
+    console.log('✅ Live Demo modal created successfully');
+    return newModal;
+  }
+
   openLiveDemo() {
-    // This will open a modal with live demo
-    console.log('Opening live demo...');
-    // Implementation will be added later
+    console.log('🚀 Opening live demo modal...');
+    const modal = this.createLiveDemoModal(); // Ensures modal is created
+
+    if (modal) {
+      modal.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+        modal.style.opacity = '0';
+        requestAnimationFrame(() => {
+          modal.style.transition = 'opacity 0.3s ease';
+          modal.style.opacity = '1';
+        });
+
+        const closeButton = modal.querySelector('#live-demo-modal-close');
+        if(closeButton) this.manageFocus(closeButton); // Focus the close button or first focusable element
+
+      });
+
+      // Add event listeners for Escape key and click outside
+      document.addEventListener('keydown', this.handleLiveDemoEscapeKey, true);
+      document.addEventListener('click', this.handleClickOutsideLiveDemo, true);
+    }
+  }
+
+  closeLiveDemoModal() {
+    console.log('🚪 Closing live demo modal...');
+    const modal = document.getElementById('live-demo-modal');
+    if (modal) {
+      modal.setAttribute('aria-hidden', 'true');
+      // Add fade-out animation
+      modal.style.transition = 'opacity 0.3s ease';
+      modal.style.opacity = '0';
+
+      setTimeout(() => {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore background scrolling
+      }, 300); // Duration of the opacity transition
+
+      document.removeEventListener('keydown', this.handleLiveDemoEscapeKey, true);
+      document.removeEventListener('click', this.handleClickOutsideLiveDemo, true);
+    }
+  }
+
+  handleLiveDemoEscapeKey = (event) => {
+    if (event.key === 'Escape') {
+      this.closeLiveDemoModal();
+    }
+  }
+
+  handleClickOutsideLiveDemo = (event) => {
+    const modalContent = document.querySelector('#live-demo-modal .modal-content');
+    if (modalContent && !modalContent.contains(event.target) && event.target.id !== 'live-demo-btn' && !event.target.closest('#live-demo-btn')) {
+      // Check if the click is outside modal-content AND not on the trigger button
+      this.closeLiveDemoModal();
+    }
   }
 
   handleScroll() {
@@ -988,6 +1097,15 @@ class ForgeECApp {
         requestAnimationFrame(() => {
           modal.style.transition = 'opacity 0.3s ease';
           modal.style.opacity = '1';
+
+          // Focus the first visible input field in the active form
+          const activeForm = modal.querySelector('.auth-form.active');
+          if (activeForm) {
+            const firstInput = activeForm.querySelector('input:not([type="hidden"]), button[type="submit"]');
+            if (firstInput) {
+              this.manageFocus(firstInput);
+            }
+          }
         });
 
         console.log('✅ Auth modal displayed successfully');
@@ -1047,15 +1165,26 @@ class ForgeECApp {
   }
 
   async handleEmailSignIn(e) {
-    const email = document.getElementById('signin-email').value;
-    const password = document.getElementById('signin-password').value;
+    const emailInput = document.getElementById('signin-email');
+    const passwordInput = document.getElementById('signin-password');
+
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value.trim();
 
     if (!email || !password) {
       this.handleAuthError('Please enter both email and password.');
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    let users = [];
+    try {
+      users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    } catch (error) {
+      console.error('Error parsing forgeECUsers from localStorage:', error);
+      this.handleAuthError('Error accessing user data. Please try again or clear site data.');
+      return;
+    }
+
     const user = users.find(u => u.email === email);
 
     if (!user || user.password !== password) { // IMPORTANT: Never store/compare plain text passwords in a real app!
@@ -1072,22 +1201,34 @@ class ForgeECApp {
   }
 
   async handleEmailSignUp(e) {
-    const name = document.getElementById('signup-name').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
+    const nameInput = document.getElementById('signup-name');
+    const emailInput = document.getElementById('signup-email');
+    const passwordInput = document.getElementById('signup-password');
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value.trim();
 
     if (!name || !email || !password) {
       this.handleAuthError('Please fill in all fields.');
       return;
     }
     if (password.length < 6) {
-      this.handleAuthError('Password must be at least 6 characters.');
+      this.handleAuthError('Password must be at least 6 characters long.');
       return;
     }
 
-    let users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    let users = [];
+    try {
+      users = JSON.parse(localStorage.getItem('forgeECUsers')) || [];
+    } catch (error) {
+      console.error('Error parsing forgeECUsers from localStorage:', error);
+      this.handleAuthError('Error accessing user data. Please try again or clear site data.');
+      return;
+    }
+
     if (users.find(u => u.email === email)) {
-      this.handleAuthError('Email already in use.');
+      this.handleAuthError('An account with this email address already exists.');
       return;
     }
 
@@ -1119,7 +1260,13 @@ class ForgeECApp {
   updateAuthUI() {
     const storedUser = localStorage.getItem('forgeECCurrentUser');
     if (storedUser) {
-      this.currentUser = JSON.parse(storedUser);
+      try {
+        this.currentUser = JSON.parse(storedUser);
+      } catch (error) {
+        console.error('Error parsing forgeECCurrentUser from localStorage:', error);
+        localStorage.removeItem('forgeECCurrentUser'); // Clear corrupted data
+        this.currentUser = null;
+      }
     } else {
       this.currentUser = null;
     }
@@ -1131,7 +1278,17 @@ class ForgeECApp {
       if (authTrigger) authTrigger.style.display = 'none';
       if (userMenuTrigger) {
         userMenuTrigger.style.display = 'flex';
-        this.updateUserProfile();
+        this.updateUserProfile(); // This will also call ensureUserMenuDropdown
+
+        // Set initial aria-expanded state for the menu button
+        const menuButton = document.getElementById('user-menu-btn');
+        if (menuButton) {
+          // Check if dropdown exists and is visible to set correct initial state,
+          // though it should typically be hidden initially.
+          const dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
+          const isDropdownVisible = dropdown && dropdown.style.display === 'block';
+          menuButton.setAttribute('aria-expanded', isDropdownVisible ? 'true' : 'false');
+        }
       }
     } else {
       if (authTrigger) authTrigger.style.display = 'block';
@@ -1143,18 +1300,134 @@ class ForgeECApp {
     const user = this.currentUser;
     if (!user) return;
 
-    const userInfo = document.querySelector('#user-menu-trigger .user-info');
-    if (userInfo) {
+    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    if (!userMenuTrigger) return;
+
+    let userInfo = userMenuTrigger.querySelector('.user-info');
+    if (userInfo) { // Should always exist as per index.html structure
       userInfo.innerHTML = `
         <img src="/assets/default-avatar.png" alt="${user.name || user.email}" class="user-avatar">
         <span class="user-name">${user.name || user.email}</span>
       `;
     }
+
+    // Ensure the dropdown menu is created
+    this.ensureUserMenuDropdown();
+
+    // Populate dropdown header if needed (already done by user-info for trigger)
+    const dropdownUserEmail = userMenuTrigger.querySelector('.user-menu-dropdown-email');
+    if (dropdownUserEmail) {
+        dropdownUserEmail.textContent = user.email;
+    }
+    const dropdownUserName = userMenuTrigger.querySelector('.user-menu-dropdown-name');
+     if (dropdownUserName) {
+        dropdownUserName.textContent = user.name || 'User';
+    }
+  }
+
+  ensureUserMenuDropdown() {
+    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    if (!userMenuTrigger) return;
+
+    let dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
+    if (!dropdown) {
+      const dropdownHTML = `
+        <div class="user-menu-dropdown" style="display: none;">
+          <div class="user-menu-header">
+            <img src="/assets/default-avatar.png" alt="User Avatar" class="user-avatar-dropdown">
+            <div class="user-menu-details">
+              <span class="user-menu-dropdown-name">${this.currentUser.name || 'User'}</span>
+              <span class="user-menu-dropdown-email">${this.currentUser.email}</span>
+            </div>
+          </div>
+          <ul class="user-menu-list">
+            <li><a href="#" id="user-profile">Profile</a></li>
+            <li><a href="#" id="user-settings">Settings</a></li>
+            <li><hr class="user-menu-divider"></li>
+            <li><a href="#" id="user-signout-dropdown">Sign Out</a></li>
+          </ul>
+        </div>
+      `;
+      userMenuTrigger.insertAdjacentHTML('beforeend', dropdownHTML);
+      // Re-query for the dropdown after inserting it
+      dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
+
+      // Add event listeners for the new items
+      dropdown.querySelector('#user-profile').addEventListener('click', (e) => {
+        e.preventDefault(); this.handleUserProfileClick(); this.closeUserMenu();
+      });
+      dropdown.querySelector('#user-settings').addEventListener('click', (e) => {
+        e.preventDefault(); this.handleUserSettingsClick(); this.closeUserMenu();
+      });
+      // The #user-signout-dropdown will be handled by the main authClickHandler
+      // but we need to ensure it also closes the menu.
+       dropdown.querySelector('#user-signout-dropdown').addEventListener('click', (e) => {
+        // Signout is handled by authClickHandler, just ensure menu closes
+        this.closeUserMenu();
+      });
+    }
+    return dropdown;
   }
 
   toggleUserMenu() {
-    // This will be implemented when user menu is added
-    console.log('User menu toggle');
+    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    if (!userMenuTrigger) return;
+
+    const dropdown = this.ensureUserMenuDropdown(); // Ensure dropdown exists
+    if (!dropdown) return;
+
+    const menuButton = document.getElementById('user-menu-btn');
+    const isOpen = dropdown.style.display === 'block';
+
+    if (isOpen) {
+      this.closeUserMenu();
+    } else {
+      dropdown.style.display = 'block';
+      menuButton.setAttribute('aria-expanded', 'true');
+      // Add event listeners for click outside and Escape key
+      document.addEventListener('click', this.handleClickOutsideUserMenu, true);
+      document.addEventListener('keydown', this.handleEscapeKeyUserMenu, true);
+      console.log('User menu opened');
+    }
+  }
+
+  closeUserMenu() {
+    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    if (!userMenuTrigger) return;
+
+    const dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
+    const menuButton = document.getElementById('user-menu-btn');
+
+    if (dropdown && dropdown.style.display === 'block') {
+      dropdown.style.display = 'none';
+      if (menuButton) menuButton.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', this.handleClickOutsideUserMenu, true);
+      document.removeEventListener('keydown', this.handleEscapeKeyUserMenu, true);
+      console.log('User menu closed');
+    }
+  }
+
+  handleClickOutsideUserMenu = (event) => {
+    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    if (userMenuTrigger && !userMenuTrigger.contains(event.target)) {
+      this.closeUserMenu();
+    }
+  }
+
+  handleEscapeKeyUserMenu = (event) => {
+    if (event.key === 'Escape') {
+      this.closeUserMenu();
+    }
+  }
+
+  handleUserProfileClick() {
+    alert('Profile page coming soon!');
+    console.log('User profile clicked');
+  }
+
+  handleUserSettingsClick() {
+    alert('Settings page coming soon!');
+    console.log('User settings clicked');
   }
 
   handleAuthError(errorMessage) {
@@ -1187,9 +1460,38 @@ class ForgeECApp {
 
   // Fallback Authentication System (when Firebase is not available)
   setupFallbackAuth() {
-    console.log('🔄 Setting up fallback authentication system');
-    this.fallbackMode = true;
-    this.setupAuthEventListeners();
+    console.log('🔄 Setting up fallback localStorage authentication system. Full authentication features require Firebase.');
+    this.fallbackMode = true; // Indicate that we are in fallback mode
+
+    // Ensure auth event listeners are set up for localStorage operations
+    // This might be redundant if setupAuthEventListeners is called elsewhere,
+    // but it's a safeguard.
+    if (!this.authEventListenersSetup) {
+        this.setupAuthEventListeners();
+    }
+
+    // Check for an existing user in localStorage and update UI
+    // This is important if Firebase fails after the app has been used with localStorage auth
+    const storedUser = localStorage.getItem('forgeECCurrentUser');
+    if (storedUser) {
+      try {
+        this.currentUser = JSON.parse(storedUser);
+        console.log('👤 Active user found in localStorage (fallback mode):', this.currentUser.email);
+      } catch (e) {
+        console.error('Error parsing stored user from localStorage', e);
+        localStorage.removeItem('forgeECCurrentUser');
+        this.currentUser = null;
+      }
+    } else {
+      this.currentUser = null;
+    }
+    this.updateAuthUI(); // Update UI based on localStorage user state
+
+    // Inform the user that they are in a limited functionality mode
+    // This could be a dismissible banner or a console message for developers
+    console.warn("🔧 Application is in fallback authentication mode. User data is stored locally in the browser. Full features require Firebase setup.");
+    // Optionally, show a non-intrusive UI notification if appropriate
+    this.showAuthFeedback("Using basic offline mode. Online features may be limited.", "info");
   }
 
   // Accessibility helper methods
@@ -1252,20 +1554,23 @@ class ForgeECApp {
   }
 
   handleFallbackAuth(type, email, password, name = null) {
-    // Simulate authentication for demo purposes
-    console.log(`🔄 Fallback ${type} attempt:`, { email, name });
+    // This function is designed to be called if we want to *prevent* localStorage auth
+    // and only show a message. However, the current flow falls back to localStorage.
+    // For now, it will just log and show a message if called directly,
+    // but it's not part of the primary sign-in/sign-up flow for localStorage.
+    console.log(`🔄 Fallback auth action (${type}) triggered for:`, { email, name });
 
-    // Show informational message about Firebase configuration
-    const message = `Demo mode: Firebase Authentication needs to be configured. Please check the configuration guide.`;
+    const message = `Firebase is not available. Authentication is in local mode. If you expected Firebase, please check your configuration.`;
     this.showAuthFeedback(message, 'warning');
 
-    // Log configuration guidance
-    console.warn('🔧 Firebase Configuration Required:', {
-      issue: 'Authentication service not configured',
-      solution: 'Enable Authentication in Firebase Console',
-      guide: 'See FIREBASE_AUTH_CONFIGURATION_GUIDE.md for detailed instructions'
+    console.warn('🔧 Firebase Configuration Note:', {
+      message: 'The application is currently using localStorage for authentication as Firebase is not available or failed to initialize.',
+      details: 'This is expected if Firebase is not configured. For full Firebase features, please set up Firebase Authentication in your project.',
+      guide: 'Refer to FIREBASE_AUTH_CONFIGURATION_GUIDE.md for more details.'
     });
 
+    // Returning false indicates that this function itself doesn't perform an auth action,
+    // but rather informs about the state.
     return false;
   }
 }

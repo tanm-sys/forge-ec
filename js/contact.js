@@ -142,61 +142,68 @@ Timestamp: ${new Date().toISOString()}
 
       // For development/fallback, we'll simulate success
       // In production, you might want to store this in a backup system
-      console.log('📧 Using mailto fallback:', mailtoLink);
+      console.log('📧 Using mailto fallback. User action required to send.');
 
-      return {
-        success: true,
-        method: 'fallback',
-        mailtoLink: mailtoLink
-      };
+      // The actual "submission" here is providing the mailto link.
+      // The form isn't "successful" in the sense of auto-sending.
+      // We trigger the fallback UI here, and handleSubmit will show a generic error.
+      this.showFallbackOption(data, mailtoLink); // Pass mailtoLink directly
+
+      // Throw an error to indicate that automatic submission failed and fallback is active.
+      // This ensures handleSubmit shows an error message guiding the user to the fallback.
+      throw new Error('Firebase submission failed; mailto fallback prepared.');
     }
   }
 
-  showFallbackOption(data) {
-    if (this.mailtoFallback) {
-      // Create fallback message
-      let fallbackElement = this.form.querySelector('.form-fallback');
-
-      if (!fallbackElement) {
-        fallbackElement = document.createElement('div');
-        fallbackElement.className = 'form-fallback';
-        fallbackElement.style.cssText = `
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-3);
-          padding: var(--space-4);
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.3);
-          border-radius: var(--radius-lg);
-          color: #3b82f6;
-          font-size: var(--text-sm);
-          margin-top: var(--space-4);
-        `;
-
-        this.form.appendChild(fallbackElement);
-      }
-
-      fallbackElement.innerHTML = `
-        <div style="display: flex; align-items: center; gap: var(--space-2);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-          <strong>Alternative: Send via Email Client</strong>
-        </div>
-        <p>If the form submission failed, you can send your message directly via email:</p>
-        <button type="button" class="btn-secondary" onclick="window.open('${this.mailtoFallback}')">
-          Open Email Client
-        </button>
-      `;
-
-      // Hide fallback message after 10 seconds
-      setTimeout(() => {
-        if (fallbackElement.parentNode) {
-          fallbackElement.remove();
-        }
-      }, 10000);
+  showFallbackOption(data, mailtoLink) { // mailtoLink passed as argument
+    if (!mailtoLink) { // Ensure mailtoLink is valid
+        console.warn('showFallbackOption called without a mailtoLink.');
+        return;
     }
+    // Create fallback message
+    let fallbackElement = this.form.querySelector('.form-fallback');
+
+    if (!fallbackElement) {
+      fallbackElement = document.createElement('div');
+      fallbackElement.className = 'form-fallback';
+      // Styles are okay, but consider moving to CSS if more complex
+      fallbackElement.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: rgba(59, 130, 246, 0.1); /* blue-500/10 */
+        border: 1px solid rgba(59, 130, 246, 0.3); /* blue-500/30 */
+        border-radius: var(--radius-lg);
+        color: #3b82f6; /* blue-500 */
+        font-size: var(--text-sm);
+        margin-top: var(--space-4);
+      `;
+      this.form.appendChild(fallbackElement);
+    }
+
+    // Ensure the mailtoLink is properly escaped for use in HTML attribute
+    const escapedMailtoLink = mailtoLink.replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+
+    fallbackElement.innerHTML = `
+      <div style="display: flex; align-items: center; gap: var(--space-2);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <strong>Automatic submission failed.</strong>
+      </div>
+      <p>You can send your message directly using your email client:</p>
+      <button type="button" class="btn-secondary" onclick="window.open('${escapedMailtoLink}', '_blank')">
+        Open Email Client
+      </button>
+    `;
+    // Fallback should persist until user interacts or dismisses, removing auto-hide.
+    // setTimeout(() => {
+    //   if (fallbackElement.parentNode) {
+    //     fallbackElement.remove();
+    //   }
+    // }, 10000); // Consider making this longer or manual dismissal
   }
 
   validateForm() {
