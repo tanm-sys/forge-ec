@@ -183,40 +183,40 @@
         <section id="home" class="hero-section">
             <canvas id="hero-canvas" class="hero-canvas"></canvas>
             <div class="hero-content">
-                <div class="hero-text animate-on-scroll"> <!-- Main container for title/subtitle -->
-                    <h1 class="hero-title animate-title-by-char"> <!-- Title to animate by char -->
+                <div class="hero-text">
+                    <h1 class="hero-title">
                         <span class="title-line">Forge</span>
                         <span class="title-line gradient-text">EC</span>
                     </h1>
-                    <p class="hero-subtitle animate-on-scroll" data-animation-delay="300"> <!-- Subtitle with a delay -->
+                    <p class="hero-subtitle">
                         Modern Rust library for secure, high-performance
                         <span class="highlight">elliptic curve cryptography</span>
                     </p>
-                    <div class="hero-features animate-on-scroll stagger-container" data-animation-delay="500"> <!-- Stagger container for badges -->
-                        <div class="feature-badge stagger-item">
+                    <div class="hero-features">
+                        <div class="feature-badge">
                             <span class="badge-icon">🦀</span>
                             <span>Zero-Unsafe Rust</span>
                         </div>
-                        <div class="feature-badge stagger-item">
+                        <div class="feature-badge">
                             <span class="badge-icon">⚡</span>
                             <span>SIMD Accelerated</span>
                         </div>
-                        <div class="feature-badge stagger-item">
+                        <div class="feature-badge">
                             <span class="badge-icon">🔒</span>
                             <span>Constant-Time</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="hero-actions animate-on-scroll stagger-container" data-animation-delay="700"> <!-- Stagger container for buttons -->
-                    <button class="cta-button primary stagger-item" id="get-started-btn">
+                <div class="hero-actions">
+                    <button class="cta-button primary" id="get-started-btn">
                         <span class="btn-text">Get Started</span>
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
                     </button>
 
-                    <button class="cta-button secondary stagger-item" id="live-demo-btn">
+                    <button class="cta-button secondary" id="live-demo-btn">
                         <span class="btn-text">Live Demo</span>
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <polygon points="5,3 19,12 5,21"/>
@@ -224,8 +224,8 @@
                     </button>
                 </div>
 
-                <div class="installation-preview animate-on-scroll" data-animation-delay="900">
-                    <div class="code-block"> <!-- Code block itself is not animated, parent is -->
+                <div class="installation-preview">
+                    <div class="code-block">
                         <div class="code-header">
                             <span class="code-title">Cargo.toml</span>
                             <button class="copy-btn" data-copy="[dependencies]&#10;forge-ec = &quot;0.1.0&quot;">

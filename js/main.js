@@ -411,13 +411,9 @@ class ForgeECApp {
           return;
         }
 
-        // Note: #user-signout is the ID in the main.js authClickHandler
-        // The dropdown uses #user-signout-dropdown
-        if (e.target.matches('#user-signout') || e.target.closest('#user-signout') ||
-            e.target.matches('#user-signout-dropdown') || e.target.closest('#user-signout-dropdown')) {
+        if (e.target.matches('#user-signout') || e.target.closest('#user-signout')) {
           e.preventDefault();
-          this.handleSignOut(); // This already updates UI and gives feedback
-          this.closeUserMenu(); // Ensure menu is closed
+          this.handleSignOut();
           return;
         }
       } catch (error) {
@@ -515,24 +511,20 @@ class ForgeECApp {
     }
 
     // Update parallax effects
-    // this.updateParallax(scrollY); // Consolidated into AnimationController
-    if (window.animationController && typeof window.animationController.updateScrollAnimations === 'function') {
-      // If AnimationController is expected to handle this, ensure it's called appropriately or remove this.
-      // For now, let's assume AnimationController's scroll handler covers parallax if elements exist.
-    }
-
+    this.updateParallax(scrollY);
 
     // Update active navigation
     this.updateActiveNavigation(scrollY);
   }
 
   updateParallax(scrollY) {
-    // This function is being consolidated into AnimationController in animations.js
-    // console.log('updateParallax in main.js called - should be removed or handled by AnimationController');
-    if (window.animationController && typeof window.animationController.updateScrollAnimations === 'function') {
-      // If AnimationController is expected to handle this, ensure it's called appropriately or remove this.
-      // For now, let's assume AnimationController's scroll handler covers parallax if elements exist.
-    }
+    const parallaxElements = document.querySelectorAll('.parallax');
+
+    parallaxElements.forEach(element => {
+      const speed = element.dataset.speed || 0.5;
+      const yPos = -(scrollY * speed);
+      element.style.transform = `translateY(${yPos}px)`;
+    });
   }
 
   updateActiveNavigation(scrollY) {
@@ -592,29 +584,85 @@ class ForgeECApp {
   }
 
   setupAnimations() {
-    // Animation setup is primarily handled by AnimationController in animations.js
-    // Ensure AnimationController is initialized (usually on DOMContentLoaded in animations.js itself)
-    if (window.animationController) {
-      console.log('AnimationController found, main.js setupAnimations will rely on it.');
-    } else {
-      console.warn('AnimationController not found. Advanced animations might not work.');
-    }
-    // The initScrollAnimations is more of a one-time check on load, keep it.
+    // Initialize intersection observer for scroll animations
+    this.observeElements();
+
+    // Setup magnetic hover effects
+    this.setupMagneticEffects();
+
+    // Setup ripple effects
+    this.setupRippleEffects();
   }
 
   observeElements() {
-    // This function is being consolidated into AnimationController in animations.js
-    // console.log('observeElements in main.js called - should be removed or handled by AnimationController');
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animated');
+
+          // Add stagger effect for child elements
+          const staggerItems = entry.target.querySelectorAll('.stagger-item');
+          staggerItems.forEach((item, index) => {
+            setTimeout(() => {
+              item.classList.add('animated');
+            }, index * 100);
+          });
+        }
+      });
+    }, observerOptions);
+
+    // Observe elements with animation classes
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    animatedElements.forEach(el => this.observer.observe(el));
   }
 
   setupMagneticEffects() {
-    // This function is being consolidated into AnimationController.setupAdvancedMagneticEffects in animations.js
-    // console.log('setupMagneticEffects in main.js called - should be removed or handled by AnimationController');
+    const magneticElements = document.querySelectorAll('.magnetic');
+
+    magneticElements.forEach(element => {
+      element.addEventListener('mousemove', (e) => {
+        const rect = element.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+
+        const moveX = x * 0.1;
+        const moveY = y * 0.1;
+
+        element.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      });
+
+      element.addEventListener('mouseleave', () => {
+        element.style.transform = 'translate(0, 0)';
+      });
+    });
   }
 
   setupRippleEffects() {
-    // This function is being consolidated into AnimationController.setupClickAnimations in animations.js
-    // console.log('setupRippleEffects in main.js called - should be removed or handled by AnimationController');
+    const rippleElements = document.querySelectorAll('.ripple');
+
+    rippleElements.forEach(element => {
+      element.addEventListener('click', (e) => {
+        const rect = element.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple-effect';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+
+        element.appendChild(ripple);
+
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    });
   }
 
   async loadGitHubData() {
@@ -740,14 +788,12 @@ class ForgeECApp {
 
   showCopyFeedback(button) {
     const originalHTML = button.innerHTML;
-    // Add a class for the "copied" state
-    button.classList.add('copied-feedback');
-    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-    // CSS will handle the color change via .copied-feedback class
+    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>';
+    button.style.color = 'var(--color-success)';
 
     setTimeout(() => {
       button.innerHTML = originalHTML;
-      button.classList.remove('copied-feedback');
+      button.style.color = '';
     }, 2000);
   }
 
@@ -1239,8 +1285,8 @@ class ForgeECApp {
         if (menuButton) {
           // Check if dropdown exists and is visible to set correct initial state,
           // though it should typically be hidden initially.
-          const dropdown = userMenuTrigger.querySelector('.user-menu');
-          const isDropdownVisible = dropdown && dropdown.classList.contains('active');
+          const dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
+          const isDropdownVisible = dropdown && dropdown.style.display === 'block';
           menuButton.setAttribute('aria-expanded', isDropdownVisible ? 'true' : 'false');
         }
       }
@@ -1283,19 +1329,15 @@ class ForgeECApp {
     const userMenuTrigger = document.getElementById('user-menu-trigger');
     if (!userMenuTrigger) return;
 
-    let dropdown = userMenuTrigger.querySelector('.user-menu');
+    let dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
     if (!dropdown) {
-      // Ensure currentUser is available for initial population.
-      const userName = this.currentUser ? this.currentUser.name || 'User' : 'User';
-      const userEmail = this.currentUser ? this.currentUser.email : 'user@example.com';
-
       const dropdownHTML = `
-        <div class="user-menu">
+        <div class="user-menu-dropdown" style="display: none;">
           <div class="user-menu-header">
             <img src="/assets/default-avatar.png" alt="User Avatar" class="user-avatar-dropdown">
             <div class="user-menu-details">
-              <span class="user-menu-dropdown-name">${userName}</span>
-              <span class="user-menu-dropdown-email">${userEmail}</span>
+              <span class="user-menu-dropdown-name">${this.currentUser.name || 'User'}</span>
+              <span class="user-menu-dropdown-email">${this.currentUser.email}</span>
             </div>
           </div>
           <ul class="user-menu-list">
@@ -1307,22 +1349,20 @@ class ForgeECApp {
         </div>
       `;
       userMenuTrigger.insertAdjacentHTML('beforeend', dropdownHTML);
-      dropdown = userMenuTrigger.querySelector('.user-menu');
+      // Re-query for the dropdown after inserting it
+      dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
 
-      const profileLink = dropdown.querySelector('#user-profile');
-      if (profileLink) profileLink.addEventListener('click', (e) => {
+      // Add event listeners for the new items
+      dropdown.querySelector('#user-profile').addEventListener('click', (e) => {
         e.preventDefault(); this.handleUserProfileClick(); this.closeUserMenu();
       });
-
-      const settingsLink = dropdown.querySelector('#user-settings');
-      if (settingsLink) settingsLink.addEventListener('click', (e) => {
+      dropdown.querySelector('#user-settings').addEventListener('click', (e) => {
         e.preventDefault(); this.handleUserSettingsClick(); this.closeUserMenu();
       });
-
-      const signOutLink = dropdown.querySelector('#user-signout-dropdown');
-      if (signOutLink) signOutLink.addEventListener('click', (e) => {
-        // Signout is primarily handled by the global authClickHandler.
-        // This ensures the menu closes if this specific link is clicked.
+      // The #user-signout-dropdown will be handled by the main authClickHandler
+      // but we need to ensure it also closes the menu.
+       dropdown.querySelector('#user-signout-dropdown').addEventListener('click', (e) => {
+        // Signout is handled by authClickHandler, just ensure menu closes
         this.closeUserMenu();
       });
     }
@@ -1333,17 +1373,18 @@ class ForgeECApp {
     const userMenuTrigger = document.getElementById('user-menu-trigger');
     if (!userMenuTrigger) return;
 
-    const dropdown = this.ensureUserMenuDropdown();
+    const dropdown = this.ensureUserMenuDropdown(); // Ensure dropdown exists
     if (!dropdown) return;
 
     const menuButton = document.getElementById('user-menu-btn');
-    const isOpen = dropdown.classList.contains('active');
+    const isOpen = dropdown.style.display === 'block';
 
     if (isOpen) {
       this.closeUserMenu();
     } else {
-      dropdown.classList.add('active');
-      if (menuButton) menuButton.setAttribute('aria-expanded', 'true');
+      dropdown.style.display = 'block';
+      menuButton.setAttribute('aria-expanded', 'true');
+      // Add event listeners for click outside and Escape key
       document.addEventListener('click', this.handleClickOutsideUserMenu, true);
       document.addEventListener('keydown', this.handleEscapeKeyUserMenu, true);
       console.log('User menu opened');
@@ -1354,11 +1395,11 @@ class ForgeECApp {
     const userMenuTrigger = document.getElementById('user-menu-trigger');
     if (!userMenuTrigger) return;
 
-    const dropdown = userMenuTrigger.querySelector('.user-menu');
+    const dropdown = userMenuTrigger.querySelector('.user-menu-dropdown');
     const menuButton = document.getElementById('user-menu-btn');
 
-    if (dropdown && dropdown.classList.contains('active')) {
-      dropdown.classList.remove('active');
+    if (dropdown && dropdown.style.display === 'block') {
+      dropdown.style.display = 'none';
       if (menuButton) menuButton.setAttribute('aria-expanded', 'false');
       document.removeEventListener('click', this.handleClickOutsideUserMenu, true);
       document.removeEventListener('keydown', this.handleEscapeKeyUserMenu, true);
