@@ -39,31 +39,62 @@ cp index.html "$BUILD_DIR/"
 cp offline.html "$BUILD_DIR/"
 cp sw.js "$BUILD_DIR/"
 
-# Copy directories
-cp -r css "$BUILD_DIR/"
-cp -r js "$BUILD_DIR/"
-cp -r assets "$BUILD_DIR/"
+# Copy directories that exist
+if [ -d "css" ]; then
+    cp -r css "$BUILD_DIR/"
+fi
+
+if [ -d "js" ]; then
+    cp -r js "$BUILD_DIR/"
+fi
+
+if [ -d "assets" ]; then
+    cp -r assets "$BUILD_DIR/"
+fi
+
+if [ -d "scripts" ]; then
+    cp -r scripts "$BUILD_DIR/"
+fi
 
 # Copy docs if it exists
 if [ -d "docs" ]; then
     cp -r docs "$BUILD_DIR/"
 fi
 
+# Copy package.json and other config files for reference
+if [ -f "package.json" ]; then
+    cp package.json "$BUILD_DIR/"
+fi
+
+if [ -f "vite.config.js" ]; then
+    cp vite.config.js "$BUILD_DIR/"
+fi
+
 # Update base paths for GitHub Pages deployment
 echo "🔧 Updating paths for GitHub Pages..."
 
 # Update index.html to use correct base path
-sed -i 's|href="css/|href="/forge-ec/css/|g' "$BUILD_DIR/index.html"
-sed -i 's|src="js/|src="/forge-ec/js/|g' "$BUILD_DIR/index.html"
-sed -i 's|href="assets/|href="/forge-ec/assets/|g' "$BUILD_DIR/index.html"
-sed -i 's|src="assets/|src="/forge-ec/assets/|g' "$BUILD_DIR/index.html"
+if [ -d "$BUILD_DIR/css" ]; then
+    sed -i 's|href="css/|href="/forge-ec/css/|g' "$BUILD_DIR/index.html"
+fi
+
+if [ -d "$BUILD_DIR/js" ]; then
+    sed -i 's|src="js/|src="/forge-ec/js/|g' "$BUILD_DIR/index.html"
+fi
+
+if [ -d "$BUILD_DIR/assets" ]; then
+    sed -i 's|href="assets/|href="/forge-ec/assets/|g' "$BUILD_DIR/index.html"
+    sed -i 's|src="assets/|src="/forge-ec/assets/|g' "$BUILD_DIR/index.html"
+fi
 
 # Update service worker paths
 sed -i 's|"/offline.html"|"/forge-ec/offline.html"|g' "$BUILD_DIR/sw.js"
 sed -i 's|"/assets/offline-image.svg"|"/forge-ec/assets/offline-image.svg"|g' "$BUILD_DIR/sw.js"
 
 # Update CSS imports if any
-find "$BUILD_DIR/css" -name "*.css" -exec sed -i 's|url("../assets/|url("/forge-ec/assets/|g' {} \;
+if [ -d "$BUILD_DIR/css" ]; then
+    find "$BUILD_DIR/css" -name "*.css" -exec sed -i 's|url("../assets/|url("/forge-ec/assets/|g' {} \;
+fi
 
 echo "✅ Build preparation completed"
 
