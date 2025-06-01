@@ -60,6 +60,11 @@ class EnhancedTransitions {
       return;
     }
 
+    // Mark performance point
+    if (window.performanceMonitor) {
+      window.performanceMonitor.mark?.('section-transition-start');
+    }
+
     // Update progress indicator
     this.updateProgressIndicator(targetId);
 
@@ -69,16 +74,16 @@ class EnhancedTransitions {
       currentSectionEl.classList.remove('active');
     }
 
-    // Phase 2: Smooth scroll to target
+    // Phase 2: Smooth scroll to target using enhanced smooth scroll system
     await this.smoothScrollToElement(targetSectionEl);
 
     // Phase 3: Transition in new section
     targetSectionEl.classList.add('transitioning-in');
-    
+
     setTimeout(() => {
       targetSectionEl.classList.remove('transitioning-in');
       targetSectionEl.classList.add('active');
-      
+
       if (currentSectionEl) {
         currentSectionEl.classList.remove('transitioning-out');
       }
@@ -86,11 +91,28 @@ class EnhancedTransitions {
       this.currentSection = targetId;
       this.updateActiveNavLink(targetId);
       this.isTransitioning = false;
+
+      // Mark performance completion
+      if (window.performanceMonitor) {
+        window.performanceMonitor.mark?.('section-transition-end');
+        window.performanceMonitor.measure?.('section-transition', 'section-transition-start', 'section-transition-end');
+      }
     }, this.transitionDuration / 2);
   }
 
   smoothScrollToElement(element) {
     return new Promise((resolve) => {
+      // Use enhanced smooth scroll system if available
+      if (window.smoothScrollSystem && window.smoothScrollSystem.isActive()) {
+        window.smoothScrollSystem.scrollToElement(element, {
+          offset: -70,
+          duration: this.transitionDuration,
+          callback: resolve
+        });
+        return;
+      }
+
+      // Fallback to custom smooth scrolling
       const targetPosition = element.offsetTop - 70; // Account for navbar
       const startPosition = window.pageYOffset;
       const distance = targetPosition - startPosition;

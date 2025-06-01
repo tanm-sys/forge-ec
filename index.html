@@ -57,9 +57,21 @@
     }
     </script>
 
+    <!-- Critical Resource Hints for Performance -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.github.com" crossorigin>
+    <link rel="dns-prefetch" href="https://forge-ec.firebaseapp.com">
+
     <!-- Preload critical resources -->
     <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="css/animations.css" as="style">
     <link rel="preload" href="js/main.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="js/performance-monitor.js" as="script">
+
+    <!-- Prefetch Next Page Resources -->
+    <link rel="prefetch" href="docs/index.html">
+    <link rel="prefetch" href="about/index.html">
+    <link rel="prefetch" href="examples/index.html">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
@@ -1694,6 +1706,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     <!-- Main Application Script (ES6 Module) -->
     <script type="module" src="js/main.js"></script>
+
+    <!-- Performance Enhancement Scripts (Phase 1) -->
+    <script src="js/performance-monitor.js" defer></script>
+    <script src="js/smooth-scroll.js" defer></script>
+    <script src="js/quicklink-prefetch.js" defer></script>
+    <script src="js/performance-validation.js" defer></script>
 
     <!-- Legacy scripts for non-module browsers -->
     <script src="js/hero-canvas.js" defer></script>
