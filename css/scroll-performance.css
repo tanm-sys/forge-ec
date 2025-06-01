@@ -1,0 +1,273 @@
+/**
+ * @fileoverview Scroll Performance Optimizations
+ * @version 1.0.0
+ * @author Forge EC Team
+ * @description CSS optimizations specifically for scroll performance,
+ * including hardware acceleration, will-change management, and mobile optimizations.
+ */
+
+/* ===== SCROLL PERFORMANCE OPTIMIZATIONS ===== */
+
+/* Global scroll optimizations */
+html {
+  /* Enable smooth scrolling only when not using Lenis */
+  scroll-behavior: auto;
+  /* Optimize scroll performance on mobile */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent scroll bounce on iOS */
+  overscroll-behavior: none;
+}
+
+body {
+  /* Prevent horizontal scroll issues */
+  overflow-x: hidden;
+  /* Optimize for scroll performance */
+  transform: translateZ(0);
+}
+
+/* Fixed elements optimization */
+.navbar,
+.loading-screen,
+.modal-overlay,
+.auth-feedback {
+  /* Force hardware acceleration for fixed elements */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Optimize backdrop-filter performance */
+  will-change: background-color, backdrop-filter;
+}
+
+/* Scrollable content optimization */
+.code-content,
+.modal-content,
+.user-menu-dropdown,
+.example-output {
+  /* Optimize scrollable areas */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Hardware acceleration for smooth scrolling */
+  transform: translateZ(0);
+}
+
+/* Glass morphism performance during scroll */
+.glass-enhanced,
+.feature-card,
+.doc-card,
+.team-member {
+  /* Optimize backdrop-filter during scroll */
+  will-change: transform, backdrop-filter;
+  backface-visibility: hidden;
+  /* Contain layout changes */
+  contain: layout style paint;
+}
+
+/* Parallax elements optimization */
+.parallax,
+.hero-canvas,
+.particle {
+  /* Optimize for smooth parallax scrolling */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Prevent layout thrashing */
+  contain: layout style paint;
+}
+
+/* Animation elements during scroll */
+.animate-on-scroll,
+.stagger-item,
+.magnetic {
+  /* Optimize for scroll-triggered animations */
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  /* Remove will-change after animation completes */
+  transition-property: opacity, transform, will-change;
+}
+
+.animate-on-scroll.animated,
+.stagger-item.animated {
+  /* Clean up will-change after animation */
+  will-change: auto;
+}
+
+/* Progress bars optimization */
+.scroll-progress,
+.progress-bar,
+.stage-progress {
+  /* Use transform instead of width for better performance */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Mobile scroll optimizations */
+@media (max-width: 768px) {
+  /* Optimize for mobile scrolling */
+  body {
+    /* Improve touch scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent scroll bounce */
+    overscroll-behavior-y: none;
+  }
+  
+  /* Reduce animations on mobile for better performance */
+  .parallax {
+    /* Disable parallax on mobile for better performance */
+    transform: none !important;
+    will-change: auto;
+  }
+  
+  /* Optimize glass effects on mobile */
+  .glass-enhanced {
+    /* Reduce backdrop-filter complexity on mobile */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  /* Optimize hover effects for touch devices */
+  .magnetic,
+  .enhanced-hover {
+    /* Disable complex hover effects on touch devices */
+    transform: none !important;
+    will-change: auto;
+  }
+}
+
+/* High refresh rate display optimizations */
+@media (min-resolution: 120dpi) {
+  /* Optimize for high refresh rate displays */
+  .animate-on-scroll,
+  .parallax,
+  .magnetic {
+    /* Use more efficient animations for high refresh rates */
+    animation-timing-function: linear;
+    transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all scroll-based animations */
+  html {
+    scroll-behavior: auto !important;
+  }
+  
+  .parallax,
+  .animate-on-scroll,
+  .magnetic {
+    /* Remove all transforms and animations */
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+  
+  /* Keep essential functionality but remove motion */
+  .navbar.scrolled {
+    /* Instant state changes instead of transitions */
+    transition: none;
+  }
+}
+
+/* Performance monitoring classes */
+.scroll-performance-monitor {
+  /* Class for elements being monitored for scroll performance */
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.scroll-performance-critical {
+  /* Class for critical scroll performance elements */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: strict;
+}
+
+/* Cleanup classes for removing performance optimizations */
+.scroll-animation-complete {
+  /* Remove performance optimizations after animations complete */
+  will-change: auto !important;
+  contain: none !important;
+}
+
+/* Browser-specific optimizations */
+@supports (contain: layout style paint) {
+  /* Modern browsers with containment support */
+  .parallax,
+  .glass-enhanced,
+  .animate-on-scroll {
+    contain: layout style paint;
+  }
+}
+
+@supports not (contain: layout style paint) {
+  /* Fallback for older browsers */
+  .parallax,
+  .glass-enhanced,
+  .animate-on-scroll {
+    /* Use transform3d for hardware acceleration */
+    transform: translateZ(0);
+  }
+}
+
+/* Scroll snap optimizations */
+.scroll-snap-container {
+  /* Optimize scroll snap performance */
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Custom scrollbar optimizations */
+::-webkit-scrollbar {
+  /* Optimize custom scrollbars */
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  /* Hardware acceleration for scrollbar */
+  transform: translateZ(0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 4px;
+  /* Smooth scrollbar interactions */
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Firefox scrollbar optimization */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--bg-tertiary);
+}
+
+/* Intersection Observer optimization classes */
+.io-observed {
+  /* Elements being observed by Intersection Observer */
+  contain: layout style;
+}
+
+.io-visible {
+  /* Elements currently visible in viewport */
+  will-change: opacity, transform;
+}
+
+.io-hidden {
+  /* Elements not visible in viewport */
+  will-change: auto;
+  contain: strict;
+}

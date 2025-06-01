@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll Performance Test - Forge EC</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .test-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .test-description {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        
+        .test-results {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-pass { background: #4ade80; }
+        .status-fail { background: #f87171; }
+        .status-warning { background: #fbbf24; }
+        .status-info { background: #60a5fa; }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .scroll-test-area {
+            height: 2000px;
+            background: linear-gradient(to bottom, 
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.05) 50%,
+                rgba(255, 255, 255, 0.1) 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .scroll-marker {
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 1px;
+        }
+        
+        .parallax-element {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            right: 50px;
+            will-change: transform;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Scroll Performance Test Suite</h1>
+        <p>Comprehensive testing for Forge EC website scroll performance fixes</p>
+    </div>
+
+    <div class="test-container">
+        <div class="test-section">
+            <h2 class="test-title">📊 Performance Metrics</h2>
+            <p class="test-description">Real-time scroll performance monitoring</p>
+            
+            <div class="performance-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="fps-value">--</div>
+                    <div class="metric-label">FPS</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="scroll-events">0</div>
+                    <div class="metric-label">Scroll Events</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="velocity-value">0</div>
+                    <div class="metric-label">Velocity</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="direction-value">--</div>
+                    <div class="metric-label">Direction</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Scroll Coordinator Test</h2>
+            <p class="test-description">Test centralized scroll event management</p>
+            
+            <button class="test-button" onclick="testScrollCoordinator()">Test Coordinator</button>
+            <button class="test-button" onclick="testMultipleHandlers()">Test Multiple Handlers</button>
+            
+            <div class="test-results" id="coordinator-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🚀 Smooth Scroll Test</h2>
+            <p class="test-description">Test smooth scrolling functionality and performance</p>
+            
+            <button class="test-button" onclick="testSmoothScroll()">Test Smooth Scroll</button>
+            <button class="test-button" onclick="testScrollToSection()">Test Section Navigation</button>
+            
+            <div class="test-results" id="smooth-scroll-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📱 Mobile Scroll Test</h2>
+            <p class="test-description">Test mobile-specific scroll behaviors</p>
+            
+            <button class="test-button" onclick="testTouchScroll()">Test Touch Scroll</button>
+            <button class="test-button" onclick="testMomentumScroll()">Test Momentum</button>
+            
+            <div class="test-results" id="mobile-scroll-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎨 Visual Effects Test</h2>
+            <p class="test-description">Test glass morphism and parallax during scroll</p>
+            
+            <button class="test-button" onclick="testParallaxPerformance()">Test Parallax</button>
+            <button class="test-button" onclick="testGlassMorphism()">Test Glass Effects</button>
+            
+            <div class="test-results" id="visual-effects-results"></div>
+        </div>
+    </div>
+
+    <!-- Scroll Test Area -->
+    <div class="test-container">
+        <h2>📏 Scroll Test Area</h2>
+        <p>Scroll through this area to test performance and behavior</p>
+        
+        <div class="scroll-test-area">
+            <div class="scroll-marker" style="top: 100px;"></div>
+            <div class="scroll-marker" style="top: 300px;"></div>
+            <div class="scroll-marker" style="top: 500px;"></div>
+            <div class="scroll-marker" style="top: 700px;"></div>
+            <div class="scroll-marker" style="top: 900px;"></div>
+            
+            <div class="parallax-element" style="top: 200px;" data-speed="0.3"></div>
+            <div class="parallax-element" style="top: 600px;" data-speed="0.5"></div>
+            <div class="parallax-element" style="top: 1000px;" data-speed="0.7"></div>
+            
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <h3>Scroll Test Content</h3>
+                <p>This area contains parallax elements and performance monitoring</p>
+                <p>Scroll up and down to test performance</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Performance monitoring
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let scrollEventCount = 0;
+        let currentVelocity = 0;
+        let currentDirection = '--';
+
+        function updateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime - lastTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                document.getElementById('fps-value').textContent = fps;
+                
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+            
+            requestAnimationFrame(updateFPS);
+        }
+
+        // Start FPS monitoring
+        requestAnimationFrame(updateFPS);
+
+        // Scroll event monitoring
+        let lastScrollY = 0;
+        window.addEventListener('scroll', () => {
+            scrollEventCount++;
+            document.getElementById('scroll-events').textContent = scrollEventCount;
+            
+            const currentScrollY = window.scrollY;
+            currentDirection = currentScrollY > lastScrollY ? 'Down' : 'Up';
+            currentVelocity = Math.abs(currentScrollY - lastScrollY);
+            
+            document.getElementById('velocity-value').textContent = currentVelocity.toFixed(1);
+            document.getElementById('direction-value').textContent = currentDirection;
+            
+            lastScrollY = currentScrollY;
+        }, { passive: true });
+
+        // Test functions
+        function testScrollCoordinator() {
+            const results = document.getElementById('coordinator-results');
+            results.textContent = 'Testing scroll coordinator...\n';
+            
+            if (window.scrollCoordinator) {
+                results.textContent += '✅ Scroll coordinator found\n';
+                results.textContent += `📊 Current scroll: ${window.scrollCoordinator.scrollY}px\n`;
+                results.textContent += `📈 Direction: ${window.scrollCoordinator.direction}\n`;
+                results.textContent += `⚡ Velocity: ${window.scrollCoordinator.velocity.toFixed(2)}\n`;
+            } else {
+                results.textContent += '❌ Scroll coordinator not found\n';
+            }
+        }
+
+        function testMultipleHandlers() {
+            const results = document.getElementById('coordinator-results');
+            results.textContent += '\nTesting multiple scroll handlers...\n';
+            
+            // Count active scroll listeners
+            const eventListeners = getEventListeners ? getEventListeners(window) : null;
+            if (eventListeners && eventListeners.scroll) {
+                results.textContent += `📝 Found ${eventListeners.scroll.length} scroll listeners\n`;
+            } else {
+                results.textContent += '⚠️ Cannot detect scroll listeners (DevTools required)\n';
+            }
+        }
+
+        function testSmoothScroll() {
+            const results = document.getElementById('smooth-scroll-results');
+            results.textContent = 'Testing smooth scroll system...\n';
+            
+            if (window.smoothScrollSystem) {
+                results.textContent += '✅ Smooth scroll system found\n';
+                results.textContent += `🎯 Active: ${window.smoothScrollSystem.isActive()}\n`;
+                results.textContent += `🔧 Enabled: ${window.smoothScrollSystem.isEnabled}\n`;
+            } else {
+                results.textContent += '❌ Smooth scroll system not found\n';
+            }
+        }
+
+        function testScrollToSection() {
+            const results = document.getElementById('smooth-scroll-results');
+            results.textContent += '\nTesting scroll to section...\n';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            results.textContent += '🔄 Scrolled to top\n';
+        }
+
+        function testTouchScroll() {
+            const results = document.getElementById('mobile-scroll-results');
+            results.textContent = 'Testing touch scroll...\n';
+            
+            const isTouchDevice = 'ontouchstart' in window;
+            results.textContent += `📱 Touch device: ${isTouchDevice}\n`;
+            
+            const hasOverflowScrolling = getComputedStyle(document.body).webkitOverflowScrolling;
+            results.textContent += `🔄 Momentum scrolling: ${hasOverflowScrolling || 'auto'}\n`;
+        }
+
+        function testMomentumScroll() {
+            const results = document.getElementById('mobile-scroll-results');
+            results.textContent += '\nTesting momentum scroll...\n';
+            
+            const overscrollBehavior = getComputedStyle(document.documentElement).overscrollBehavior;
+            results.textContent += `🎯 Overscroll behavior: ${overscrollBehavior}\n`;
+        }
+
+        function testParallaxPerformance() {
+            const results = document.getElementById('visual-effects-results');
+            results.textContent = 'Testing parallax performance...\n';
+            
+            const parallaxElements = document.querySelectorAll('.parallax-element');
+            results.textContent += `🎨 Found ${parallaxElements.length} parallax elements\n`;
+            
+            parallaxElements.forEach((el, index) => {
+                const transform = getComputedStyle(el).transform;
+                results.textContent += `Element ${index + 1}: ${transform}\n`;
+            });
+        }
+
+        function testGlassMorphism() {
+            const results = document.getElementById('visual-effects-results');
+            results.textContent += '\nTesting glass morphism...\n';
+            
+            const glassElements = document.querySelectorAll('.test-container');
+            results.textContent += `🔍 Found ${glassElements.length} glass elements\n`;
+            
+            const backdropFilter = getComputedStyle(glassElements[0]).backdropFilter;
+            results.textContent += `🎭 Backdrop filter: ${backdropFilter}\n`;
+        }
+
+        // Auto-run initial tests
+        setTimeout(() => {
+            testScrollCoordinator();
+            testSmoothScroll();
+            testTouchScroll();
+            testParallaxPerformance();
+        }, 1000);
+    </script>
+</body>
+</html>

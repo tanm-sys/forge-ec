@@ -50,18 +50,21 @@ class SmoothScrollSystem {
 
     /** @type {Object|null} */
     this.lenis = null;
-    
+
     /** @type {boolean} */
     this.isEnabled = true;
-    
+
     /** @type {boolean} */
     this.isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
+
     /** @type {number} */
     this.rafId = null;
-    
+
     /** @type {Map<string, Function>} */
     this.scrollListeners = new Map();
+
+    /** @type {number} */
+    this.lastScrollY = 0;
 
     this.init();
   }
@@ -206,23 +209,35 @@ class SmoothScrollSystem {
    * @param {Object} data - Scroll data from Lenis
    */
   handleScroll(data) {
-    // Update scroll position for other systems
+    const scrollY = data.scroll || window.scrollY;
+    const direction = data.direction || (scrollY > this.lastScrollY ? 'down' : 'up');
+    this.lastScrollY = scrollY;
+
+    // Update scroll position for other systems with enhanced coordination
     if (window.forgeECApp && window.forgeECApp.updateScrollEffects) {
-      window.forgeECApp.updateScrollEffects();
+      // Pass scroll data to main app for coordinated updates
+      window.forgeECApp.updateScrollEffects(scrollY, direction);
     }
 
-    // Trigger custom scroll listeners
+    // Trigger custom scroll listeners with error handling
     this.scrollListeners.forEach((callback, name) => {
       try {
-        callback(data);
+        callback({ ...data, scrollY, direction });
       } catch (error) {
         console.warn(`⚠️ Scroll listener '${name}' failed:`, error);
       }
     });
 
-    // Update enhanced transitions if available
-    if (window.enhancedTransitions && window.enhancedTransitions.detectCurrentSection) {
-      window.enhancedTransitions.detectCurrentSection();
+    // Update enhanced transitions if available (skip if main app handles it)
+    if (window.enhancedTransitions &&
+        window.enhancedTransitions.detectCurrentSection &&
+        (!window.forgeECApp || !window.forgeECApp.updateActiveNavigation)) {
+      window.enhancedTransitions.detectCurrentSection(scrollY, direction);
+    }
+
+    // Performance monitoring
+    if (window.performanceMonitor) {
+      window.performanceMonitor.mark?.('smooth-scroll-update');
     }
   }
 

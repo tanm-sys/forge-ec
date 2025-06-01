@@ -483,71 +483,133 @@ class ForgeECApp {
   }
 
   setupScrollEffects() {
-    // Throttled scroll handler
+    // Enhanced throttled scroll handler with passive listener
     let ticking = false;
+    let lastScrollY = 0;
+    let scrollDirection = 'down';
 
-    window.addEventListener('scroll', () => {
+    const scrollHandler = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          this.updateScrollEffects();
+          const currentScrollY = window.scrollY;
+          scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
+          lastScrollY = currentScrollY;
+
+          this.updateScrollEffects(currentScrollY, scrollDirection);
           ticking = false;
         });
         ticking = true;
       }
-    });
+    };
+
+    // Use passive listener for better performance
+    window.addEventListener('scroll', scrollHandler, { passive: true });
+
+    // Store handler for cleanup
+    this.scrollHandler = scrollHandler;
   }
 
-  updateScrollEffects() {
-    const scrollY = window.scrollY;
+  updateScrollEffects(scrollY = window.scrollY, direction = 'down') {
     const navbar = document.getElementById('navbar');
 
-    // Update navbar appearance
+    // Update navbar appearance with enhanced performance
     if (navbar) {
-      if (scrollY > 50) {
+      const shouldShowScrolled = scrollY > 50;
+      const hasScrolledClass = navbar.classList.contains('scrolled');
+
+      if (shouldShowScrolled && !hasScrolledClass) {
         navbar.classList.add('scrolled');
-      } else {
+        // Add will-change for smooth transitions
+        navbar.style.willChange = 'background-color, box-shadow';
+      } else if (!shouldShowScrolled && hasScrolledClass) {
         navbar.classList.remove('scrolled');
+        // Remove will-change after transition
+        setTimeout(() => {
+          navbar.style.willChange = 'auto';
+        }, 300);
       }
     }
 
-    // Update parallax effects
+    // Update parallax effects with performance optimization
     this.updateParallax(scrollY);
 
-    // Update active navigation
-    this.updateActiveNavigation(scrollY);
+    // Update active navigation with direction awareness
+    this.updateActiveNavigation(scrollY, direction);
+
+    // Update scroll position for other systems
+    this.scrollPosition = scrollY;
   }
 
   updateParallax(scrollY) {
     const parallaxElements = document.querySelectorAll('.parallax');
 
+    if (parallaxElements.length === 0) return;
+
+    // Use transform3d for better performance and add will-change
     parallaxElements.forEach(element => {
-      const speed = element.dataset.speed || 0.5;
+      const speed = parseFloat(element.dataset.speed) || 0.5;
       const yPos = -(scrollY * speed);
-      element.style.transform = `translateY(${yPos}px)`;
+
+      // Use transform3d for hardware acceleration
+      element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+
+      // Add will-change for smooth scrolling
+      if (!element.style.willChange) {
+        element.style.willChange = 'transform';
+      }
     });
   }
 
-  updateActiveNavigation(scrollY) {
+  updateActiveNavigation(scrollY, direction = 'down') {
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.nav-link');
 
+    if (sections.length === 0) return;
+
     let currentSection = '';
+    const offset = 100; // Navbar height offset
+    const windowHeight = window.innerHeight;
 
+    // Improved section detection with direction awareness
     sections.forEach(section => {
-      const sectionTop = section.offsetTop - 100;
-      const sectionHeight = section.offsetHeight;
+      const rect = section.getBoundingClientRect();
+      const sectionTop = rect.top + scrollY;
+      const sectionBottom = sectionTop + rect.height;
 
-      if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-        currentSection = section.getAttribute('id');
+      // Different logic based on scroll direction for better UX
+      if (direction === 'down') {
+        if (scrollY + offset >= sectionTop && scrollY + offset < sectionBottom) {
+          currentSection = section.getAttribute('id');
+        }
+      } else {
+        // When scrolling up, activate section when it's more than 50% visible
+        if (rect.top <= windowHeight * 0.5 && rect.bottom >= windowHeight * 0.5) {
+          currentSection = section.getAttribute('id');
+        }
       }
     });
 
+    // Update navigation links efficiently
+    let hasActiveLink = false;
     navLinks.forEach(link => {
-      link.classList.remove('active');
-      if (link.getAttribute('href') === `#${currentSection}`) {
+      const isActive = link.getAttribute('href') === `#${currentSection}`;
+      const wasActive = link.classList.contains('active');
+
+      if (isActive && !wasActive) {
         link.classList.add('active');
+        hasActiveLink = true;
+      } else if (!isActive && wasActive) {
+        link.classList.remove('active');
+      } else if (isActive) {
+        hasActiveLink = true;
       }
     });
+
+    // Fallback to home if no section is active
+    if (!hasActiveLink && scrollY < 100) {
+      const homeLink = document.querySelector('.nav-link[href="#home"]');
+      if (homeLink) homeLink.classList.add('active');
+    }
   }
 
   setupNavigation() {
@@ -567,14 +629,46 @@ class ForgeECApp {
 
   scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
-    if (section) {
-      const offsetTop = section.offsetTop - 80; // Account for fixed navbar
+    if (!section) return;
 
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
+    // Use enhanced smooth scroll system if available
+    if (window.smoothScrollSystem && window.smoothScrollSystem.isActive()) {
+      window.smoothScrollSystem.scrollToElement(section, {
+        offset: -80,
+        duration: 1200
       });
+      return;
     }
+
+    // Fallback to native smooth scrolling with better performance
+    const offsetTop = section.offsetTop - 80; // Account for fixed navbar
+    const startPosition = window.pageYOffset;
+    const distance = offsetTop - startPosition;
+    const duration = Math.min(Math.abs(distance) / 2, 1200); // Dynamic duration
+
+    if (Math.abs(distance) < 10) return; // Skip if already at target
+
+    // Use requestAnimationFrame for smooth scrolling
+    const startTime = performance.now();
+
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation
+      const easeInOutCubic = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      const currentPosition = startPosition + distance * easeInOutCubic;
+      window.scrollTo(0, currentPosition);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+
+    requestAnimationFrame(animateScroll);
   }
 
   setActiveNavLink(activeLink) {

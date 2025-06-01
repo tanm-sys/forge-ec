@@ -165,35 +165,67 @@ class EnhancedTransitions {
   }
 
   setupScrollSectionDetection() {
-    let ticking = false;
+    // Register with main app's scroll system to avoid duplicate handlers
+    if (window.forgeECApp) {
+      // Hook into main app's scroll updates
+      const originalUpdateScrollEffects = window.forgeECApp.updateScrollEffects;
+      window.forgeECApp.updateScrollEffects = (scrollY, direction) => {
+        originalUpdateScrollEffects.call(window.forgeECApp, scrollY, direction);
+        if (!this.isTransitioning) {
+          this.detectCurrentSection(scrollY, direction);
+        }
+      };
+    } else {
+      // Fallback: create own handler if main app not available
+      let ticking = false;
+      const scrollHandler = () => {
+        if (!ticking && !this.isTransitioning) {
+          requestAnimationFrame(() => {
+            this.detectCurrentSection();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
 
-    window.addEventListener('scroll', () => {
-      if (!ticking && !this.isTransitioning) {
-        requestAnimationFrame(() => {
-          this.detectCurrentSection();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    });
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+      this.scrollHandler = scrollHandler;
+    }
   }
 
-  detectCurrentSection() {
+  detectCurrentSection(scrollY = window.scrollY, direction = 'down') {
     const sections = document.querySelectorAll('section[id]');
-    const scrollY = window.scrollY + 100;
+    if (sections.length === 0) return;
 
+    const offset = 100;
+    const windowHeight = window.innerHeight;
+    let newCurrentSection = '';
+
+    // Improved section detection with direction awareness
     for (const section of sections) {
       const rect = section.getBoundingClientRect();
-      const sectionTop = scrollY - rect.height + window.scrollY;
+      const sectionTop = rect.top + scrollY;
       const sectionBottom = sectionTop + rect.height;
 
-      if (scrollY >= sectionTop && scrollY < sectionBottom) {
-        if (section.id !== this.currentSection) {
-          this.currentSection = section.id;
-          this.updateActiveNavLink(section.id);
+      // Different logic based on scroll direction for better UX
+      if (direction === 'down') {
+        if (scrollY + offset >= sectionTop && scrollY + offset < sectionBottom) {
+          newCurrentSection = section.id;
+          break;
         }
-        break;
+      } else {
+        // When scrolling up, activate section when it's more than 50% visible
+        if (rect.top <= windowHeight * 0.5 && rect.bottom >= windowHeight * 0.5) {
+          newCurrentSection = section.id;
+          break;
+        }
       }
+    }
+
+    // Only update if section changed to avoid unnecessary DOM updates
+    if (newCurrentSection && newCurrentSection !== this.currentSection) {
+      this.currentSection = newCurrentSection;
+      this.updateActiveNavLink(newCurrentSection);
     }
   }
 

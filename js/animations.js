@@ -237,41 +237,72 @@ class AnimationController {
   }
 
   setupScrollAnimations() {
-    let ticking = false;
+    // Register with main app's scroll system instead of creating duplicate handler
+    if (window.forgeECApp) {
+      // Hook into main app's scroll updates
+      const originalUpdateScrollEffects = window.forgeECApp.updateScrollEffects;
+      window.forgeECApp.updateScrollEffects = (scrollY, direction) => {
+        originalUpdateScrollEffects.call(window.forgeECApp, scrollY, direction);
+        this.updateScrollAnimations(scrollY);
+      };
+    } else {
+      // Fallback: create own handler if main app not available
+      let ticking = false;
+      const scrollHandler = () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            this.updateScrollAnimations();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
 
-    window.addEventListener('scroll', () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          this.updateScrollAnimations();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    });
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+      this.scrollHandler = scrollHandler;
+    }
   }
 
-  updateScrollAnimations() {
-    const scrollY = window.scrollY;
+  updateScrollAnimations(scrollY = window.scrollY) {
     const windowHeight = window.innerHeight;
 
-    // Parallax effects
-    const parallaxElements = document.querySelectorAll('.parallax');
-    if (parallaxElements.length > 0) {
-      parallaxElements.forEach(element => {
-        const speed = parseFloat(element.dataset.speed) || 0.5;
-        const yPos = -(scrollY * speed);
-        element.style.transform = `translateY(${yPos}px)`;
-      });
-    } // else { console.log("No .parallax elements found for scroll animation."); }
+    // Skip parallax if main app handles it to avoid conflicts
+    if (!window.forgeECApp || !window.forgeECApp.updateParallax) {
+      // Parallax effects with performance optimization
+      const parallaxElements = document.querySelectorAll('.parallax:not(.main-parallax)');
+      if (parallaxElements.length > 0) {
+        parallaxElements.forEach(element => {
+          const speed = parseFloat(element.dataset.speed) || 0.5;
+          const yPos = -(scrollY * speed);
 
-    // Progress bars based on scroll
+          // Use transform3d for hardware acceleration
+          element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+
+          // Add will-change for smooth scrolling
+          if (!element.style.willChange) {
+            element.style.willChange = 'transform';
+          }
+        });
+      }
+    }
+
+    // Progress bars based on scroll with performance optimization
     const progressBars = document.querySelectorAll('.scroll-progress');
     if (progressBars.length > 0) {
+      const maxScroll = document.body.scrollHeight - windowHeight;
+      const progress = maxScroll > 0 ? (scrollY / maxScroll) * 100 : 0;
+      const clampedProgress = Math.min(Math.max(progress, 0), 100);
+
       progressBars.forEach(bar => {
-        const progress = (scrollY / (document.body.scrollHeight - windowHeight)) * 100;
-        bar.style.width = `${Math.min(progress, 100)}%`;
+        // Use transform instead of width for better performance
+        bar.style.transform = `scaleX(${clampedProgress / 100})`;
+        bar.style.transformOrigin = 'left';
+
+        if (!bar.style.willChange) {
+          bar.style.willChange = 'transform';
+        }
       });
-    } // else { console.log("No .scroll-progress elements found for scroll animation."); }
+    }
   }
 
   setupHoverAnimations() {

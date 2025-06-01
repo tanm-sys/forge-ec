@@ -76,13 +76,16 @@
 /* ===== SCROLL TRIGGERED ANIMATIONS ===== */
 .animate-on-scroll {
   opacity: 0;
-  transform: translateY(50px);
+  transform: translate3d(0, 50px, 0);
   transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 
 .animate-on-scroll.animated {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
+  will-change: auto; /* Remove will-change after animation */
 }
 
 .animate-on-scroll.delay-1 { transition-delay: 0.1s; }
@@ -326,6 +329,9 @@
 .parallax {
   transform: translateZ(0);
   will-change: transform;
+  backface-visibility: hidden;
+  /* Optimize for smooth scrolling */
+  contain: layout style paint;
 }
 
 .parallax-slow {

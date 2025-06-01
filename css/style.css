@@ -120,8 +120,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Conditional smooth scrolling - will be overridden by Lenis when active */
+  scroll-behavior: auto;
   font-size: 16px;
+  /* Optimize for smooth scrolling performance */
+  scroll-padding-top: 80px; /* Account for fixed navbar */
 }
 
 body {
@@ -238,6 +241,9 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-glass);
   transition: all var(--transition-normal);
+  /* Optimize for scroll performance */
+  will-change: background-color, box-shadow;
+  transform: translateZ(0); /* Force hardware acceleration */
 }
 
 .navbar.scrolled {
