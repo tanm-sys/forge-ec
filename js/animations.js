@@ -136,6 +136,36 @@ class AnimationController {
     element.classList.add('title-chars-processed');
   }
 
+  animateTitleChars(element) {
+    if (this.isReducedMotion || element.classList.contains('chars-animated')) return;
+    element.classList.add('chars-animated'); // Mark as processed
+
+    const text = element.textContent.trim();
+    element.innerHTML = ''; // Clear original text
+
+    text.split('').forEach((char, index) => {
+      const span = document.createElement('span');
+      span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space for spaces
+      span.style.display = 'inline-block';
+      span.style.opacity = '0';
+      span.style.transform = 'translateY(20px) scale(0.8)';
+      // More sophisticated animation could vary X/Y/rotation slightly
+      span.style.transition = 'opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      span.style.transitionDelay = `${index * 0.03}s`; // Stagger delay
+      element.appendChild(span);
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { // Double rAF for some browsers to ensure transition picks up
+          span.style.opacity = '1';
+          span.style.transform = 'translateY(0) scale(1)';
+        });
+      });
+    });
+     // Add a class to indicate the parent has had its chars animated, for potential parent-level styling
+    element.classList.add('title-chars-processed');
+  }
+
   animateFadeInUp(element) {
     if (element.classList.contains('animated')) return;
 
