@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure, high-performance elliptic curve cryptography library for Rust. ECDSA, EdDSA, ECDH, and Schnorr signatures with constant-time implementations and memory safety.">
+    <meta name="keywords" content="rust, cryptography, elliptic curve, ECDSA, EdDSA, ECDH, Schnorr, secp256k1, ed25519, x25519, constant-time, memory safe, zero-unsafe, SIMD, RFC compliance">
+    <meta name="author" content="Tanmay Patil">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+
+    <!-- Permissions Policy to suppress browser warnings -->
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=(), browsing-topics=(), run-ad-auction=(), join-ad-interest-group=(), private-state-token-redemption=(), private-state-token-issuance=(), private-aggregation=(), attribution-reporting=()">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tanm-sys.github.io/forge-ec/">
+    <meta property="og:title" content="Forge EC - Advanced Elliptic Curve Cryptography">
+    <meta property="og:description" content="Modern Rust library for secure, high-performance elliptic curve cryptography">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tanm-sys.github.io/forge-ec/">
+    <meta property="twitter:title" content="Forge EC - Advanced Elliptic Curve Cryptography">
+    <meta property="twitter:description" content="Modern Rust library for secure, high-performance elliptic curve cryptography">
+
+    <title>Forge EC - Advanced Elliptic Curve Cryptography</title>
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://tanm-sys.github.io/forge-ec/">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Forge EC",
+      "description": "Modern Rust library for secure, high-performance elliptic curve cryptography",
+      "url": "https://tanm-sys.github.io/forge-ec/",
+      "downloadUrl": "https://crates.io/crates/forge-ec",
+      "author": {
+        "@type": "Person",
+        "name": "Tanmay Patil",
+        "url": "https://github.com/tanm-sys"
+      },
+      "programmingLanguage": "Rust",
+      "operatingSystem": "Cross-platform",
+      "applicationCategory": "DeveloperApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "codeRepository": "https://github.com/tanm-sys/forge-ec",
+      "license": "https://opensource.org/licenses/MIT",
+      "keywords": ["cryptography", "elliptic curve", "rust", "ECDSA", "EdDSA", "security"]
+    }
+    </script>
+
+    <!-- Critical Resource Hints for Performance -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.github.com" crossorigin>
+    <link rel="dns-prefetch" href="https://forge-ec.firebaseapp.com">
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="css/animations.css" as="style">
+    <link rel="preload" href="js/main.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="js/performance-monitor.js" as="script">
+
+    <!-- Prefetch Next Page Resources -->
+    <link rel="prefetch" href="docs/index.html">
+    <link rel="prefetch" href="about/index.html">
+    <link rel="prefetch" href="examples/index.html">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="forge-logo-container">
+                <svg class="forge-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <path class="logo-path" d="M20,50 Q50,20 80,50 Q50,80 20,50" stroke="url(#logoGradient)" stroke-width="3" fill="none"/>
+                    <circle class="logo-dot" cx="50" cy="50" r="3" fill="url(#logoGradient)"/>
+                </svg>
+            </div>
+            <div class="loading-text">
+                <span class="loading-letter">F</span>
+                <span class="loading-letter">o</span>
+                <span class="loading-letter">r</span>
+                <span class="loading-letter">g</span>
+                <span class="loading-letter">e</span>
+                <span class="loading-space"></span>
+                <span class="loading-letter">E</span>
+                <span class="loading-letter">C</span>
+            </div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg class="brand-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                </svg>
+                <span class="brand-text">Forge EC</span>
+            </div>
+
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link active" data-section="home">Home</a>
+                <a href="#features" class="nav-link" data-section="features">Features</a>
+                <a href="#about" class="nav-link" data-section="about">About</a>
+                <a href="#docs" class="nav-link" data-section="docs">Documentation</a>
+                <a href="#examples" class="nav-link" data-section="examples">Examples</a>
+                <a href="#community" class="nav-link" data-section="community">Community</a>
+                <a href="#contact" class="nav-link" data-section="contact">Contact</a>
+            </div>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+
+                <a href="https://github.com/tanm-sys/forge-ec" class="github-btn" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span class="github-stats" id="github-stats">
+                        <span class="stars-count" id="stars-count">⭐ --</span>
+                        <span class="forks-count" id="forks-count">🍴 --</span>
+                    </span>
+                </a>
+
+                <!-- Authentication Button -->
+                <button class="auth-trigger auth-btn" id="auth-trigger" style="display: block;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Sign In</span>
+                </button>
+
+                <!-- User Menu Trigger -->
+                <div class="user-menu-trigger auth-required" id="user-menu-trigger" style="display: none;">
+                    <div class="user-info"></div>
+                    <button class="user-menu-btn" id="user-menu-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="nav-menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <canvas id="hero-canvas" class="hero-canvas"></canvas>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="title-line">Forge</span>
+                        <span class="title-line gradient-text">EC</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Modern Rust library for secure, high-performance
+                        <span class="highlight">elliptic curve cryptography</span>
+                    </p>
+                    <div class="hero-features">
+                        <div class="feature-badge">
+                            <span class="badge-icon">🦀</span>
+                            <span>Zero-Unsafe Rust</span>
+                        </div>
+                        <div class="feature-badge">
+                            <span class="badge-icon">⚡</span>
+                            <span>SIMD Accelerated</span>
+                        </div>
+                        <div class="feature-badge">
+                            <span class="badge-icon">🔒</span>
+                            <span>Constant-Time</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-actions">
+                    <button class="cta-button primary liquid-button pulse-ring" id="get-started-btn">
+                        <span class="btn-text">Get Started</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    <button class="cta-button secondary liquid-button" id="live-demo-btn">
+                        <span class="btn-text">Live Demo</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="5,3 19,12 5,21"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="installation-preview">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Cargo.toml</span>
+                            <button class="copy-btn" data-copy="[dependencies]&#10;forge-ec = &quot;0.1.0&quot;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <pre class="code-content"><code>[dependencies]
+forge-ec = "0.1.0"</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroll-indicator">
+                <div class="scroll-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M7 13l3 3 7-7M7 6l3 3 7-7"/>
+                    </svg>
+                </div>
+                <span class="scroll-text">Scroll to explore</span>
+            </div>
+        </section>
+
+        <!-- GitHub Stats Section -->
+        <section class="github-stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card animate-on-scroll" id="stars-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value counter-animate" data-target="0" id="repo-stars">Loading...</div>
+                        <div class="stat-label">GitHub Stars</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-1" id="forks-card">
+                        <div class="stat-icon">🍴</div>
+                        <div class="stat-value counter-animate" data-target="0" id="repo-forks">Loading...</div>
+                        <div class="stat-label">Forks</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-2" id="commits-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value counter-animate" data-target="0" id="repo-commits">Loading...</div>
+                        <div class="stat-label">Commits</div>
+                    </div>
+                    <div class="stat-card animate-on-scroll delay-3" id="contributors-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value counter-animate" data-target="0" id="repo-contributors">Loading...</div>
+                        <div class="stat-label">Contributors</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title animate-title-by-char">Advanced Features</h2>
+                    <p class="section-subtitle">
+                        Forge EC provides cutting-edge elliptic curve cryptography with uncompromising security and performance
+                    </p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow holographic-border">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Zero-Unsafe Rust</h3>
+                        <p class="feature-description">
+                            Built entirely in safe Rust with no unsafe blocks, ensuring memory safety and preventing common security vulnerabilities.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">Memory Safe</span>
+                            <span class="tag">No Unsafe</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">SIMD Acceleration</h3>
+                        <p class="feature-description">
+                            Leverages modern CPU SIMD instructions for blazing-fast cryptographic operations with hardware-optimized performance.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">AVX2</span>
+                            <span class="tag">High Performance</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Constant-Time Operations</h3>
+                        <p class="feature-description">
+                            All cryptographic operations execute in constant time, preventing timing attacks and ensuring side-channel resistance.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">Timing Safe</span>
+                            <span class="tag">Side-Channel Resistant</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Multiple Curves</h3>
+                        <p class="feature-description">
+                            Support for secp256k1, P-256, Ed25519, X25519, and other popular elliptic curves with unified API design.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">secp256k1</span>
+                            <span class="tag">Ed25519</span>
+                            <span class="tag">P-256</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">RFC Compliance</h3>
+                        <p class="feature-description">
+                            Fully compliant with RFC 6979, RFC 8032, RFC 9380, and other cryptographic standards for interoperability.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">RFC 6979</span>
+                            <span class="tag">RFC 8032</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-card animate-on-scroll stagger-item magnetic glass-enhanced volumetric-shadow holographic-border">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M9 12l2 2 4-4"/>
+                                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
+                                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+                                <path d="M13 12h3a2 2 0 0 1 2 2v1"/>
+                                <path d="M11 12H8a2 2 0 0 0-2 2v1"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Advanced Signatures</h3>
+                        <p class="feature-description">
+                            Support for ECDSA, EdDSA, Schnorr signatures, batch verification, and threshold cryptography schemes.
+                        </p>
+                        <div class="feature-tags">
+                            <span class="tag">ECDSA</span>
+                            <span class="tag">EdDSA</span>
+                            <span class="tag">Schnorr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="about-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">About Forge EC</h2>
+                    <p class="section-subtitle">
+                        Building the future of elliptic curve cryptography with security, performance, and developer experience at the forefront
+                    </p>
+                </div>
+
+                <!-- Mission Statement -->
+                <div class="mission-container animate-on-scroll">
+                    <div class="mission-card glass-enhanced volumetric-shadow">
+                        <div class="mission-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="mission-title">Our Mission</h3>
+                        <p class="mission-description">
+                            Forge EC aims to democratize secure elliptic curve cryptography by providing a modern, safe, and high-performance Rust library.
+                            We believe that cryptographic security should be accessible to all developers without compromising on performance or safety.
+                        </p>
+                        <div class="mission-principles">
+                            <div class="principle">
+                                <span class="principle-icon">🔒</span>
+                                <span class="principle-text">Security First</span>
+                            </div>
+                            <div class="principle">
+                                <span class="principle-icon">⚡</span>
+                                <span class="principle-text">Performance Optimized</span>
+                            </div>
+                            <div class="principle">
+                                <span class="principle-icon">🦀</span>
+                                <span class="principle-text">Memory Safe</span>
+                            </div>
+                            <div class="principle">
+                                <span class="principle-icon">🌐</span>
+                                <span class="principle-text">Standards Compliant</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Section -->
+                <div class="team-section animate-on-scroll">
+                    <h3 class="subsection-title">Core Team</h3>
+                    <div class="team-grid">
+                        <div class="team-member magnetic glass-enhanced volumetric-shadow">
+                            <div class="member-avatar">
+                                <img src="https://github.com/tanm-sys.png" alt="Tanmay Patil" loading="lazy">
+                                <div class="avatar-ring"></div>
+                            </div>
+                            <div class="member-info">
+                                <h4 class="member-name">Tanmay Patil</h4>
+                                <p class="member-role">Lead Developer & Cryptographer</p>
+                                <p class="member-bio">
+                                    Passionate about cryptography and systems programming. Specializes in elliptic curve implementations
+                                    and secure coding practices in Rust.
+                                </p>
+                                <div class="member-links">
+                                    <a href="https://github.com/tanm-sys" target="_blank" rel="noopener" class="member-link">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                        </svg>
+                                    </a>
+                                    <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" target="_blank" rel="noopener" class="member-link">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="contributors-card magnetic glass-enhanced volumetric-shadow">
+                            <div class="contributors-header">
+                                <h4 class="contributors-title">Contributors</h4>
+                                <p class="contributors-subtitle">Open source contributors who make Forge EC possible</p>
+                            </div>
+                            <div class="contributors-list" id="about-contributors">
+                                <div class="contributor-placeholder">
+                                    <div class="placeholder-avatar"></div>
+                                    <div class="placeholder-text">Loading contributors...</div>
+                                </div>
+                            </div>
+                            <a href="https://github.com/tanm-sys/forge-ec/graphs/contributors" target="_blank" rel="noopener" class="view-all-contributors">
+                                View All Contributors
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roadmap Section -->
+                <div class="roadmap-section animate-on-scroll">
+                    <h3 class="subsection-title">Development Roadmap</h3>
+                    <div class="roadmap-timeline">
+                        <div class="timeline-item completed magnetic glass-enhanced">
+                            <div class="timeline-marker">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            </div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">v0.1.0 - Foundation</h4>
+                                <p class="timeline-description">Core elliptic curve operations, ECDSA signatures, and basic curve support</p>
+                                <div class="timeline-status completed">Completed</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item in-progress magnetic glass-enhanced">
+                            <div class="timeline-marker">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                            </div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">v0.2.0 - Advanced Features</h4>
+                                <p class="timeline-description">EdDSA signatures, Schnorr signatures, and enhanced curve support</p>
+                                <div class="timeline-status in-progress">In Progress</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item planned magnetic glass-enhanced">
+                            <div class="timeline-marker">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M8 12h8M12 8v8"/>
+                                </svg>
+                            </div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">v0.3.0 - Performance & Security</h4>
+                                <p class="timeline-description">SIMD optimizations, formal verification, and security audit</p>
+                                <div class="timeline-status planned">Planned</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item planned magnetic glass-enhanced">
+                            <div class="timeline-marker">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M8 12h8M12 8v8"/>
+                                </svg>
+                            </div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">v1.0.0 - Production Ready</h4>
+                                <p class="timeline-description">Stable API, comprehensive documentation, and ecosystem integration</p>
+                                <div class="timeline-status planned">Future</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Philosophy -->
+                <div class="philosophy-section animate-on-scroll">
+                    <h3 class="subsection-title">Technical Philosophy</h3>
+                    <div class="philosophy-grid">
+                        <div class="philosophy-card magnetic glass-enhanced volumetric-shadow">
+                            <div class="philosophy-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                            </div>
+                            <h4 class="philosophy-title">Security by Design</h4>
+                            <p class="philosophy-description">
+                                Every line of code is written with security as the primary concern. We use constant-time algorithms,
+                                secure random number generation, and follow cryptographic best practices.
+                            </p>
+                        </div>
+
+                        <div class="philosophy-card magnetic glass-enhanced volumetric-shadow">
+                            <div class="philosophy-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                            </div>
+                            <h4 class="philosophy-title">Performance Without Compromise</h4>
+                            <p class="philosophy-description">
+                                We leverage Rust's zero-cost abstractions and modern CPU features like SIMD to deliver
+                                maximum performance without sacrificing security or safety.
+                            </p>
+                        </div>
+
+                        <div class="philosophy-card magnetic glass-enhanced volumetric-shadow">
+                            <div class="philosophy-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14,2 14,8 20,8"/>
+                                </svg>
+                            </div>
+                            <h4 class="philosophy-title">Standards Compliance</h4>
+                            <p class="philosophy-description">
+                                Full compliance with cryptographic standards (RFC 6979, RFC 8032, RFC 9380) ensures
+                                interoperability and trust in our implementations.
+                            </p>
+                        </div>
+
+                        <div class="philosophy-card magnetic glass-enhanced volumetric-shadow">
+                            <div class="philosophy-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="8.5" cy="7" r="4"/>
+                                    <path d="M20 8v6M23 11h-6"/>
+                                </svg>
+                            </div>
+                            <h4 class="philosophy-title">Developer Experience</h4>
+                            <p class="philosophy-description">
+                                Clean APIs, comprehensive documentation, and helpful error messages make cryptography
+                                accessible to developers of all experience levels.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Section -->
+        <section class="installation-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Quick Installation</h2>
+                    <p class="section-subtitle">
+                        Get started with Forge EC in seconds using Cargo
+                    </p>
+                </div>
+
+                <div class="installation-steps">
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Add to Cargo.toml</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14,2 14,8 20,8"/>
+                                        </svg>
+                                        Cargo.toml
+                                    </span>
+                                    <button class="copy-btn" data-copy="[dependencies]&#10;forge-ec = &quot;0.1.0&quot;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>[dependencies]
+forge-ec = "0.1.0"</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Import and Use</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14,2 14,8 20,8"/>
+                                        </svg>
+                                        main.rs
+                                    </span>
+                                    <button class="copy-btn" data-copy="use forge_ec::*;&#10;&#10;fn main() {&#10;    let private_key = PrivateKey::new();&#10;    let message = b&quot;Hello, Forge EC!&quot;;&#10;    let signature = private_key.sign(message);&#10;    &#10;    assert!(verify(&signature, message, &private_key.public_key()));&#10;}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>use forge_ec::*;
+
+fn main() {
+    let private_key = PrivateKey::new();
+    let message = b"Hello, Forge EC!";
+    let signature = private_key.sign(message);
+
+    assert!(verify(&signature, message, &private_key.public_key()));
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card animate-on-scroll stagger-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Run and Test</h3>
+                            <div class="code-snippet">
+                                <div class="code-snippet-header">
+                                    <span class="code-snippet-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="9" cy="9" r="2"/>
+                                            <path d="M21 15.5c-.3-1.4-1.4-2.5-2.8-2.8"/>
+                                        </svg>
+                                        Terminal
+                                    </span>
+                                    <button class="copy-btn" data-copy="cargo run">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="code-snippet-content">
+                                    <pre><code>$ cargo run
+   Compiling forge-ec v0.1.0
+    Finished dev [unoptimized + debuginfo] target(s) in 2.34s
+     Running `target/debug/main`
+✅ Signature verified successfully!</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section id="docs" class="docs-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Documentation Portal</h2>
+                    <p class="section-subtitle">
+                        Comprehensive guides, API reference, and best practices for Forge EC
+                    </p>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="docs-search animate-on-scroll">
+                    <div class="search-container glass-enhanced">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search documentation..." id="docs-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Documentation Categories -->
+                <div class="docs-categories">
+                    <!-- Getting Started -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                            Getting Started
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Quick Start Guide</h4>
+                                <p class="doc-description">Get up and running with Forge EC in under 5 minutes</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">5 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="docs/getting-started/quick-start.html" class="doc-link">
+                                    Start Tutorial
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14,2 14,8 20,8"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Installation Guide</h4>
+                                <p class="doc-description">Multiple installation methods and dependency management</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">3 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="docs/getting-started/installation.html" class="doc-link">
+                                    View Guide
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Configuration</h4>
+                                <p class="doc-description">Customize Forge EC for your specific use case</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">8 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="docs/getting-started/configuration.html" class="doc-link">
+                                    Configure
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Reference -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                            API Reference
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Signatures Module</h4>
+                                <p class="doc-description">ECDSA, EdDSA, and Schnorr signature implementations</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">15 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="docs/api/signatures.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Encoding Module</h4>
+                                <p class="doc-description">Point compression, serialization, and format conversion</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">12 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="docs/api/encoding.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 9V5a3 3 0 0 0-6 0v4M7 9h10l1 10H6L7 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Hashing Module</h4>
+                                <p class="doc-description">Hash-to-curve, HMAC, and cryptographic hash functions</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">10 min read</span>
+                                    <span class="doc-level advanced">Advanced</span>
+                                </div>
+                                <a href="docs/api/hashing.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">RNG Module</h4>
+                                <p class="doc-description">Secure random number generation and entropy sources</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">8 min read</span>
+                                    <span class="doc-level intermediate">Intermediate</span>
+                                </div>
+                                <a href="docs/api/rng.html" class="doc-link">
+                                    Browse API
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security & Best Practices -->
+                    <div class="docs-category animate-on-scroll">
+                        <h3 class="category-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Security & Best Practices
+                        </h3>
+                        <div class="docs-grid">
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Security Guidelines</h4>
+                                <p class="doc-description">Essential security practices and common pitfalls to avoid</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">20 min read</span>
+                                    <span class="doc-level advanced">Advanced</span>
+                                </div>
+                                <a href="docs/security/guidelines.html" class="doc-link">
+                                    Read Guide
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 15v5M12 4v5M8 12h8M3 12h2M19 12h2"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Constant-Time Operations</h4>
+                                <p class="doc-description">Understanding and implementing timing-attack resistant code</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">15 min read</span>
+                                    <span class="doc-level expert">Expert</span>
+                                </div>
+                                <a href="docs/security/constant-time.html" class="doc-link">
+                                    Learn More
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <div class="doc-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="doc-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 9V5a3 3 0 0 0-6 0v4M7 9h10l1 10H6L7 9z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="doc-title">Vulnerability Disclosure</h4>
+                                <p class="doc-description">How to responsibly report security vulnerabilities</p>
+                                <div class="doc-meta">
+                                    <span class="doc-time">5 min read</span>
+                                    <span class="doc-level beginner">Beginner</span>
+                                </div>
+                                <a href="docs/security/vulnerability-disclosure.html" class="doc-link">
+                                    Report Issue
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section id="examples" class="examples-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Live Examples</h2>
+                    <p class="section-subtitle">
+                        Interactive code examples demonstrating Forge EC capabilities
+                    </p>
+                </div>
+
+                <div class="examples-container">
+                    <div class="example-tabs">
+                        <button class="tab-button active" data-tab="ecdsa">ECDSA Signing</button>
+                        <button class="tab-button" data-tab="eddsa">EdDSA Signing</button>
+                        <button class="tab-button" data-tab="ecdh">ECDH Key Exchange</button>
+                        <button class="tab-button" data-tab="schnorr">Schnorr Signatures</button>
+                    </div>
+
+                    <div class="example-content">
+                        <div class="tab-panel active" id="ecdsa-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="ecdsa-demo-btn">
+                                        <span class="btn-text">Run ECDSA Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="ecdsa-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="ecdsa-output">
+                                    <div class="output-placeholder">Click "Run ECDSA Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            ECDSA Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::ecdsa::*;&#10;use forge_ec::curves::secp256k1::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate a new private key&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC ECDSA!&quot;;&#10;    &#10;    // Sign the message&#10;    let signature = private_key.sign(message)?;&#10;    &#10;    // Verify the signature&#10;    let is_valid = public_key.verify(message, &signature)?;&#10;    &#10;    println!(&quot;Signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::ecdsa::*;
+use forge_ec::curves::secp256k1::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate a new private key
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC ECDSA!";
+
+    // Sign the message
+    let signature = private_key.sign(message)?;
+
+    // Verify the signature
+    let is_valid = public_key.verify(message, &signature)?;
+
+    println!("Signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="eddsa-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="eddsa-demo-btn">
+                                        <span class="btn-text">Run EdDSA Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="eddsa-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="eddsa-output">
+                                    <div class="output-placeholder">Click "Run EdDSA Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            EdDSA Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::eddsa::*;&#10;use forge_ec::curves::ed25519::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate Ed25519 keypair&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC EdDSA!&quot;;&#10;    &#10;    // Sign with Ed25519&#10;    let signature = private_key.sign(message)?;&#10;    &#10;    // Verify signature&#10;    let is_valid = public_key.verify(message, &signature)?;&#10;    &#10;    println!(&quot;Ed25519 signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::eddsa::*;
+use forge_ec::curves::ed25519::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate Ed25519 keypair
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC EdDSA!";
+
+    // Sign with Ed25519
+    let signature = private_key.sign(message)?;
+
+    // Verify signature
+    let is_valid = public_key.verify(message, &signature)?;
+
+    println!("Ed25519 signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="ecdh-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="ecdh-demo-btn">
+                                        <span class="btn-text">Run ECDH Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="ecdh-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="ecdh-output">
+                                    <div class="output-placeholder">Click "Run ECDH Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            ECDH Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::ecdh::*;&#10;use forge_ec::curves::x25519::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Alice generates her keypair&#10;    let alice_private = PrivateKey::new();&#10;    let alice_public = alice_private.public_key();&#10;    &#10;    // Bob generates his keypair&#10;    let bob_private = PrivateKey::new();&#10;    let bob_public = bob_private.public_key();&#10;    &#10;    // Both parties compute the shared secret&#10;    let alice_shared = alice_private.diffie_hellman(&bob_public)?;&#10;    let bob_shared = bob_private.diffie_hellman(&alice_public)?;&#10;    &#10;    // Verify they computed the same secret&#10;    assert_eq!(alice_shared, bob_shared);&#10;    println!(&quot;Shared secret established!&quot;);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::ecdh::*;
+use forge_ec::curves::x25519::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Alice generates her keypair
+    let alice_private = PrivateKey::new();
+    let alice_public = alice_private.public_key();
+
+    // Bob generates his keypair
+    let bob_private = PrivateKey::new();
+    let bob_public = bob_private.public_key();
+
+    // Both parties compute the shared secret
+    let alice_shared = alice_private.diffie_hellman(&bob_public)?;
+    let bob_shared = bob_private.diffie_hellman(&alice_public)?;
+
+    // Verify they computed the same secret
+    assert_eq!(alice_shared, bob_shared);
+    println!("Shared secret established!");
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-panel" id="schnorr-panel">
+                            <div class="example-demo">
+                                <div class="demo-controls">
+                                    <button class="btn btn-primary" id="schnorr-demo-btn">
+                                        <span class="btn-text">Run Schnorr Demo</span>
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <polygon points="5,3 19,12 5,21"/>
+                                        </svg>
+                                    </button>
+                                    <div class="demo-status" id="schnorr-status">Ready to run</div>
+                                </div>
+                                <div class="demo-output" id="schnorr-output">
+                                    <div class="output-placeholder">Click "Run Schnorr Demo" to see the results</div>
+                                </div>
+                            </div>
+                            <div class="example-code">
+                                <div class="code-snippet">
+                                    <div class="code-snippet-header">
+                                        <span class="code-snippet-title">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                            </svg>
+                                            Schnorr Example
+                                        </span>
+                                        <button class="copy-btn" data-copy="use forge_ec::schnorr::*;&#10;use forge_ec::curves::secp256k1::*;&#10;&#10;fn main() -> Result<(), Box<dyn std::error::Error>> {&#10;    // Generate Schnorr keypair&#10;    let private_key = PrivateKey::new();&#10;    let public_key = private_key.public_key();&#10;    &#10;    // Message to sign&#10;    let message = b&quot;Hello, Forge EC Schnorr!&quot;;&#10;    &#10;    // Create Schnorr signature&#10;    let signature = private_key.sign_schnorr(message)?;&#10;    &#10;    // Verify Schnorr signature&#10;    let is_valid = public_key.verify_schnorr(message, &signature)?;&#10;    &#10;    println!(&quot;Schnorr signature valid: {}&quot;, is_valid);&#10;    Ok(())&#10;}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="code-snippet-content">
+                                        <pre><code>use forge_ec::schnorr::*;
+use forge_ec::curves::secp256k1::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Generate Schnorr keypair
+    let private_key = PrivateKey::new();
+    let public_key = private_key.public_key();
+
+    // Message to sign
+    let message = b"Hello, Forge EC Schnorr!";
+
+    // Create Schnorr signature
+    let signature = private_key.sign_schnorr(message)?;
+
+    // Verify Schnorr signature
+    let is_valid = public_key.verify_schnorr(message, &signature)?;
+
+    println!("Schnorr signature valid: {}", is_valid);
+    Ok(())
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Get in Touch</h2>
+                    <p class="section-subtitle">
+                        Have questions, suggestions, or want to contribute? We'd love to hear from you
+                    </p>
+                </div>
+
+                <div class="contact-content">
+                    <!-- Contact Form -->
+                    <div class="contact-form-container animate-on-scroll">
+                        <div class="contact-form-card glass-enhanced volumetric-shadow">
+                            <h3 class="form-title">Send us a Message</h3>
+                            <form class="contact-form" id="contact-form">
+                                <div class="form-group">
+                                    <label for="contact-name" class="form-label">Name *</label>
+                                    <input type="text" id="contact-name" name="name" class="form-input" required>
+                                    <div class="form-error" id="name-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="contact-email" class="form-label">Email *</label>
+                                    <input type="email" id="contact-email" name="email" class="form-input" required>
+                                    <div class="form-error" id="email-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="contact-subject" class="form-label">Subject *</label>
+                                    <select id="contact-subject" name="subject" class="form-select" required>
+                                        <option value="">Select a topic</option>
+                                        <option value="general">General Inquiry</option>
+                                        <option value="bug">Bug Report</option>
+                                        <option value="feature">Feature Request</option>
+                                        <option value="security">Security Issue</option>
+                                        <option value="documentation">Documentation</option>
+                                        <option value="collaboration">Collaboration</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <div class="form-error" id="subject-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="contact-message" class="form-label">Message *</label>
+                                    <textarea id="contact-message" name="message" class="form-textarea" rows="6" required placeholder="Tell us about your question, suggestion, or how you'd like to contribute..."></textarea>
+                                    <div class="form-error" id="message-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="contact-newsletter" name="newsletter" class="form-checkbox">
+                                        <span class="checkbox-custom"></span>
+                                        <span class="checkbox-text">Subscribe to updates about Forge EC development</span>
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="form-submit magnetic" id="contact-submit">
+                                    <span class="submit-text">Send Message</span>
+                                    <span class="submit-loading" style="display: none;">
+                                        <svg class="loading-spinner" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                                                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                            </circle>
+                                        </svg>
+                                        Sending...
+                                    </span>
+                                    <svg class="submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                    </svg>
+                                </button>
+
+                                <div class="form-success" id="contact-success" style="display: none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M20 6L9 17l-5-5"/>
+                                    </svg>
+                                    <span>Message sent successfully! We'll get back to you soon.</span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="contact-info-container animate-on-scroll">
+                        <div class="contact-info-grid">
+                            <!-- Direct Contact -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Direct Contact</h4>
+                                <p class="contact-description">For urgent matters or direct communication</p>
+                                <a href="mailto:tanmayspatil2006@gmail.com" class="contact-link">
+                                    tanmayspatil2006@gmail.com
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Bug Reports -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+                                        <path d="M11 14h1v4h-1zM12 10h.01"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Bug Reports</h4>
+                                <p class="contact-description">Found a bug? Help us improve by reporting it</p>
+                                <a href="https://github.com/tanm-sys/forge-ec/issues/new?template=bug_report.md" target="_blank" rel="noopener" class="contact-link">
+                                    Report on GitHub
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Feature Requests -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Feature Requests</h4>
+                                <p class="contact-description">Have an idea for a new feature?</p>
+                                <a href="https://github.com/tanm-sys/forge-ec/issues/new?template=feature_request.md" target="_blank" rel="noopener" class="contact-link">
+                                    Request Feature
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Security Issues -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Security Issues</h4>
+                                <p class="contact-description">Found a security vulnerability? Please report responsibly</p>
+                                <a href="mailto:tanmayspatil2006@gmail.com?subject=Security%20Issue%20-%20Forge%20EC" class="contact-link">
+                                    Report Privately
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Contributing -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="8.5" cy="7" r="4"/>
+                                        <path d="M20 8v6M23 11h-6"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Contributing</h4>
+                                <p class="contact-description">Want to contribute code or documentation?</p>
+                                <a href="https://github.com/tanm-sys/forge-ec/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" class="contact-link">
+                                    Contribution Guide
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+
+                            <!-- Professional Inquiries -->
+                            <div class="contact-info-card magnetic glass-enhanced volumetric-shadow">
+                                <div class="contact-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                        <rect x="2" y="9" width="4" height="12"/>
+                                        <circle cx="4" cy="4" r="2"/>
+                                    </svg>
+                                </div>
+                                <h4 class="contact-title">Professional</h4>
+                                <p class="contact-description">Business inquiries and professional networking</p>
+                                <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" target="_blank" rel="noopener" class="contact-link">
+                                    Connect on LinkedIn
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15,3 21,3 21,9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Response Time Info -->
+                        <div class="response-info animate-on-scroll">
+                            <div class="response-card glass-enhanced">
+                                <h4 class="response-title">Response Times</h4>
+                                <div class="response-grid">
+                                    <div class="response-item">
+                                        <span class="response-type">General Inquiries</span>
+                                        <span class="response-time">24-48 hours</span>
+                                    </div>
+                                    <div class="response-item">
+                                        <span class="response-type">Bug Reports</span>
+                                        <span class="response-time">12-24 hours</span>
+                                    </div>
+                                    <div class="response-item">
+                                        <span class="response-type">Security Issues</span>
+                                        <span class="response-time">Within 6 hours</span>
+                                    </div>
+                                    <div class="response-item">
+                                        <span class="response-type">Feature Requests</span>
+                                        <span class="response-time">2-5 days</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Section -->
+        <section id="community" class="community-section">
+            <div class="container">
+                <div class="section-header animate-on-scroll">
+                    <h2 class="section-title">Join the Community</h2>
+                    <p class="section-subtitle">
+                        Connect with developers, contribute to the project, and help shape the future of cryptography
+                    </p>
+                </div>
+
+                <div class="community-grid">
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">GitHub</h3>
+                        <p class="community-description">
+                            Star the repository, report issues, and contribute code to help improve Forge EC.
+                        </p>
+                        <a href="https://github.com/tanm-sys/forge-ec" class="community-link" target="_blank" rel="noopener">
+                            <span>Visit Repository</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">Contact</h3>
+                        <p class="community-description">
+                            Have questions or suggestions? Reach out to the maintainer directly.
+                        </p>
+                        <a href="mailto:tanmayspatil2006@gmail.com" class="community-link">
+                            <span>Send Email</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                <rect x="2" y="9" width="4" height="12"/>
+                                <circle cx="4" cy="4" r="2"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">LinkedIn</h3>
+                        <p class="community-description">
+                            Connect professionally and stay updated on cryptography research and developments.
+                        </p>
+                        <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" class="community-link" target="_blank" rel="noopener">
+                            <span>Connect</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15,3 21,3 21,9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="community-card animate-on-scroll stagger-item magnetic">
+                        <div class="community-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                        </div>
+                        <h3 class="community-title">Documentation</h3>
+                        <p class="community-description">
+                            Help improve documentation, write tutorials, and create educational content.
+                        </p>
+                        <a href="#docs" class="community-link">
+                            <span>Contribute Docs</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="contributors-section animate-on-scroll">
+                    <h3 class="contributors-title">Hall of Fame</h3>
+                    <p class="contributors-subtitle">Thanks to all the amazing contributors who make Forge EC possible</p>
+                    <div class="contributors-list" id="contributors-list">
+                        <!-- Contributors will be loaded dynamically -->
+                        <div class="contributor-placeholder">
+                            <div class="contributor-avatar-placeholder"></div>
+                            <div class="contributor-info-placeholder">
+                                <div class="contributor-name-placeholder"></div>
+                                <div class="contributor-contributions-placeholder"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <svg class="footer-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8,20 Q20,8 32,20 Q20,32 8,20" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <circle cx="20" cy="20" r="2" fill="currentColor"/>
+                        </svg>
+                        <span class="footer-brand-text">Forge EC</span>
+                    </div>
+                    <p class="footer-description">
+                        Modern Rust library for secure, high-performance elliptic curve cryptography.
+                        Built with safety, security, and performance in mind.
+                    </p>
+                    <div class="footer-social">
+                        <a href="https://github.com/tanm-sys/forge-ec" class="social-link" target="_blank" rel="noopener" aria-label="GitHub">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/tanmay-patil-6b55ba1a7/" class="social-link" target="_blank" rel="noopener" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                <rect x="2" y="9" width="4" height="12"/>
+                                <circle cx="4" cy="4" r="2"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:tanmayspatil2006@gmail.com" class="social-link" aria-label="Email">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Getting Started</a></li>
+                        <li><a href="#" class="footer-link">API Reference</a></li>
+                        <li><a href="#" class="footer-link">Security Guide</a></li>
+                        <li><a href="#" class="footer-link">Performance</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Examples</h4>
+                    <ul class="footer-links">
+                        <li><a href="#examples" class="footer-link">ECDSA Signing</a></li>
+                        <li><a href="#examples" class="footer-link">EdDSA Signing</a></li>
+                        <li><a href="#examples" class="footer-link">ECDH Key Exchange</a></li>
+                        <li><a href="#examples" class="footer-link">Schnorr Signatures</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4 class="footer-title">Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/tanm-sys/forge-ec" class="footer-link" target="_blank" rel="noopener">GitHub Repository</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/issues" class="footer-link" target="_blank" rel="noopener">Report Issues</a></li>
+                        <li><a href="https://github.com/tanm-sys/forge-ec/blob/main/CONTRIBUTING.md" class="footer-link" target="_blank" rel="noopener">Contributing</a></li>
+                        <li><a href="mailto:tanmayspatil2006@gmail.com" class="footer-link">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p class="footer-copyright">
+                        © 2024 Forge EC. Licensed under
+                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/LICENSE-APACHE" target="_blank" rel="noopener">Apache 2.0</a>
+                        and
+                        <a href="https://github.com/tanm-sys/forge-ec/blob/main/LICENSE-MIT" target="_blank" rel="noopener">MIT</a>.
+                    </p>
+                    <div class="footer-badges">
+                        <span class="badge badge-primary">Rust</span>
+                        <span class="badge badge-success">Zero-Unsafe</span>
+                        <span class="badge badge-warning">Constant-Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Authentication modal will be created dynamically by main.js -->
+
+    <!-- Main Application Script (ES6 Module) -->
+    <script type="module" src="js/main.js"></script>
+
+    <!-- Performance Enhancement Scripts (Phase 1) -->
+    <script src="js/performance-monitor.js" defer></script>
+    <script src="js/smooth-scroll.js" defer></script>
+    <script src="js/quicklink-prefetch.js" defer></script>
+    <script src="js/performance-validation.js" defer></script>
+
+    <!-- Phase 3: Enhanced Interactions -->
+    <script src="js/theatre-animations.js" defer></script>
+    <script src="js/micro-interactions.js" defer></script>
+    <script src="js/accessibility-focus.js" defer></script>
+    <script src="js/keyboard-shortcuts.js" defer></script>
+
+    <!-- Phase 4: Monitoring & Quality -->
+    <script src="js/sentry-monitoring.js" defer></script>
+    <script src="js/accessibility-testing.js" defer></script>
+    <script src="js/performance-budgets.js" defer></script>
+
+    <!-- Legacy scripts for non-module browsers -->
+    <script src="js/hero-canvas.js" defer></script>
+    <script src="js/examples.js" defer></script>
+    <script src="js/forge-animation.js" defer></script>
+    <script src="js/interactive-components.js" defer></script>
+    <script src="js/github-api.js" defer></script>
+    <script src="js/enhanced-transitions.js" defer></script>
+
+    <!-- Fallback Loading Screen Handler -->
+    <script>
+        // Ensure loading screen disappears even if there are JavaScript errors
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                    console.log('🚨 Fallback: Force hiding loading screen');
+                    loadingScreen.classList.add('hidden');
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.remove();
+                        }
+                    }, 500);
+                }
+            }, 3000); // Fallback after 3 seconds
+        });
+
+        // Also handle DOMContentLoaded as a backup
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                    console.log('🚨 DOMContentLoaded fallback: Force hiding loading screen');
+                    loadingScreen.classList.add('hidden');
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.remove();
+                        }
+                    }, 500);
+                }
+            }, 5000); // Fallback after 5 seconds
+        });
+    </script>
+</body>
+</html>

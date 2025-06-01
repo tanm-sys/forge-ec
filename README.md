@@ -541,6 +541,49 @@ If you encounter issues not covered here:
 2. Review the documentation for the specific crate you're using
 3. Open a new issue with a minimal reproducible example
 
+## Website Development
+
+The Forge EC project includes a comprehensive website showcasing the library's capabilities. The website features modern web technologies and accessibility standards.
+
+### Website Features
+
+- **Professional Design**: Glass morphism effects with cryptography theming
+- **Performance Optimized**: 60fps animations and Core Web Vitals compliance
+- **Accessibility**: WCAG 2.1 AA compliant with comprehensive keyboard navigation
+- **Modern Build System**: Vite with hot reload and production optimization
+- **Offline Support**: Service worker with intelligent caching strategies
+- **Error Monitoring**: Real-time tracking with Sentry integration
+- **Quality Assurance**: Automated accessibility and performance testing
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/tanmaypatil/forge-ec.git
+cd forge-ec
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Deploy to GitHub Pages
+npm run deploy
+```
+
+### Website Architecture
+
+- **Phase 1**: Core functionality with performance monitoring
+- **Phase 2**: Vite build system, service worker, image optimization
+- **Phase 3**: Theatre.js animations, Popmotion micro-interactions, accessibility features
+- **Phase 4**: Sentry monitoring, Axe-core testing, performance budgets
+
+The website demonstrates the library's capabilities while maintaining professional standards for performance, accessibility, and user experience.
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
