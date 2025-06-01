@@ -1550,3 +1550,5 @@ window.showAuthModal = function() {
     console.warn('Forge EC App not initialized or auth modal not available');
   }
 };
+
+[end of js/main.js]
