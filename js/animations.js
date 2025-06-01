@@ -38,12 +38,13 @@ class AnimationController {
     }, observerOptions);
 
     // Observe elements with animation classes
+    // .stagger-item is removed from direct observation; it's handled by its container.
     const animatedElements = document.querySelectorAll([
-      '.animate-on-scroll',
-      '.stagger-item',
+      '.animate-on-scroll', // This will be the main trigger
+      // '.stagger-item', // Removed: Handled by container
       '.reveal-mask',
       '.counter-animate',
-      '.animate-title-by-char' // Add new class to observer targets
+      '.animate-title-by-char'
     ].join(', '));
 
     animatedElements.forEach(el => observer.observe(el));
@@ -53,15 +54,28 @@ class AnimationController {
   triggerAnimation(element, ratio) {
     if (this.isReducedMotion) return;
 
+    // If an element is a stagger-item and its container is already animating/animated,
+    // it might be handled by the container's stagger logic.
+    // However, the primary model is that containers are animated, and they handle their children.
+    // This check prevents direct animation of stagger-items if they are somehow still observed.
+    if (element.classList.contains('stagger-item') && !element.classList.contains('stagger-container')) {
+        // Check if parent is already doing stagger, if so, item might not need individual trigger.
+        // For simplicity, we assume stagger-items are not independently animated if part of a container.
+        if (element.parentElement.classList.contains('stagger-container-animating')) return;
+    }
+
     const animationType = this.getAnimationType(element);
 
     switch (animationType) {
+      case 'staggerContainer': // New type for the container
+        this.animateStagger(element); // Call animateStagger on the container
+        break;
       case 'fadeInUp':
         this.animateFadeInUp(element);
         break;
-      case 'stagger':
-        this.animateStagger(element);
-        break;
+      // case 'stagger': // This case should ideally not be hit for individual items if container handles it
+      //   // this.animateStagger(element); // This was problematic
+      //   break;
       case 'reveal':
         this.animateReveal(element);
         break;
@@ -80,12 +94,46 @@ class AnimationController {
   }
 
   getAnimationType(element) {
-    if (element.classList.contains('animate-title-by-char')) return 'titleChars'; // Check for new class first
-    if (element.classList.contains('stagger-item')) return 'stagger';
+    if (element.classList.contains('animate-title-by-char')) return 'titleChars';
+    // Check for stagger-container on an animate-on-scroll element
+    if (element.classList.contains('animate-on-scroll') && element.classList.contains('stagger-container')) return 'staggerContainer';
+    // if (element.classList.contains('stagger-item')) return 'stagger'; // Avoid this for individual items
     if (element.classList.contains('reveal-mask')) return 'reveal';
     if (element.classList.contains('counter-animate')) return 'counter';
     if (element.classList.contains('typewriter')) return 'typewriter';
-    return 'fadeInUp';
+    // Default for .animate-on-scroll if no other type matches
+    if (element.classList.contains('animate-on-scroll')) return 'fadeInUp';
+    return 'default'; // Fallback for any other observed elements if any
+  }
+
+  animateTitleChars(element) {
+    if (this.isReducedMotion || element.classList.contains('chars-animated')) return;
+    element.classList.add('chars-animated'); // Mark as processed
+
+    const text = element.textContent.trim();
+    element.innerHTML = ''; // Clear original text
+
+    text.split('').forEach((char, index) => {
+      const span = document.createElement('span');
+      span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space for spaces
+      span.style.display = 'inline-block';
+      span.style.opacity = '0';
+      span.style.transform = 'translateY(20px) scale(0.8)';
+      // More sophisticated animation could vary X/Y/rotation slightly
+      span.style.transition = 'opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Faster
+      span.style.transitionDelay = `${index * 0.02}s`; // Faster stagger delay
+      element.appendChild(span);
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { // Double rAF for some browsers to ensure transition picks up
+          span.style.opacity = '1';
+          span.style.transform = 'translateY(0) scale(1)';
+        });
+      });
+    });
+     // Add a class to indicate the parent has had its chars animated, for potential parent-level styling
+    element.classList.add('title-chars-processed');
   }
 
   animateTitleChars(element) {
@@ -121,36 +169,51 @@ class AnimationController {
   animateFadeInUp(element) {
     if (element.classList.contains('animated')) return;
 
-    element.style.opacity = '0';
-    element.style.transform = 'translateY(30px)';
-    element.style.transition = 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    const delay = parseInt(element.dataset.animationDelay, 10) || 0;
 
-    requestAnimationFrame(() => {
-      element.style.opacity = '1';
-      element.style.transform = 'translateY(0)';
-      element.classList.add('animated');
-    });
+    setTimeout(() => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(30px)';
+      element.style.transition = 'opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
+      requestAnimationFrame(() => {
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+        element.classList.add('animated');
+      });
+    }, delay);
   }
 
-  animateStagger(element) {
-    const parent = element.closest('.stagger-container') || element.parentElement;
-    const items = parent.querySelectorAll('.stagger-item');
+  animateStagger(containerElement) { // Parameter is now the container
+    if (containerElement.classList.contains('stagger-container-animating') || containerElement.classList.contains('animated')) return;
 
-    items.forEach((item, index) => {
-      if (item.classList.contains('animated')) return;
+    const delay = parseInt(containerElement.dataset.animationDelay, 10) || 0;
 
-      setTimeout(() => {
+    setTimeout(() => {
+      containerElement.classList.add('stagger-container-animating');
+      // Mark container itself as animated if it's also an animate-on-scroll element
+      // This ensures it doesn't re-trigger its own separate 'fadeInUp' if it was also a generic animate-on-scroll
+      if (containerElement.classList.contains('animate-on-scroll')) {
+        containerElement.classList.add('animated');
+      }
+
+      const items = containerElement.querySelectorAll('.stagger-item');
+      items.forEach((item, index) => {
+        if (item.classList.contains('animated')) return; // Skip if somehow already animated
+
+        // Apply initial styles for animation
         item.style.opacity = '0';
         item.style.transform = 'translateY(30px)';
-        item.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        item.style.transition = 'opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        item.style.transitionDelay = `${index * 100}ms`; // Stagger delay for each item
 
         requestAnimationFrame(() => {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
-          item.classList.add('animated');
+          item.classList.add('animated'); // Mark item as animated
         });
-      }, index * 100);
-    });
+      });
+    }, delay);
   }
 
   animateReveal(element) {
@@ -293,7 +356,8 @@ class AnimationController {
     magneticElements.forEach(element => {
       // Add magnetic field indicator
       element.style.position = 'relative';
-      element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      // Apply a more comprehensive initial transition
+      element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 150ms ease-out, box-shadow 150ms ease-out';
 
       // Enhanced magnetic interaction
       const handleMouseMove = (e) => {
@@ -310,7 +374,7 @@ class AnimationController {
         if (distance < magneticRadius) {
           // Calculate magnetic force (stronger when closer)
           const force = Math.max(0, (magneticRadius - distance) / magneticRadius);
-          const magneticStrength = force * 0.3; // Adjust magnetic strength
+          const magneticStrength = force * 0.25; // Slightly reduced strength
 
           const moveX = deltaX * magneticStrength;
           const moveY = deltaY * magneticStrength;
@@ -339,7 +403,9 @@ class AnimationController {
 
         // Restore normal transition after spring-back
         setTimeout(() => {
-          element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          // element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          // Restore comprehensive transition
+          element.style.transition = 'transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 150ms ease-out, box-shadow 150ms ease-out';
         }, 300);
       };
 

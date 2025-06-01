@@ -24,6 +24,8 @@
   /* Borders */
   --border-color: rgba(148, 163, 184, 0.2);
   --border-glass: rgba(255, 255, 255, 0.2);
+  --border-glass-hover: rgba(255, 255, 255, 0.3);
+
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -105,6 +107,8 @@
 
   --border-color: rgba(148, 163, 184, 0.1);
   --border-glass: rgba(255, 255, 255, 0.1);
+  --border-glass-hover: rgba(255, 255, 255, 0.15);
+
 
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   --gradient-glass: linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%);
@@ -148,12 +152,13 @@ body {
   z-index: 9999;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+  /* transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out; */ /* Transition handled by .hidden */
 }
 
 .loading-screen.hidden {
   opacity: 0;
   visibility: hidden;
+  transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s; /* Delay visibility change */
 }
 
 .loading-content {
@@ -168,7 +173,7 @@ body {
 .forge-logo {
   width: 80px;
   height: 80px;
-  animation: logoSpin 2s ease-in-out infinite;
+  animation: logoSpin 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; /* Smoother easing */
 }
 
 .logo-path {
@@ -293,13 +298,7 @@ body {
   color: var(--color-primary);
 }
 
-.nav-link:focus {
-  color: var(--color-primary);
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.nav-link:focus {
+.nav-link:focus-visible {
   color: var(--color-primary);
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -345,9 +344,11 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   background: var(--bg-glass-hover);
   transform: scale(1.05);
+  outline: none;
 }
 
 .theme-icon {
@@ -389,10 +390,12 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.github-btn:hover {
+.github-btn:hover,
+.github-btn:focus-visible {
   background: var(--bg-glass-hover);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  outline: none;
 }
 
 .github-btn svg {
@@ -554,9 +557,11 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-.cta-button.primary:hover {
-  transform: translateY(-3px);
+.cta-button.primary:hover,
+.cta-button.primary:focus-visible {
+  transform: translateY(-2px); /* Consistent -2px for primary CTAs */
   box-shadow: var(--shadow-xl);
+  outline: none;
 }
 
 .cta-button.secondary {
@@ -567,17 +572,12 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.cta-button.secondary:hover {
+.cta-button.secondary:hover,
+.cta-button.secondary:focus-visible {
   background: var(--bg-glass-hover);
   transform: translateY(-2px);
-}
-
-.cta-button.secondary:focus {
-  background: var(--bg-glass-hover);
-  transform: translateY(-2px); /* Consistent with hover */
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  box-shadow: var(--shadow-md); /* Add a subtle shadow on focus */
+  outline: none;
+  box-shadow: var(--shadow-md), 0 0 0 2px var(--color-primary);
 }
 
 .btn-icon {
@@ -626,35 +626,31 @@ body {
 .copy-btn {
   width: 24px;
   height: 24px;
-  border: 1px solid var(--border-glass); /* Added a subtle border */
+  border: 1px solid var(--border-glass);
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast); /* Ensure color is part of transition */
 }
 
-.copy-btn:hover {
-  color: var(--color-primary);
-  background: var(--bg-glass-hover); /* Slightly more interactive hover */
-}
-
-.copy-btn:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+.copy-btn:hover,
+.copy-btn:focus-visible {
   color: var(--color-primary);
   background: var(--bg-glass-hover);
+  outline: none;
 }
 
 .copy-btn.copied-feedback {
-  background: var(--color-success);
-  color: white; /* Ensure text is readable on success background */
+  /* background: var(--color-success); -- Removing background change for copied, color is enough */
+  color: var(--color-success) !important; /* Ensure this overrides hover/focus */
   cursor: default;
 }
 
 .copy-btn.copied-feedback svg {
-  stroke: white; /* Make SVG checkmark white */
+  stroke: var(--color-success); /* Make SVG checkmark match text color */
 }
+
 
 .copy-btn svg {
   width: 16px;
@@ -674,10 +670,9 @@ body {
   overflow-y: hidden;
   max-width: 100%;
   min-width: 0;
-  transition: color var(--transition-normal); /* Added for text color */
-  /* Custom scrollbar for webkit browsers */
+  transition: color var(--transition-normal);
   scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--bg-tertiary); /* These colors are theme-dependent already */
+  scrollbar-color: var(--color-primary) var(--bg-tertiary);
 }
 
 /* Custom scrollbar styles for code-content */
@@ -798,13 +793,13 @@ body {
 }
 
 @keyframes letterFadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  from {
+  from { /* Start state */
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(20px) scale(0.95); /* Added subtle scale */
+  }
+  to { /* End state */
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1602,9 +1597,11 @@ body {
   overflow: hidden;
 }
 
-.form-submit:hover {
+.form-submit:hover,
+.form-submit:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  outline: none;
 }
 
 .form-submit:active {
@@ -2180,8 +2177,24 @@ body {
   right: 0;
   margin-top: var(--space-2);
   min-width: 280px;
-  z-index: 1000;
+  z-index: var(--z-dropdown); /* Use variable */
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast) ease-out,
+              transform var(--transition-fast) ease-out,
+              visibility 0s linear var(--transition-fast); /* Delay visibility change for hiding */
 }
+
+.user-menu.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s; /* Ensure visibility transition delay is overridden for showing */
+}
+
 
 .user-menu-content {
   background: var(--bg-glass);
@@ -3219,18 +3232,15 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.social-link:hover {
+.social-link:hover,
+.social-link:focus-visible {
   color: var(--color-primary);
   background: var(--bg-glass-hover);
   transform: translateY(-2px);
+  outline: none;
 }
 
-.social-link:focus {
-  color: var(--color-primary);
-  background: var(--bg-glass-hover);
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
+/* Removed old .social-link:focus */
 
 .social-link svg {
   width: 20px;
@@ -3264,10 +3274,10 @@ body {
   color: var(--color-primary);
 }
 
-.footer-link:focus {
+.footer-link:focus-visible { /* Changed from :focus */
   color: var(--color-primary);
   text-decoration: underline;
-  outline: 1px dashed var(--color-primary);
+  outline: 1px dashed var(--color-primary); /* Simple outline for visibility */
   outline-offset: 1px;
 }
 
