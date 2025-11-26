@@ -5,13 +5,17 @@ edition = "2021"
 
 [workspace]
 
+[features]
+default = ["alloc"]
+alloc = []
+
 [dependencies]
-forge-ec-core = { path = "../forge-ec-core" }
-forge-ec-curves = { path = "../forge-ec-curves" }
-forge-ec-signature = { path = "../forge-ec-signature" }
-forge-ec-encoding = { path = "../forge-ec-encoding" }
-forge-ec-hash = { path = "../forge-ec-hash" }
-forge-ec-rng = { path = "../forge-ec-rng" }
+forge-ec-core = { path = "../forge-ec-core", features = ["alloc"] }
+forge-ec-curves = { path = "../forge-ec-curves", features = ["alloc"] }
+forge-ec-signature = { path = "../forge-ec-signature", features = ["alloc"] }
+forge-ec-encoding = { path = "../forge-ec-encoding", features = ["alloc"] }
+forge-ec-hash = { path = "../forge-ec-hash", features = ["alloc"] }
+forge-ec-rng = { path = "../forge-ec-rng", features = ["alloc"] }
 sha2 = "0.10"
 subtle = "2.6"
 der = "0.7"

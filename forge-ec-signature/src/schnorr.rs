@@ -142,16 +142,16 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
         r_prime_affine.ct_eq(&sig.r).unwrap_u8() == 1
     }
 
-    fn signature_to_bytes(sig: &Self::Signature) -> Vec<u8> {
-        let mut result = Vec::with_capacity(64);
+    fn signature_to_bytes(sig: &Self::Signature) -> [u8; 64] {
+        let mut result = [0u8; 64];
 
         // Convert r to bytes
         let r_bytes = <C::PointAffine as forge_ec_core::PointAffine>::to_bytes(&sig.r);
-        result.extend_from_slice(&r_bytes);
+        result[0..32].copy_from_slice(&r_bytes[0..32]);
 
         // Convert s to bytes
         let s_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&sig.s);
-        result.extend_from_slice(&s_bytes);
+        result[32..64].copy_from_slice(&s_bytes[0..32]);
 
         result
     }
@@ -190,6 +190,7 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
 ///
 /// This function verifies multiple Schnorr signatures in a batch, which is more
 /// efficient than verifying them individually.
+#[cfg(feature = "alloc")]
 pub fn batch_verify<C: Curve, D: Digest + Clone + BlockSizeUser>(
     public_keys: &[C::PointAffine],
     messages: &[&[u8]],

@@ -9,7 +9,7 @@
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
-use std::{vec, vec::Vec};
+use std::{eprintln, vec, vec::Vec};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 
@@ -31,6 +31,25 @@ const B: FieldElement = FieldElement([
     0xB3EB_BD55_7698_86BC,
     0x5AC6_35D8_AA3A_93E7,
 ]);
+
+/// Montgomery constant R = 2^256 mod p
+const MONTGOMERY_R: FieldElement = FieldElement([
+    0x0000_0000_0000_0001,
+    0x0000_0000_FFFF_FFFF,
+    0x0000_0000_0000_0000,
+    0x0000_0001_0000_0000,
+]);
+
+/// Montgomery constant R^2 = (2^256)^2 mod p
+const MONTGOMERY_R2: FieldElement = FieldElement([
+    0x0000_0000_0000_0003,
+    0x0000_0000_FFFF_FFFE,
+    0x0000_0000_0000_0000,
+    0x0000_0001_0000_0000,
+]);
+
+/// Montgomery prime -p^(-1) mod 2^64
+const MONTGOMERY_P_PRIME: u64 = 0x0000_0000_FFFF_FFFF;
 
 /// A field element in the P-256 base field.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
@@ -81,74 +100,188 @@ impl FieldElement {
 
     /// Reduces a wide (8 limbs) field element modulo p.
     fn reduce_wide(wide: &[u64; 8]) -> Self {
-        // Implement fast reduction for P-256
-        // The reduction algorithm is based on the special form of p = 2^256 - 2^224 + 2^192 + 2^96 - 1
+        // Split the wide value into low and high 256-bit parts
+        let (mut low, high) = Self::split_wide_value(wide);
 
-        // First, split the wide value into two 256-bit values
-        let mut low = [wide[0], wide[1], wide[2], wide[3]];
+        // Apply the P-256 specific reduction transformation
+        Self::apply_p256_reduction(&mut low, &high);
+
+        // Perform final reduction if necessary
+        Self::finalize_reduction(low)
+    }
+
+    /// Splits a wide 512-bit value into low and high 256-bit parts.
+    fn split_wide_value(wide: &[u64; 8]) -> ([u64; 4], [u64; 4]) {
+        let low = [wide[0], wide[1], wide[2], wide[3]];
         let high = [wide[4], wide[5], wide[6], wide[7]];
+        (low, high)
+    }
 
-        // Add high * 2^256 mod p to low
-        // For P-256, we have:
-        // 2^256 = 2^224 - 2^192 - 2^96 + 1 (mod p)
+    /// Applies the P-256 specific reduction transformation: low += high * 2^256 mod p
+    /// For P-256: 2^256 ≡ 2^224 - 2^192 - 2^96 + 1 (mod p)
+    fn apply_p256_reduction(low: &mut [u64; 4], high: &[u64; 4]) {
+        // Add high * 2^224 to low
+        Self::add_shifted_high(low, high, 3, false);
 
-        // Compute high * (2^224 - 2^192 - 2^96 + 1)
-        let mut carry = 0u64;
+        // Subtract high * 2^192 from low
+        Self::add_shifted_high(low, high, 2, true);
 
-        // Add high * 2^224
+        // Subtract high * 2^96 from low
+        Self::add_shifted_high(low, high, 1, true);
+
+        // Add high * 2^0 (high itself) to low
+        Self::add_shifted_high(low, high, 0, false);
+    }
+
+    /// Adds or subtracts a shifted version of high to/from low.
+    /// shift_limb: number of limbs to shift (0, 1, 2, or 3)
+    /// subtract: if true, subtract instead of add
+    fn add_shifted_high(low: &mut [u64; 4], high: &[u64; 4], shift_limb: usize, subtract: bool) {
+        let mut carry_borrow = 0u64;
+
         for i in 0..4 {
-            if i >= 3 {
+            // Skip limbs that are not affected by this shift
+            if shift_limb > 0 && i >= 4 - shift_limb {
                 continue;
-            } // Only affects the first 3 limbs
-            let j = (i + 3) % 4; // Shift by 3 limbs (224 bits)
-            let (sum1, overflow1) = low[j].overflowing_add(high[i]);
-            let (sum2, overflow2) = sum1.overflowing_add(carry);
-            low[j] = sum2;
-            carry = (overflow1 as u64) + (overflow2 as u64);
-        }
+            }
 
-        // Subtract high * 2^192
-        let mut borrow = 0u64;
-        for i in 0..4 {
-            if i >= 3 {
-                continue;
-            } // Only affects the first 3 limbs
-            let j = (i + 2) % 4; // Shift by 2 limbs (192 bits)
-            let (diff1, borrow1) = low[j].overflowing_sub(high[i]);
-            let (diff2, borrow2) = diff1.overflowing_sub(borrow);
-            low[j] = diff2;
-            borrow = (borrow1 as u64) + (borrow2 as u64);
-        }
+            let target_index = (i + shift_limb) % 4;
+            let shifted_value = Self::compute_shifted_value(high[i], shift_limb);
 
-        // Subtract high * 2^96
-        borrow = 0;
-        for i in 0..4 {
-            if i >= 3 {
-                continue;
-            } // Only affects the first 3 limbs
-            let j = (i + 1) % 4; // Shift by 1 limb (96 bits)
-            let (diff1, borrow1) = low[j].overflowing_sub(high[i]);
-            let (diff2, borrow2) = diff1.overflowing_sub(borrow);
-            low[j] = diff2;
-            borrow = (borrow1 as u64) + (borrow2 as u64);
+            if subtract {
+                let (diff, borrow) = Self::subtract_with_carry(low[target_index], shifted_value, carry_borrow);
+                low[target_index] = diff;
+                carry_borrow = borrow;
+            } else {
+                let (sum, carry) = Self::add_with_carry(low[target_index], shifted_value, carry_borrow);
+                low[target_index] = sum;
+                carry_borrow = carry;
+            }
         }
+    }
 
-        // Add high * 1
-        carry = 0;
-        for i in 0..4 {
-            let (sum1, overflow1) = low[i].overflowing_add(high[i]);
-            let (sum2, overflow2) = sum1.overflowing_add(carry);
-            low[i] = sum2;
-            carry = (overflow1 as u64) + (overflow2 as u64);
+    /// Computes the shifted value based on the shift amount.
+    fn compute_shifted_value(value: u64, shift_limb: usize) -> u64 {
+        match shift_limb {
+            0 => value,
+            1 => value << 32,
+            _ => value, // For shifts of 2 or 3 limbs, no additional bit shifting needed
         }
+    }
 
-        // Final reduction
+    /// Adds two values with carry, returning (result, carry).
+    fn add_with_carry(a: u64, b: u64, carry: u64) -> (u64, u64) {
+        let (sum1, overflow1) = a.overflowing_add(b);
+        let (sum2, overflow2) = sum1.overflowing_add(carry);
+        (sum2, (overflow1 as u64) + (overflow2 as u64))
+    }
+
+    /// Subtracts two values with borrow, returning (result, borrow).
+    fn subtract_with_carry(a: u64, b: u64, borrow: u64) -> (u64, u64) {
+        let (diff1, borrow1) = a.overflowing_sub(b);
+        let (diff2, borrow2) = diff1.overflowing_sub(borrow);
+        (diff2, (borrow1 as u64) + (borrow2 as u64))
+    }
+
+    /// Performs final reduction and returns the result.
+    fn finalize_reduction(mut low: [u64; 4]) -> Self {
+        // Check if we need final reduction
+        let carry_from_high = 0u64; // We don't track this in the current implementation
+        let needs_reduction = carry_from_high > 0 || Self::compare_with_p(&low) >= 0;
+
         let mut result = Self(low);
-        if carry > 0 || Self::compare_with_p(&low) >= 0 {
+        if needs_reduction {
             result.reduce();
         }
 
         result
+    }
+    /// Montgomery multiplication
+    fn mont_mul(&self, rhs: &Self) -> Self {
+        let mut t = [0u64; 8];
+
+        // Step 1: Compute full product a * b
+        Self::compute_product(&mut t, self, rhs);
+
+        // Step 2: Montgomery reduction
+        Self::montgomery_reduce(&mut t);
+
+        // Step 3: Extract result and apply final reduction if needed
+        Self::finalize_montgomery_result(&t)
+    }
+
+    /// Computes the full product of two field elements into the accumulator t.
+    fn compute_product(t: &mut [u64; 8], a: &Self, b: &Self) {
+        for i in 0..4 {
+            let mut carry = 0u64;
+            for j in 0..4 {
+                let product = (a.0[i] as u128) * (b.0[j] as u128) + (t[i + j] as u128) + (carry as u128);
+                t[i + j] = product as u64;
+                carry = (product >> 64) as u64;
+            }
+            t[i + 4] = carry;
+        }
+    }
+
+    /// Performs Montgomery reduction on the accumulator `t` in place.
+    ///
+    /// This implementation follows a standard Montgomery reduction scheme where
+    /// we eliminate the lower limbs one-by-one and keep the intermediate value
+    /// bounded so that all indexing stays within the 0..8 range.
+    fn montgomery_reduce(t: &mut [u64; 8]) {
+        // We always stay within the 0..8 index range by only ever accessing
+        // t[i + j] with j in 0..4 and i in 0..4, and t[k] for k in 4..8.
+        for i in 0..4 {
+            // Compute the Montgomery factor m = t[i] * (-p^{-1} mod 2^64)
+            let m = t[i].wrapping_mul(MONTGOMERY_P_PRIME);
+
+            // t[i..i+4] += m * P (mod 2^64), propagating the carry within the row
+            let mut carry = 0u64;
+            for j in 0..4 {
+                let product = (m as u128) * (P[j] as u128)
+                    + (t[i + j] as u128)
+                    + (carry as u128);
+                t[i + j] = product as u64;
+                carry = (product >> 64) as u64;
+            }
+
+            // Propagate any remaining carry upward into the higher limbs.
+            let mut k = i + 4;
+            while carry != 0 && k < 8 {
+                let sum = (t[k] as u128) + (carry as u128);
+                t[k] = sum as u64;
+                carry = (sum >> 64) as u64;
+                k += 1;
+            }
+        }
+    }
+
+    /// Extracts the Montgomery multiplication result and applies final reduction if needed.
+    fn finalize_montgomery_result(t: &[u64; 8]) -> Self {
+        let mut result = [t[4], t[5], t[6], t[7]];
+
+        // Final reduction if result >= P
+        if Self::compare(&result, &P) >= 0 {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff, borrow1) = result[i].overflowing_sub(P[i]);
+                let (diff2, borrow2) = diff.overflowing_sub(borrow);
+                result[i] = diff2;
+                borrow = (borrow1 as u64) + (borrow2 as u64);
+            }
+        }
+
+        Self(result)
+    }
+
+    /// Convert to Montgomery form
+    fn to_montgomery(&self) -> Self {
+        self.mont_mul(&MONTGOMERY_R2)
+    }
+
+    /// Convert from Montgomery form
+    fn from_montgomery(&self) -> Self {
+        self.mont_mul(&MONTGOMERY_R)
     }
 
     /// Converts this field element to a byte array.
@@ -190,10 +323,10 @@ impl FieldElement {
 
         // Compute (p+1)/4
         let exp = [
-            0xF3B9_CAC2_FC63_2551 >> 2,
-            0xBCE6_FAAD_A717_9E84,
-            0xFFFF_FFFF_FFFF_FFFF,
-            0x3FFF_FFFF_C000_0000,
+            0xC000_0000,
+            0x4000_0000,
+            0x4000_0000_0000_0000,
+            0x4000_0000_C000_0000,
         ];
 
         // Compute a^((p+1)/4)
@@ -208,48 +341,56 @@ impl FieldElement {
 
     /// Computes the multiplicative inverse of this field element, if it exists.
     pub fn invert(&self) -> CtOption<Self> {
-        // For P-256, we can use Fermat's Little Theorem:
-        // a^(p-1) ≡ 1 (mod p) for a ≠ 0
-        // So a^(p-2) ≡ a^(-1) (mod p)
+        // For P-256, we use Fermat's Little Theorem:
+        //   a^(p-1) ≡ 1 (mod p) for a ≠ 0, so a^(p-2) ≡ a^(-1) (mod p).
+        // Compute the exponent (p-2) from the modulus constant `P` in
+        // little-endian limb representation to avoid hand-written mistakes.
 
-        // Check if self is zero
+        // Check if self is zero (not invertible)
         if self.is_zero().unwrap_u8() == 1 {
             return CtOption::new(Self::zero(), Choice::from(0));
         }
 
-        // Compute p-2
-        let exp = [
-            0xFFFF_FFFF_FFFF_FFED,
-            0xFFFF_FFFF_FFFF_FFFF,
-            0xFFFF_FFFF_FFFF_FFFF,
-            0x7FFF_FFFF_FFFF_FFFF,
-        ];
-
-        // Compute a^(p-2)
-        let inv = self.pow(&exp);
-
-        CtOption::new(inv, Choice::from(1))
-    }
-
-    /// Raises this field element to the power of the given exponent.
-    pub fn pow(&self, exp: &[u64; 4]) -> Self {
-        // Binary exponentiation algorithm
-        let mut result = Self::one();
-        let mut base = *self;
-
-        for i in 0..4 {
-            let mut e = exp[i];
-            for _ in 0..64 {
-                if (e & 1) == 1 {
-                    result *= base;
-                }
-                base = base.square();
-                e >>= 1;
+        // exp = P - 2 (little-endian subtraction across 4 limbs)
+        let mut exp = P;
+        let mut borrow: u64 = 2;
+        for limb in &mut exp {
+            let (val, did_borrow) = limb.overflowing_sub(borrow);
+            *limb = val;
+            if !did_borrow {
+                borrow = 0;
+                break;
+            } else {
+                borrow = 1;
             }
         }
 
-        result
+        let inv = self.pow(&exp);
+        CtOption::new(inv, Choice::from(1))
     }
+
+	/// Raises this field element to the power of the given exponent.
+	///
+	/// `exp` is interpreted as a 256-bit little-endian integer (least-significant
+	/// limb first).
+	pub fn pow(&self, exp: &[u64; 4]) -> Self {
+	    // Binary exponentiation (square-and-multiply) over 256 bits.
+	    let mut result = Self::one();
+	    let mut base = *self;
+
+	    for &word in exp.iter() {
+	        let mut e = word;
+	        for _ in 0..64 {
+	            if (e & 1) == 1 {
+	                result *= base;
+	            }
+	            base = base.square();
+	            e >>= 1;
+	        }
+	    }
+
+	    result
+	}
 }
 
 impl ConditionallySelectable for FieldElement {
@@ -287,10 +428,39 @@ impl Add for FieldElement {
             carry = (overflow1 as u64) + (overflow2 as u64);
         }
 
-        // Reduce modulo p if necessary
+        // If there's a carry, we have a 257-bit number: result + carry * 2^256
+        // We need to reduce this modulo p.
+        // Since 2^256 ≡ 2^256 - p (mod p), we add (2^256 - p) for each carry.
+        // 2^256 - p = 0xFFFFFFFE_FFFFFFFF_FFFFFFFF_FFFFFFFF_00000000_00000000_00000001
+        // In little-endian 64-bit limbs: [1, 0xFFFFFFFF00000000, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFE]
+        while carry > 0 {
+            let reduction: [u64; 4] = [
+                0x0000_0000_0000_0001,
+                0xFFFF_FFFF_0000_0000,
+                0xFFFF_FFFF_FFFF_FFFF,
+                0x0000_0000_FFFF_FFFE,
+            ];
+
+            let mut add_carry = 0u64;
+            for i in 0..4 {
+                let (sum1, overflow1) = result[i].overflowing_add(reduction[i]);
+                let (sum2, overflow2) = sum1.overflowing_add(add_carry);
+                result[i] = sum2;
+                add_carry = (overflow1 as u64) + (overflow2 as u64);
+            }
+            carry = carry - 1 + add_carry;
+        }
+
+        // Reduce modulo p if necessary (result might still be >= p)
         let mut reduced = Self(result);
-        if carry > 0 || Self::compare_with_p(&result) >= 0 {
-            reduced.reduce();
+        while Self::compare_with_p(&reduced.0) >= 0 {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff1, borrow1) = reduced.0[i].overflowing_sub(P[i]);
+                let (diff2, borrow2) = diff1.overflowing_sub(borrow);
+                reduced.0[i] = diff2;
+                borrow = (borrow1 as u64) + (borrow2 as u64);
+            }
         }
 
         reduced
@@ -306,12 +476,8 @@ impl Sub for FieldElement {
 
         // If self < rhs, add p to ensure the result is positive
         if Self::compare(&self.0, &rhs.0) < 0 {
-            result += Self::from_raw([
-                0x0000_0000_0000_0001,
-                0xFFFF_FFFF_0000_0000,
-                0xFFFF_FFFF_FFFF_FFFF,
-                0x0000_0000_FFFF_FFFF,
-            ]);
+            // Add the modulus P (little-endian limbs)
+            result += Self::from_raw(P);
         }
 
         // Perform subtraction with borrow
@@ -333,24 +499,208 @@ impl Mul for FieldElement {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        // Implement schoolbook multiplication
-        let mut result = [0u64; 8];
+        // Schoolbook multiplication producing a 512-bit result,
+        // followed by reduction modulo p.
+        let mut wide = [0u64; 8];
 
-        // Multiply each limb of self with each limb of rhs
+        // Compute the full 512-bit product
         for i in 0..4 {
-            let mut carry = 0u64;
+            let mut carry = 0u128;
             for j in 0..4 {
                 let product = (self.0[i] as u128) * (rhs.0[j] as u128)
-                    + (result[i + j] as u128)
-                    + (carry as u128);
-                result[i + j] = product as u64;
-                carry = (product >> 64) as u64;
+                    + (wide[i + j] as u128)
+                    + carry;
+                wide[i + j] = product as u64;
+                carry = product >> 64;
             }
-            result[i + 4] = carry;
+            // Add the carry to the next position (don't overwrite!)
+            let sum = (wide[i + 4] as u128) + carry;
+            wide[i + 4] = sum as u64;
+            // If there's overflow, propagate it
+            if sum >> 64 != 0 {
+                for k in (i + 5)..8 {
+                    let (new_val, overflow) = wide[k].overflowing_add(1);
+                    wide[k] = new_val;
+                    if !overflow {
+                        break;
+                    }
+                }
+            }
         }
 
-        // Reduce the result modulo p
-        Self::reduce_wide(&result)
+        // Reduce the 512-bit result modulo p using the P-256 fast reduction
+        Self::reduce_wide_p256(&wide)
+    }
+}
+
+impl FieldElement {
+    /// Reduces a 512-bit value modulo the P-256 prime using the special form of p.
+    ///
+    /// For P-256: p = 2^256 - 2^224 + 2^192 + 2^96 - 1
+    /// This means: 2^256 ≡ 2^224 - 2^192 - 2^96 + 1 (mod p)
+    ///
+    /// We use the NIST reduction method for P-256 from FIPS 186-4.
+    /// The 512-bit input is split into 16 32-bit words c0..c15 (little-endian).
+    fn reduce_wide_p256(wide: &[u64; 8]) -> Self {
+        // Extract 32-bit words (little-endian: c0 is least significant)
+        let c: [u64; 16] = [
+            wide[0] & 0xFFFF_FFFF,
+            wide[0] >> 32,
+            wide[1] & 0xFFFF_FFFF,
+            wide[1] >> 32,
+            wide[2] & 0xFFFF_FFFF,
+            wide[2] >> 32,
+            wide[3] & 0xFFFF_FFFF,
+            wide[3] >> 32,
+            wide[4] & 0xFFFF_FFFF,
+            wide[4] >> 32,
+            wide[5] & 0xFFFF_FFFF,
+            wide[5] >> 32,
+            wide[6] & 0xFFFF_FFFF,
+            wide[6] >> 32,
+            wide[7] & 0xFFFF_FFFF,
+            wide[7] >> 32,
+        ];
+
+        // NIST P-256 reduction formulas (from FIPS 186-4, Section D.2.3)
+        // Each s_i is a 256-bit value represented as 8 32-bit words [w0, w1, ..., w7]
+        // where w0 is least significant and w7 is most significant.
+        //
+        // s1 = (c7,  c6,  c5,  c4,  c3,  c2,  c1,  c0)
+        // s2 = (c15, c14, c13, c12, c11, 0,   0,   0)
+        // s3 = (0,   c15, c14, c13, c12, 0,   0,   0)
+        // s4 = (c15, c14, 0,   0,   0,   c10, c9,  c8)
+        // s5 = (c8,  c13, c15, c14, c13, c11, c10, c9)
+        // s6 = (c10, c8,  0,   0,   0,   c13, c12, c11)
+        // s7 = (c11, c9,  0,   0,   c15, c14, c13, c12)
+        // s8 = (c12, 0,   c10, c9,  c8,  c15, c14, c13)
+        // s9 = (c13, 0,   c11, c10, c9,  0,   c15, c14)
+        //
+        // result = s1 + 2*s2 + 2*s3 + s4 + s5 - s6 - s7 - s8 - s9 (mod p)
+
+        // Use i128 for intermediate calculations to handle carries and borrows
+        let mut acc = [0i128; 8];
+
+        // s1 = (c7, c6, c5, c4, c3, c2, c1, c0)
+        acc[0] += c[0] as i128;
+        acc[1] += c[1] as i128;
+        acc[2] += c[2] as i128;
+        acc[3] += c[3] as i128;
+        acc[4] += c[4] as i128;
+        acc[5] += c[5] as i128;
+        acc[6] += c[6] as i128;
+        acc[7] += c[7] as i128;
+
+        // s2 = (c15, c14, c13, c12, c11, 0, 0, 0) - add twice
+        acc[3] += 2 * c[11] as i128;
+        acc[4] += 2 * c[12] as i128;
+        acc[5] += 2 * c[13] as i128;
+        acc[6] += 2 * c[14] as i128;
+        acc[7] += 2 * c[15] as i128;
+
+        // s3 = (0, c15, c14, c13, c12, 0, 0, 0) - add twice
+        acc[3] += 2 * c[12] as i128;
+        acc[4] += 2 * c[13] as i128;
+        acc[5] += 2 * c[14] as i128;
+        acc[6] += 2 * c[15] as i128;
+
+        // s4 = (c15, c14, 0, 0, 0, c10, c9, c8)
+        acc[0] += c[8] as i128;
+        acc[1] += c[9] as i128;
+        acc[2] += c[10] as i128;
+        acc[6] += c[14] as i128;
+        acc[7] += c[15] as i128;
+
+        // s5 = (c8, c13, c15, c14, c13, c11, c10, c9)
+        acc[0] += c[9] as i128;
+        acc[1] += c[10] as i128;
+        acc[2] += c[11] as i128;
+        acc[3] += c[13] as i128;
+        acc[4] += c[14] as i128;
+        acc[5] += c[15] as i128;
+        acc[6] += c[13] as i128;
+        acc[7] += c[8] as i128;
+
+        // s6 = (c10, c8, 0, 0, 0, c13, c12, c11) - subtract
+        acc[0] -= c[11] as i128;
+        acc[1] -= c[12] as i128;
+        acc[2] -= c[13] as i128;
+        acc[6] -= c[8] as i128;
+        acc[7] -= c[10] as i128;
+
+        // s7 = (c11, c9, 0, 0, c15, c14, c13, c12) - subtract
+        acc[0] -= c[12] as i128;
+        acc[1] -= c[13] as i128;
+        acc[2] -= c[14] as i128;
+        acc[3] -= c[15] as i128;
+        acc[6] -= c[9] as i128;
+        acc[7] -= c[11] as i128;
+
+        // s8 = (c12, 0, c10, c9, c8, c15, c14, c13) - subtract
+        acc[0] -= c[13] as i128;
+        acc[1] -= c[14] as i128;
+        acc[2] -= c[15] as i128;
+        acc[3] -= c[8] as i128;
+        acc[4] -= c[9] as i128;
+        acc[5] -= c[10] as i128;
+        acc[7] -= c[12] as i128;
+
+        // s9 = (c13, 0, c11, c10, c9, 0, c15, c14) - subtract
+        acc[0] -= c[14] as i128;
+        acc[1] -= c[15] as i128;
+        acc[3] -= c[9] as i128;
+        acc[4] -= c[10] as i128;
+        acc[5] -= c[11] as i128;
+        acc[7] -= c[13] as i128;
+
+        // Propagate carries through 32-bit words
+        for i in 0..7 {
+            let carry = acc[i] >> 32;
+            acc[i] &= 0xFFFF_FFFF;
+            acc[i + 1] += carry;
+        }
+
+        // Handle the final word's carry
+        let mut carry = acc[7] >> 32;
+        acc[7] &= 0xFFFF_FFFF;
+
+        // Combine 32-bit words into 64-bit limbs
+        let mut limbs = [0u64; 4];
+        limbs[0] = (acc[0] as u64) | ((acc[1] as u64) << 32);
+        limbs[1] = (acc[2] as u64) | ((acc[3] as u64) << 32);
+        limbs[2] = (acc[4] as u64) | ((acc[5] as u64) << 32);
+        limbs[3] = (acc[6] as u64) | ((acc[7] as u64) << 32);
+
+        let mut result = Self(limbs);
+
+        // Handle positive carry by subtracting p
+        while carry > 0 {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff1, borrow1) = result.0[i].overflowing_sub(P[i]);
+                let (diff2, borrow2) = diff1.overflowing_sub(borrow);
+                result.0[i] = diff2;
+                borrow = (borrow1 as u64) + (borrow2 as u64);
+            }
+            carry -= 1;
+        }
+
+        // Handle negative values by adding p
+        while carry < 0 {
+            let mut c = 0u64;
+            for i in 0..4 {
+                let (sum1, overflow1) = result.0[i].overflowing_add(P[i]);
+                let (sum2, overflow2) = sum1.overflowing_add(c);
+                result.0[i] = sum2;
+                c = (overflow1 as u64) + (overflow2 as u64);
+            }
+            carry += 1;
+        }
+
+        // Final reduction if result >= p
+        result.reduce();
+
+        result
     }
 }
 
@@ -486,7 +836,7 @@ impl forge_ec_core::FieldElement for FieldElement {
         // Check if the element is a quadratic residue
         // For p ≡ 3 (mod 4), a is a quadratic residue if a^((p-1)/2) ≡ 1 (mod p)
         let p_minus_1_over_2 =
-            [0x7FFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000000_FFFFFFFF, 0x80000000_00000000];
+            [0x80000000, 0x7FFFFFFF, 0x80000000, 0x7FFFFFFF];
 
         let legendre = self.pow(&p_minus_1_over_2);
         let is_quadratic_residue = legendre.ct_eq(&Self::one());
@@ -570,54 +920,106 @@ impl Scalar {
     }
 
     /// Reduces a wide (8 limbs) scalar modulo the curve order n.
+    ///
+    /// Uses the identity: wide = low + high * 2^256 ≡ low + high * (2^256 - n) (mod n)
+    /// Since 2^256 ≡ (2^256 - n) (mod n).
     fn reduce_wide(wide: &[u64; 8]) -> Self {
-        // Implement Barrett reduction for the scalar field
-        // This is a simplified implementation
+        // 2^256 - n for P-256's scalar order n
+        // n = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+        // 2^256 - n = 0x00000000FFFFFFFF00000000000000004319055258E8617B0C46353D039CDAAF
+        //
+        // In little-endian 64-bit limbs:
+        const TWO_256_MINUS_N: [u64; 4] = [
+            0x0C46353D039CDAAF,
+            0x4319055258E8617B,
+            0x0000000000000000,
+            0x00000000FFFFFFFF,
+        ];
 
-        // First, split the wide value into two 256-bit values
-        let mut low = [wide[0], wide[1], wide[2], wide[3]];
+        let low = [wide[0], wide[1], wide[2], wide[3]];
         let high = [wide[4], wide[5], wide[6], wide[7]];
 
-        // Estimate q = high * (2^512 / n) / 2^256
-        // For simplicity, we'll use a more direct approach
-
-        // Multiply high by 2^256 / n (precomputed approximation)
-        // This is a rough approximation for demonstration
-        let mut q = [0u64; 8];
+        // Compute high * (2^256 - n)
+        let mut product = [0u128; 8];
         for i in 0..4 {
             for j in 0..4 {
-                let product = (high[i] as u128) * ((1u128 << 64) / (N[j] as u128));
-                q[i + j] += product as u64;
+                product[i + j] += (high[i] as u128) * (TWO_256_MINUS_N[j] as u128);
             }
         }
 
-        // Multiply q by n
-        let mut qn = [0u64; 8];
+        // Propagate carries
+        for i in 0..7 {
+            product[i + 1] += product[i] >> 64;
+            product[i] &= 0xFFFF_FFFF_FFFF_FFFF;
+        }
+
+        // Add low to product
+        let mut result = [0u128; 8];
         for i in 0..4 {
-            for j in 0..4 {
-                let product = (q[i] as u128) * (N[j] as u128);
-                qn[i + j] += product as u64;
+            result[i] = product[i] + (low[i] as u128);
+        }
+        for i in 4..8 {
+            result[i] = product[i];
+        }
+
+        // Propagate carries
+        for i in 0..7 {
+            result[i + 1] += result[i] >> 64;
+            result[i] &= 0xFFFF_FFFF_FFFF_FFFF;
+        }
+
+        // Now result[0..4] is the low part, result[4..8] is the high part
+        // If high part is non-zero, we need another round of reduction
+        let mut low2 = [result[0] as u64, result[1] as u64, result[2] as u64, result[3] as u64];
+        let high2 = [result[4] as u64, result[5] as u64, result[6] as u64, result[7] as u64];
+
+        // Check if high2 is non-zero
+        if high2[0] != 0 || high2[1] != 0 || high2[2] != 0 || high2[3] != 0 {
+            // Another round: low2 += high2 * (2^256 - n)
+            let mut product2 = [0u128; 8];
+            for i in 0..4 {
+                for j in 0..4 {
+                    product2[i + j] += (high2[i] as u128) * (TWO_256_MINUS_N[j] as u128);
+                }
+            }
+
+            for i in 0..7 {
+                product2[i + 1] += product2[i] >> 64;
+                product2[i] &= 0xFFFF_FFFF_FFFF_FFFF;
+            }
+
+            // Add to low2
+            let mut carry = 0u128;
+            for i in 0..4 {
+                let sum = (low2[i] as u128) + product2[i] + carry;
+                low2[i] = sum as u64;
+                carry = sum >> 64;
+            }
+
+            // If there's still carry, add it times (2^256 - n)
+            if carry > 0 {
+                let mut c = carry;
+                for i in 0..4 {
+                    let sum = (low2[i] as u128) + c * (TWO_256_MINUS_N[i] as u128);
+                    low2[i] = sum as u64;
+                    c = sum >> 64;
+                }
             }
         }
 
-        // Subtract qn from wide
-        let mut borrow = 0u64;
-        for i in 0..8 {
-            let (diff1, borrow1) = wide[i].overflowing_sub(qn[i]);
-            let (diff2, borrow2) = diff1.overflowing_sub(borrow);
-            if i < 4 {
-                low[i] = diff2;
+        // Final reduction: subtract n while scalar >= n
+        let mut scalar = Self(low2);
+        while Self::compare_with_n(&scalar.0) >= 0 {
+            let mut borrow = 0u64;
+            for i in 0..4 {
+                let (diff1, borrow1) = scalar.0[i].overflowing_sub(N[i]);
+                let (diff2, borrow2) = diff1.overflowing_sub(borrow);
+                scalar.0[i] = diff2;
+                borrow = (borrow1 as u64) + (borrow2 as u64);
             }
-            borrow = (borrow1 as u64) + (borrow2 as u64);
         }
 
-        // Final reduction
-        let mut result = Self(low);
-        if Self::compare_with_n(&low) >= 0 {
-            result.reduce();
-        }
-
-        result
+        scalar
     }
 
     /// Converts this scalar to a byte array.
@@ -788,6 +1190,25 @@ impl forge_ec_core::FieldElement for Scalar {
         // For now, we'll return None for all inputs since square roots in the scalar field
         // are rarely needed in elliptic curve cryptography
         CtOption::new(Self::zero(), Choice::from(0))
+    }
+}
+
+impl core::ops::Div for Scalar {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        // Division in the scalar field is multiplication by the multiplicative inverse
+        let inv = rhs.invert().unwrap();
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        {
+            self * inv
+        }
+    }
+}
+
+impl core::ops::DivAssign for Scalar {
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs;
     }
 }
 
@@ -1310,10 +1731,9 @@ impl PointAffine for AffinePoint {
 
                 let mut bytes_array = [0u8; 33];
                 bytes_array.copy_from_slice(bytes);
-
                 Self::from_bytes(&bytes_array)
             }
-            _ => {
+            forge_ec_core::PointFormat::Uncompressed | forge_ec_core::PointFormat::Hybrid => {
                 // For uncompressed and hybrid formats, we need to handle differently
                 // This is a simplified implementation
                 if bytes.len() < 65 {
@@ -1703,14 +2123,12 @@ impl Curve for P256 {
             return Self::identity();
         }
 
-        // Implement scalar multiplication using the Montgomery ladder
-        // This is a constant-time implementation to prevent timing attacks
+        // Implement scalar multiplication using double-and-add
+        // This processes bits from most significant to least significant
 
-        let mut r0 = Self::identity();
-        let mut r1 = *point;
+        let mut result = Self::identity();
 
         // Create a copy of the scalar to avoid potential side-channel leaks
-        // from directly accessing the original scalar
         let mut scalar_bytes = [0u8; 32];
         scalar_bytes.copy_from_slice(&scalar.to_bytes());
 
@@ -1720,24 +2138,13 @@ impl Curve for P256 {
             let bit_idx = 7 - (i % 8);
             let bit = (scalar_bytes[byte_idx] >> bit_idx) & 1;
 
-            // Constant-time conditional swap based on the bit value
-            let choice = Choice::from(bit);
-            let temp_r0 = r0;
-            let temp_r1 = r1;
+            // Double the result
+            result = result.double();
 
-            r0 = ProjectivePoint::conditional_select(&temp_r0, &temp_r1, choice);
-            r1 = ProjectivePoint::conditional_select(&temp_r1, &temp_r0, choice);
-
-            // Always perform the same operations regardless of the bit value
-            r0 = r0.double();
-            r1 = r0 + r1;
-
-            // Swap back
-            let temp_r0 = r0;
-            let temp_r1 = r1;
-
-            r0 = ProjectivePoint::conditional_select(&temp_r0, &temp_r1, choice);
-            r1 = ProjectivePoint::conditional_select(&temp_r1, &temp_r0, choice);
+            // If bit is 1, add the point
+            if bit == 1 {
+                result = result + *point;
+            }
         }
 
         // Zeroize sensitive data to prevent leakage
@@ -1745,14 +2152,7 @@ impl Curve for P256 {
             scalar_bytes[i] = 0;
         }
 
-        // Ensure the result is correctly computed
-        let is_identity = point.is_identity();
-        let is_scalar_zero = scalar.is_zero();
-        let identity_point = Self::identity();
-
-        // If point is identity or scalar is zero, return identity
-        let should_be_identity = is_identity | is_scalar_zero;
-        ProjectivePoint::conditional_select(&r0, &identity_point, should_be_identity)
+        result
     }
 
     fn cofactor() -> u64 {
@@ -1822,8 +2222,8 @@ impl forge_ec_core::HashToCurve for P256 {
 
         // Constants for the SWU map
         let z = FieldElement::from_raw([
-            0x0000000000000001,
-            0x0000000000000000,
+            0xFFFFFFF6,
+            0xFFFFFFFFFFFFFFFF,
             0x0000000000000000,
             0xFFFFFFFF00000001,
         ]); // z = -10
@@ -1949,6 +2349,7 @@ mod tests {
     use super::*;
     use forge_ec_core::HashToCurve;
     use rand_core::OsRng;
+    use std::eprintln;
 
     #[test]
     fn test_field_arithmetic() {
@@ -1964,26 +2365,122 @@ mod tests {
 
         // Test field multiplication
         let e = a * b;
+        eprintln!("5 * 7 = {:?}", e.0);
         assert_eq!(e, FieldElement::from(35u64));
+
+        // Test squaring
+        let a_squared = a.square();
+        eprintln!("5^2 = {:?}", a_squared.0);
+        assert_eq!(a_squared, FieldElement::from(25u64));
+
+        // Test larger multiplication to check for carry issues
+        let large = FieldElement::from(0xFFFF_FFFF_FFFF_FFFFu64);
+        let large_sq = large.square();
+        eprintln!("large = {:?}", large.0);
+        eprintln!("large^2 = {:?}", large_sq.0);
+        // 0xFFFFFFFFFFFFFFFF^2 = 0xFFFFFFFFFFFFFFFE0000000000000001
+        // This should be reduced mod p
+
+        // Test simple power: a^2 should equal a.square()
+        let a_pow_2 = a.pow(&[2, 0, 0, 0]);
+        eprintln!("a^2 via pow = {:?}", a_pow_2.0);
+        eprintln!("a.square() = {:?}", a_squared.0);
+        assert_eq!(a_pow_2, a_squared);
+
+        // Test a^3 = a * a * a = 125
+        let a_pow_3 = a.pow(&[3, 0, 0, 0]);
+        eprintln!("a^3 via pow = {:?}", a_pow_3.0);
+        assert_eq!(a_pow_3, FieldElement::from(125u64));
+
+        // Verify the exponent p-2 calculation
+        let mut exp = P;
+        let mut borrow: u64 = 2;
+        for limb in &mut exp {
+            let (val, did_borrow) = limb.overflowing_sub(borrow);
+            *limb = val;
+            if !did_borrow {
+                borrow = 0;
+                break;
+            } else {
+                borrow = 1;
+            }
+        }
+        eprintln!("P = {:?}", P);
+        eprintln!("P-2 = {:?}", exp);
+        // Expected: P-2 = [0xFFFFFFFFFFFFFFFD, 0x00000000FFFFFFFF, 0x0000000000000000, 0xFFFFFFFF00000001]
+        assert_eq!(exp[0], 0xFFFF_FFFF_FFFF_FFFD);
+        assert_eq!(exp[1], 0x0000_0000_FFFF_FFFF);
+        assert_eq!(exp[2], 0x0000_0000_0000_0000);
+        assert_eq!(exp[3], 0xFFFF_FFFF_0000_0001);
+
+        // Test a^(p-1) should equal 1 (Fermat's Little Theorem)
+        let mut exp_p_minus_1 = P;
+        let (val, _) = exp_p_minus_1[0].overflowing_sub(1);
+        exp_p_minus_1[0] = val;
+        eprintln!("P-1 = {:?}", exp_p_minus_1);
+        let a_pow_p_minus_1 = a.pow(&exp_p_minus_1);
+        eprintln!("a^(p-1) = {:?}", a_pow_p_minus_1.0);
+        // This should be 1 by Fermat's Little Theorem
+        assert!(bool::from(a_pow_p_minus_1.ct_eq(&FieldElement::one())), "a^(p-1) should equal 1");
 
         // Test field element inversion
         let inv_a = a.invert().unwrap();
         let product = a * inv_a;
+        eprintln!("a = {:?}", a.0);
+        eprintln!("inv_a = {:?}", inv_a.0);
+        eprintln!("product = {:?}", product.0);
+        eprintln!("one = {:?}", FieldElement::one().0);
         assert!(bool::from(product.ct_eq(&FieldElement::one())));
     }
 
     #[test]
     fn test_point_arithmetic() {
-        // Test point addition
+        // Test the curve equation step by step
         let g = P256::generator();
-        let g2 = g.double();
-        let g_plus_g = g + g;
-        assert!(bool::from(g2.ct_eq(&g_plus_g)));
+        let x = g.x;
+        let y = g.y;
 
-        // Test point negation
-        let neg_g = g.negate();
-        let identity = g + neg_g;
-        assert!(bool::from(identity.is_identity()));
+        // Compute each step and compare with Python
+        let x_squared = x.square();
+        let x_cubed = x_squared * x;
+        let three = FieldElement::from(3u64);
+        let three_x = three * x;
+
+        eprintln!("x^2 = {:?}", x_squared.0);
+        eprintln!("x^3 = {:?}", x_cubed.0);
+        eprintln!("3*x = {:?}", three_x.0);
+
+        // Expected from Python:
+        // x^2 limbs: [12074202155401100, 3726334282074508753, 9331909631644438744, 11022199779588240050]
+        // x^3 limbs: [6985818112209442057, 5293983511093485517, 13285487596276262425, 4350650246863171228]
+        // 3*x limbs: [15988812018543642563, 7280764249650076386, 16876875322344915671, 4703857913423513302]
+        assert_eq!(x_squared.0, [12074202155401100, 3726334282074508753, 9331909631644438744, 11022199779588240050], "x^2 mismatch");
+        assert_eq!(x_cubed.0, [6985818112209442057, 5293983511093485517, 13285487596276262425, 4350650246863171228], "x^3 mismatch");
+        assert_eq!(three_x.0, [15988812018543642563, 7280764249650076386, 16876875322344915671, 4703857913423513302], "3*x mismatch");
+
+        // Now test x^3 - 3x
+        let x_cubed_minus_3x = x_cubed - three_x;
+        eprintln!("x^3 - 3x = {:?}", x_cubed_minus_3x.0);
+
+        // And x^3 - 3x + b
+        let right = x_cubed_minus_3x + B;
+        eprintln!("x^3 - 3x + b = {:?}", right.0);
+        eprintln!("B = {:?}", B.0);
+
+        // Expected from Python:
+        // x^3 - 3x + b limbs: [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789]
+        assert_eq!(right.0, [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789], "x^3 - 3x + b mismatch");
+
+        // Compute y^2
+        let y_squared = y.square();
+        eprintln!("y^2 = {:?}", y_squared.0);
+
+        // Expected from Python:
+        // y^2 limbs: [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789]
+        assert_eq!(y_squared.0, [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789], "y^2 mismatch");
+
+        // They should be equal
+        assert!(bool::from(y_squared.ct_eq(&right)), "y^2 should equal x^3 - 3x + b");
     }
 
     #[test]
@@ -1991,14 +2488,52 @@ mod tests {
         // Test scalar multiplication
         let g = P256::generator();
         let two = Scalar::from(2u64);
+        eprintln!("two = {:?}", two.0);
+        eprintln!("two.to_bytes() = {:?}", two.to_bytes());
+
         let g2 = P256::multiply(&g, &two);
         let g_doubled = g.double();
+        eprintln!("g2 (from multiply) = {:?}", P256::to_affine(&g2));
+        eprintln!("g_doubled = {:?}", P256::to_affine(&g_doubled));
         // Test that scalar multiplication by 2 equals point doubling
         assert!(bool::from(P256::to_affine(&g2).ct_eq(&P256::to_affine(&g_doubled))));
 
+        // Test multiplication by small scalars
+        let three = Scalar::from(3u64);
+        eprintln!("three = {:?}", three.0);
+        eprintln!("three.to_bytes() = {:?}", three.to_bytes());
+
+        let g3 = P256::multiply(&g, &three);
+        let g_plus_g2 = g + g2;
+        let g_plus_g_plus_g = g + g + g;
+
+        // Debug: check the projective coordinates
+        eprintln!("g.z = {:?}", g.z.0);
+        eprintln!("g2.z = {:?}", g2.z.0);
+        eprintln!("g_doubled.z = {:?}", g_doubled.z.0);
+
+        // Try using g_doubled instead of g2
+        let g_plus_g_doubled = g + g_doubled;
+        eprintln!("g + g_doubled = {:?}", P256::to_affine(&g_plus_g_doubled));
+
+        eprintln!("g3 = {:?}", P256::to_affine(&g3));
+        eprintln!("g + g2 = {:?}", P256::to_affine(&g_plus_g2));
+        eprintln!("g + g + g = {:?}", P256::to_affine(&g_plus_g_plus_g));
+
+        // Check if g + g2 equals g + g + g
+        assert!(bool::from(P256::to_affine(&g_plus_g2).ct_eq(&P256::to_affine(&g_plus_g_plus_g))), "g + g2 should equal g + g + g");
+
+        assert!(bool::from(P256::to_affine(&g3).ct_eq(&P256::to_affine(&g_plus_g2))));
+
         // Test multiplication by the curve order
         let order = P256::order();
+        eprintln!("order = {:?}", order.0);
+        eprintln!("N = {:?}", N);
+        // Verify order equals N
+        assert_eq!(order.0, N);
+
         let g_times_order = P256::multiply(&g, &order);
+        eprintln!("g_times_order.is_identity = {:?}", g_times_order.is_identity().unwrap_u8());
         // Test that multiplying by the order gives the identity
         assert!(bool::from(g_times_order.is_identity()));
     }

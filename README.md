@@ -5,17 +5,58 @@
 [![Build Status](https://github.com/forge-ec/forge-ec/workflows/CI/badge.svg)](https://github.com/forge-ec/forge-ec/actions)
 [![dependency status](https://deps.rs/repo/github/forge-ec/forge-ec/status.svg)](https://deps.rs/repo/github/forge-ec/forge-ec)
 
-A comprehensive, production-grade Elliptic Curve Cryptography implementation in pure Rust.
+**EXPERIMENTAL RESEARCH LIBRARY - DO NOT USE IN PRODUCTION**
 
-Forge EC provides a modular, secure, and efficient framework for elliptic curve cryptography operations, with a focus on constant-time implementations to prevent side-channel attacks.
+Forge EC is an experimental elliptic curve cryptography library in pure Rust, currently under active development. This library contains known security vulnerabilities and is provided for educational and research purposes only.
 
-## ⚠️ Security Warning
+**⚠️ WARNING: This library is not secure and should never be used in production systems, financial applications, or any security-critical software.**
 
-This library has not been audited by security professionals and is not FIPS certified. Use at your own risk.
+## 🚨 CRITICAL SECURITY WARNING
 
-## ✅ Development Status
+**DO NOT USE THIS LIBRARY IN PRODUCTION UNDER ANY CIRCUMSTANCES**
 
-The library has reached a significant development milestone with comprehensive code quality improvements and enhanced test reliability. **62 out of 70 tests are now passing** across all implementations, with **50+ clippy warnings resolved** and **automatic code formatting applied**. The core cryptographic operations are robust and the codebase is significantly more maintainable and production-ready.
+This library contains **known security vulnerabilities** and **critical implementation flaws** that make it completely unsuitable for any production use, including:
+
+- **Unresolved cryptographic bugs** in signature verification algorithms
+- **Incomplete security audits** with no professional review
+- **Known timing attack vulnerabilities** in certain operations
+- **Unstable API** with breaking changes that could compromise security
+- **No FIPS certification** or compliance verification
+
+**Immediate Actions Required:**
+- **Stop using this library immediately** if you have deployed it anywhere
+- **Audit your systems** for any use of Forge EC
+- **Replace with audited, production-ready alternatives** such as:
+  - `rust-crypto` ecosystem libraries
+  - `dalek-cryptography` for Ed25519/Curve25519
+  - `ring` or `aws-lc-rs` for general cryptography
+
+**This library is for educational and research purposes only.** It should never be used in systems handling sensitive data, financial transactions, or any security-critical applications.
+
+**By using this library, you acknowledge and accept full responsibility for any security breaches, data loss, or other consequences resulting from its use.**
+
+## ⚠️ Development Status - NOT PRODUCTION READY
+
+**This library is in active development and contains critical security vulnerabilities.** While significant progress has been made in code quality and test coverage, **the library is NOT suitable for any production use**.
+
+### Current Test Status
+- **62 out of 70 tests passing** (89% pass rate)
+- **50+ clippy warnings resolved**
+- **Automatic code formatting applied**
+- **Zero compilation errors**
+
+### Known Critical Issues
+- **ECDSA signature verification bugs** - verification logic contains errors
+- **Hash-to-curve implementation issues** - point validation failures
+- **Incomplete security audits** - no professional security review
+- **API instability** - breaking changes may occur without notice
+
+### Development Focus
+The current development effort is focused on:
+- Debugging and fixing ECDSA verification algorithms
+- Completing hash-to-curve RFC 9380 compliance
+- Implementing comprehensive security testing
+- Preparing for professional security audit
 
 ## Features
 
@@ -77,7 +118,9 @@ The library has reached a significant development milestone with comprehensive c
 
 ## Installation
 
-Add this to your `Cargo.toml`:
+**⚠️ SECURITY WARNING: Do not install or use this library in production systems.**
+
+For experimental/research purposes only, add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -86,9 +129,17 @@ forge-ec-curves = "0.1"     # For specific curve implementations
 forge-ec-signature = "0.1"  # For signature schemes
 ```
 
+**Important Security Notes:**
+- This library contains known vulnerabilities
+- No security audit has been performed
+- Use only for educational purposes
+- Never use in systems handling sensitive data
+
 ## Quick Start
 
-### ECDSA with secp256k1
+**⚠️ SECURITY WARNING: These examples are for educational purposes only. Do not use this library in production code.**
+
+### ECDSA with secp256k1 (EXPERIMENTAL - Contains Known Bugs)
 
 ```rust
 use forge_ec_core::{Curve, SignatureScheme};
@@ -112,7 +163,7 @@ let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &sig
 assert!(valid);
 ```
 
-### EdDSA with Ed25519
+### EdDSA with Ed25519 (EXPERIMENTAL - Contains Known Bugs)
 
 ```rust
 use forge_ec_core::{Curve, SignatureScheme};
@@ -142,7 +193,7 @@ let signature_bytes = Ed25519Signature::sign(&private_key_bytes, message);
 let valid = Ed25519Signature::verify(&public_key_bytes, message, &signature_bytes);
 ```
 
-### ECDH Key Exchange
+### ECDH Key Exchange (EXPERIMENTAL - Contains Known Bugs)
 
 ```rust
 use forge_ec_core::Curve;
@@ -354,9 +405,11 @@ Forge EC aims to provide a balance of security, performance, and usability. Here
 - **Dalek**: Forge EC supports more curves (including secp256k1 and P-256) and signature schemes (ECDSA, Schnorr), while Dalek focuses primarily on Curve25519/Ed25519.
 - **ring**: Forge EC is pure Rust with no unsafe code in the public API, while ring uses C and assembly code for performance. Forge EC also supports more curves and signature schemes.
 
-## Security Features
+## Security Features (INCOMPLETE - Known Vulnerabilities Exist)
 
-### Constant-Time Operations
+**⚠️ WARNING: Despite the security features listed below, this library contains known security vulnerabilities and should not be used in production.**
+
+### Constant-Time Operations (Partial Implementation)
 
 All cryptographically sensitive operations are implemented to run in constant time to prevent timing attacks:
 
@@ -387,17 +440,41 @@ All cryptographically sensitive operations are implemented to run in constant ti
 - Memory safety verification with Miri
 - Constant-time verification with dudect/ctgrind
 
-### Standards Compliance
+### Standards Compliance (Partial Implementation)
 
 - RFC6979 for deterministic ECDSA nonce generation
-- RFC8032 for Ed25519 implementation
-- RFC9380 for hash-to-curve operations
-- BIP-340 for Schnorr signatures
+- RFC8032 for Ed25519 implementation (incomplete)
+- RFC9380 for hash-to-curve operations (known bugs)
+- BIP-340 for Schnorr signatures (framework only)
 - SEC1 for point encoding/decoding
+
+## Known Security Vulnerabilities
+
+**This library contains critical security vulnerabilities that make it unsuitable for production use:**
+
+### Critical Issues
+1. **ECDSA Signature Verification Flaws**: The verification algorithm contains logic errors that may accept invalid signatures
+2. **Hash-to-Curve Validation Bugs**: Point validation in hash-to-curve operations fails, potentially allowing invalid points
+3. **Timing Attack Vulnerabilities**: Some operations may not be fully constant-time despite claims
+4. **Incomplete Input Validation**: Certain edge cases in cryptographic operations are not properly handled
+
+### Immediate Risks
+- **Signature forgery**: Invalid signatures may be accepted as valid
+- **Key recovery attacks**: Weaknesses in implementation may allow private key recovery
+- **Side-channel attacks**: Potential timing and power analysis vulnerabilities
+- **Invalid curve attacks**: Insufficient validation of curve parameters and points
+
+### Recommended Actions
+- **Do not use this library** in any security-critical application
+- **Replace with audited libraries** such as `rust-crypto`, `dalek-cryptography`, or `ring`
+- **Conduct security audit** of any systems currently using this library
+- **Monitor for updates** - fixes are being developed but not yet complete
 
 ## Examples
 
-The library includes several examples in the `examples/` directory:
+**⚠️ SECURITY WARNING: All examples are experimental and contain known security vulnerabilities. Do not use in production.**
+
+The library includes several examples in the `examples/` directory for educational purposes only:
 
 ### Key Generation (`examples/keygen.rs`)
 

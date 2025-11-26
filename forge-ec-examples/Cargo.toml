@@ -1,0 +1,52 @@
+[package]
+name = "forge-ec-examples"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+description = "Example programs demonstrating usage of the forge-ec elliptic curve cryptography library"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+forge-ec-core = { workspace = true }
+forge-ec-curves = { workspace = true }
+forge-ec-signature = { workspace = true, features = ["alloc"] }
+forge-ec-encoding = { workspace = true }
+forge-ec-hash = { workspace = true }
+forge-ec-rng = { workspace = true }
+subtle = { workspace = true }
+zeroize = { workspace = true }
+rand_core = { workspace = true }
+digest = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+der = { version = "0.7", features = ["oid"] }
+
+[[bin]]
+name = "ecdh"
+path = "src/ecdh.rs"
+
+[[bin]]
+name = "ecdsa"
+path = "src/ecdsa.rs"
+
+[[bin]]
+name = "eddsa"
+path = "src/eddsa.rs"
+
+[[bin]]
+name = "keygen"
+path = "src/keygen.rs"
+
+[[bin]]
+name = "openssl_interop"
+path = "src/openssl_interop.rs"
+
+[[bin]]
+name = "schnorr"
+path = "src/schnorr.rs"

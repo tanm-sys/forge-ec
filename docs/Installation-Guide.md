@@ -1,6 +1,8 @@
 # Installation Guide
 
-This guide covers how to install and set up Forge EC in your Rust project.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities. Do not install or use this library in production systems.**
+
+This guide covers how to install and set up Forge EC in your Rust project. **Installation is only recommended for experimental/research purposes.**
 
 ## Requirements
 

@@ -48,7 +48,7 @@ impl<C: Curve> Signature<C> {
     /// This is required by some systems (e.g. Bitcoin) for signature malleability reasons.
     pub fn normalize(&mut self)
     where
-        C::Scalar: std::ops::Div<Output = C::Scalar>,
+        C::Scalar: core::ops::Div<Output = C::Scalar>,
     {
         // Get the actual curve order
         let curve_order = <C::Scalar as forge_ec_core::Scalar>::get_order();
@@ -92,7 +92,7 @@ pub struct Ecdsa<C: Curve, D: Digest = Sha256> {
 
 impl<C: Curve, D: Digest + Clone + BlockSizeUser> Ecdsa<C, D>
 where
-    C::Scalar: std::ops::Div<Output = C::Scalar>,
+    C::Scalar: core::ops::Div<Output = C::Scalar>,
 {
     /// Internal implementation of sign that returns a Result
     fn sign_internal(sk: &C::Scalar, msg: &[u8]) -> Result<Signature<C>> {
@@ -191,7 +191,7 @@ where
 
 impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Ecdsa<C, D>
 where
-    C::Scalar: std::ops::Div<Output = C::Scalar>,
+    C::Scalar: core::ops::Div<Output = C::Scalar>,
 {
     type Curve = C;
     type Signature = Signature<C>;
@@ -283,6 +283,7 @@ where
     /// Verifies multiple signatures in a batch.
     /// This is more efficient than verifying each signature individually.
     /// Returns true if all signatures are valid, false otherwise.
+    #[cfg(feature = "alloc")]
     fn batch_verify(pks: &[C::PointAffine], msgs: &[&[u8]], sigs: &[Self::Signature]) -> bool {
         // Check that the number of public keys, messages, and signatures match
         if pks.len() != msgs.len() || pks.len() != sigs.len() || pks.is_empty() {
@@ -390,16 +391,16 @@ where
         result
     }
 
-    fn signature_to_bytes(sig: &Self::Signature) -> Vec<u8> {
-        let mut result = Vec::with_capacity(64);
+    fn signature_to_bytes(sig: &Self::Signature) -> [u8; 64] {
+        let mut result = [0u8; 64];
 
         // Convert r to bytes
         let r_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&sig.r);
-        result.extend_from_slice(&r_bytes);
+        result[0..32].copy_from_slice(&r_bytes);
 
         // Convert s to bytes
         let s_bytes = <C::Scalar as forge_ec_core::Scalar>::to_bytes(&sig.s);
-        result.extend_from_slice(&s_bytes);
+        result[32..64].copy_from_slice(&s_bytes);
 
         result
     }

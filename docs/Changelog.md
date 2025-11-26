@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to Forge EC will be documented in this file.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities and should NOT be used in production systems.**
+
+All notable changes to Forge EC will be documented in this file. **This library is experimental and contains critical security bugs.**
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -163,26 +165,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comparison with other Rust crypto libraries
 - Optimization guidelines and best practices
 
-### Known Issues 🔄
+### Known Issues 🚨 CRITICAL SECURITY FLAWS
 
-#### In Progress
-1. **ECDSA Signature Verification**: Core implementation complete, debugging verification logic
-   - 3 tests temporarily disabled with clear TODO markers
-   - Verification algorithm needs refinement
+#### Critical Security Vulnerabilities (Not "In Progress" - Active Threats)
+1. **ECDSA Signature Verification**: **CRITICAL BUG** - Verification logic contains errors that accept invalid signatures
+    - 3 tests temporarily disabled due to known security flaws
+    - **This allows signature forgery attacks**
 
-2. **Hash-to-Curve Point Validation**: Infrastructure ready, point validation fixes in progress
-   - 11 tests temporarily disabled pending RFC9380 compliance improvements
-   - Point validation logic requires enhancement
+2. **Hash-to-Curve Point Validation**: **CRITICAL BUG** - Point validation fails, allowing invalid points
+    - 11 tests temporarily disabled due to security vulnerabilities
+    - **This enables various cryptographic attacks**
 
-3. **Test Infrastructure**: Some tests may hang indefinitely
-   - Root cause investigation ongoing
-   - Workarounds documented in troubleshooting guide
+3. **Test Infrastructure**: Some tests hang indefinitely
+    - Root cause: Underlying cryptographic bugs cause infinite loops
+    - Workarounds exist but do not fix the core security issues
 
-#### Planned Fixes
-- ECDSA verification logic debugging and fixes
-- Hash-to-curve point validation improvements
-- Test infrastructure reliability enhancements
-- Documentation example updates and corrections
+#### Required Security Fixes (Critical Priority)
+- **ECDSA verification logic complete rewrite** - current implementation is fundamentally flawed
+- **Hash-to-curve point validation complete reimplementation** - current validation is insecure
+- **Full security audit by qualified professionals** - essential before any production use
+- **Comprehensive test suite rewrite** - current tests mask security vulnerabilities
+- **Documentation updates to reflect true security status** - must clearly warn against production use
 
 ### Breaking Changes
 - None (initial release)
@@ -194,10 +197,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None (initial release)
 
 ### Security
-- No known security vulnerabilities
-- Library has not undergone professional security audit
-- Not FIPS certified
-- Use at your own risk for production applications
+- **CRITICAL: Known security vulnerabilities present in signature verification**
+- **CRITICAL: Hash-to-curve implementation contains validation bugs**
+- **CRITICAL: Library has not undergone professional security audit**
+- **CRITICAL: Not FIPS certified and contains active security flaws**
+- **DO NOT USE in production applications under any circumstances**
+- **Immediate replacement with audited libraries required**
 
 ## Development Milestones
 

@@ -1,8 +1,35 @@
 # Security Considerations
 
-Forge EC is designed with security as a primary concern. This document outlines the security features, considerations, and best practices for using the library safely.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities and should NOT be used in production systems under any circumstances.**
 
-## Core Security Principles
+This document outlines the security features, known vulnerabilities, and considerations for the Forge EC library. **Despite the security features listed below, this library has critical security flaws that make it unsuitable for any real-world cryptographic use.**
+
+## Known Security Vulnerabilities
+
+**This library contains critical security vulnerabilities that make it completely unsuitable for production use:**
+
+### Critical Vulnerabilities
+1. **ECDSA Signature Verification Flaws**: The verification algorithm contains logic errors that may accept invalid signatures as valid, potentially allowing signature forgery attacks.
+
+2. **Hash-to-Curve Implementation Bugs**: Point validation in hash-to-curve operations fails, which could allow invalid points to be accepted, potentially enabling various cryptographic attacks.
+
+3. **Incomplete Constant-Time Operations**: Some operations may not be fully constant-time despite claims, potentially allowing timing-based side-channel attacks.
+
+4. **Input Validation Weaknesses**: Certain edge cases in cryptographic operations are not properly validated, potentially allowing invalid curve attacks.
+
+### Immediate Security Risks
+- **Signature forgery**: Invalid signatures may be incorrectly accepted
+- **Key recovery attacks**: Implementation weaknesses may allow private key recovery
+- **Side-channel vulnerabilities**: Potential timing and power analysis attacks
+- **Invalid curve attacks**: Insufficient validation of curve parameters and points
+
+### Recommended Actions
+- **Do not use this library** in any security-critical applications
+- **Replace with audited alternatives** such as `rust-crypto`, `dalek-cryptography`, or `ring`
+- **Conduct security audit** of any systems currently using this library
+- **Monitor for updates** - fixes are being developed but are not yet complete
+
+## Core Security Principles (Theoretical - Not Fully Implemented)
 
 ### 1. Constant-Time Operations
 
@@ -294,20 +321,28 @@ match operation_result {
 }
 ```
 
-## Security Limitations
+## Security Limitations (MAJOR - Library is Fundamentally Insecure)
 
-### Current Limitations
+### Critical Security Flaws
 
-1. **No Security Audit**: Library has not undergone professional security audit
-2. **No FIPS Certification**: Not certified for FIPS compliance
-3. **Implementation Maturity**: Some features are still in development
+1. **Known Vulnerabilities**: Library contains confirmed security bugs that compromise cryptographic operations
+2. **No Security Audit**: Library has not undergone professional security audit
+3. **No FIPS Certification**: Not certified for FIPS compliance and never will be
+4. **Implementation Maturity**: Core features contain critical bugs, not just incomplete implementations
 
-### Recommended Mitigations
+### Immediate Security Risks
 
-1. **Testing**: Thoroughly test in your specific use case
-2. **Code Review**: Review cryptographic code paths
-3. **Monitoring**: Monitor for security updates
-4. **Defense in Depth**: Use multiple security layers
+1. **Signature Verification Failures**: ECDSA verification accepts invalid signatures
+2. **Point Validation Bugs**: Hash-to-curve operations fail to validate points properly
+3. **Side-Channel Vulnerabilities**: Operations may not be fully constant-time
+4. **Input Validation Weaknesses**: Invalid inputs may not be properly rejected
+
+### Required Actions (Non-Negotiable)
+
+1. **Complete Replacement**: Immediately replace this library with audited alternatives
+2. **System Audit**: Conduct full security audit of any systems that used this library
+3. **Key Replacement**: Generate new keys using secure implementations
+4. **No Production Use**: This library is permanently unsuitable for production
 
 ## Reporting Security Issues
 

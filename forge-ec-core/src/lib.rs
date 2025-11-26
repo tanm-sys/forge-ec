@@ -1346,6 +1346,7 @@ pub trait SignatureScheme: Sized {
     /// This method must validate all public keys and signatures before verifying
     /// to prevent attacks. It must also be implemented in constant time to
     /// prevent timing attacks.
+    #[cfg(feature = "alloc")]
     fn batch_verify(
         pks: &[<Self::Curve as Curve>::PointAffine],
         msgs: &[&[u8]],
@@ -1376,7 +1377,7 @@ pub trait SignatureScheme: Sized {
     ///
     /// The signature as a byte array.
     #[cfg(feature = "alloc")]
-    fn signature_to_bytes(sig: &Self::Signature) -> Vec<u8>;
+    fn signature_to_bytes(sig: &Self::Signature) -> [u8; 64];
 
     /// Creates a signature from bytes.
     ///

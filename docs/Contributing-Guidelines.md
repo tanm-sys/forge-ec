@@ -1,6 +1,8 @@
 # Contributing Guidelines
 
-Thank you for your interest in contributing to Forge EC! This document provides comprehensive guidelines for contributing to the project.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities. Contributions should focus on security fixes rather than new features.**
+
+Thank you for your interest in contributing to Forge EC! This document provides comprehensive guidelines for contributing to the project. **The highest priority is fixing critical security vulnerabilities in the codebase.**
 
 ## Table of Contents
 
@@ -24,7 +26,7 @@ Thank you for your interest in contributing to Forge EC! This document provides 
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/your-username/forge-ec.git
+git clone https://github.com/tanm-sys/forge-ec.git
 cd forge-ec
 
 # Add upstream remote

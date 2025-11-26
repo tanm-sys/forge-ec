@@ -1,41 +1,69 @@
-use forge_ec_core::{Curve, Scalar};
-use forge_ec_curves::secp256k1::{Secp256k1, Scalar as Secp256k1Scalar};
+use forge_ec_core::{Curve, SignatureScheme, PointAffine, Scalar as ScalarTrait};
+use forge_ec_curves::p256::P256;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_encoding::der::{EcPrivateKey, EcPublicKey, EcdsaSignature};
+use forge_ec_encoding::pem::{PemEncodable, encode_pem, decode_pem};
+use forge_ec_hash::sha2::Sha256;
 use forge_ec_rng::os_rng::OsRng;
-use rand_core::RngCore;
 
 fn main() {
     println!("OpenSSL Interoperability Example");
     println!("===============================");
 
-    println!("Note: This is a simplified example that demonstrates the API structure.");
-    println!("The OpenSSL interoperability features are not fully implemented in the library.");
-
-    // Generate a new key pair
+    // Generate a new key pair using P-256 (secp256r1)
     let mut rng = OsRng::new();
-    let secret_key = Secp256k1Scalar::random(&mut rng);
-    let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
-    let public_key_affine = Secp256k1::to_affine(&public_key);
+    let secret_key = <P256 as Curve>::Scalar::random(&mut rng);
+    let public_key = P256::multiply(&P256::generator(), &secret_key);
+    let public_key_affine = P256::to_affine(&public_key);
 
-    println!("Generated new secp256k1 key pair");
+    println!("Generated new P-256 key pair");
 
-    println!("\nSecret key (bytes):");
-    print_hex(&secret_key.to_bytes());
+    // Export private key in PEM format (PKCS#8)
+    let curve_oid = der::asn1::ObjectIdentifier::new("1.2.840.10045.3.1.7")
+        .expect("valid P-256 OID");
+    let private_key_der = EcPrivateKey::new(
+        &secret_key.to_bytes(),
+        Some(curve_oid.clone()),
+        Some(&public_key_affine.to_bytes()),
+    )
+    .to_der()
+    .unwrap();
 
-    println!("\nPublic key (bytes):");
-    print_hex(&public_key_affine.to_bytes());
+    let private_key_pem = encode_pem(&private_key_der, "EC PRIVATE KEY");
+    println!("\nPEM-encoded private key (compatible with OpenSSL):");
+    println!("{}", private_key_pem);
 
-    println!("\nIn a complete implementation, you would be able to:");
-    println!("1. Export keys in PEM format (PKCS#8) for OpenSSL compatibility");
-    println!("2. Import keys from PEM format");
-    println!("3. Export signatures in DER format");
-    println!("4. Verify signatures created by OpenSSL");
-    println!("5. Have OpenSSL verify signatures created by forge-ec");
+    // Export public key in PEM format
+    let public_key_der = EcPublicKey::new(curve_oid, &public_key_affine.to_bytes())
+    .to_der()
+    .unwrap();
 
-    println!("\nTo implement OpenSSL interoperability, you would need to:");
-    println!("1. Complete the DER encoding/decoding implementation in forge-ec-encoding");
-    println!("2. Implement PEM encoding/decoding in forge-ec-encoding");
-    println!("3. Ensure the signature format matches OpenSSL's expectations");
-    println!("4. Add support for various key formats (PKCS#8, SEC1, etc.)");
+    let public_key_pem = encode_pem(&public_key_der, "PUBLIC KEY");
+    println!("\nPEM-encoded public key (compatible with OpenSSL):");
+    println!("{}", public_key_pem);
+
+    // Sign a message
+    let message = b"This is a test message for OpenSSL interoperability";
+    let signature = Ecdsa::<P256, Sha256>::sign(&secret_key, message);
+
+    println!("\nCreated signature for message");
+
+    // Export signature in DER format
+    let r_bytes = signature.r().to_bytes();
+    let s_bytes = signature.s().to_bytes();
+    let der_sig = EcdsaSignature::new(&r_bytes, &s_bytes);
+    let der_bytes = der_sig.to_der().unwrap();
+
+    println!("\nDER-encoded signature (compatible with OpenSSL):");
+    print_hex(&der_bytes);
+
+    // Verify the signature
+    let valid = Ecdsa::<P256, Sha256>::verify(&public_key_affine, message, &signature);
+    println!("\nSignature verification: {}", if valid { "success" } else { "failed" });
+
+    println!("\nTo verify with OpenSSL, save the above PEM files and run:");
+    println!("echo -n 'This is a test message for OpenSSL interoperability' > message.txt");
+    println!("openssl dgst -sha256 -verify pubkey.pem -signature signature.der message.txt");
 }
 
 fn print_hex(bytes: &[u8]) {

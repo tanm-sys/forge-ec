@@ -1,6 +1,8 @@
 # Examples and Tutorials
 
-This guide provides comprehensive examples and tutorials for using Forge EC in real-world scenarios.
+**🚨 CRITICAL SECURITY WARNING: All examples in this document are for educational purposes only. This library contains known security vulnerabilities and should NEVER be used in production systems.**
+
+This guide provides comprehensive examples and tutorials for using Forge EC in real-world scenarios. **These examples demonstrate experimental code that may contain security bugs.**
 
 ## Table of Contents
 
@@ -13,7 +15,9 @@ This guide provides comprehensive examples and tutorials for using Forge EC in r
 
 ## Basic Examples
 
-### Example 1: Simple Key Generation and Usage
+**⚠️ WARNING: These basic examples demonstrate experimental cryptographic operations that may contain security vulnerabilities.**
+
+### Example 1: Simple Key Generation and Usage (EXPERIMENTAL)
 
 ```rust
 use forge_ec_core::Curve;
@@ -103,7 +107,9 @@ fn scalar_arithmetic_demo() {
 
 ## Cryptocurrency Applications
 
-### Example 4: Bitcoin-Style Address Generation
+**⚠️ WARNING: Cryptocurrency examples demonstrate operations that may be vulnerable to attacks. Do not use for real financial transactions.**
+
+### Example 4: Bitcoin-Style Address Generation (EXPERIMENTAL - May contain bugs)
 
 ```rust
 use forge_ec_core::Curve;
@@ -183,7 +189,9 @@ fn ethereum_signature_example() -> Result<(), Box<dyn std::error::Error>> {
 
 ## TLS and PKI
 
-### Example 6: X.509 Certificate Key Generation
+**⚠️ WARNING: TLS and PKI examples may contain vulnerabilities that compromise certificate security. Do not use for real certificates.**
+
+### Example 6: X.509 Certificate Key Generation (EXPERIMENTAL - Not for production certificates)
 
 ```rust
 use forge_ec_core::Curve;
@@ -280,7 +288,9 @@ fn tls_ecdh_example() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Advanced Cryptographic Protocols
 
-### Example 8: Schnorr Multi-Signature
+**⚠️ WARNING: Advanced protocol examples contain experimental cryptography that may have undiscovered vulnerabilities.**
+
+### Example 8: Schnorr Multi-Signature (EXPERIMENTAL - Not secure for use)
 
 ```rust
 use forge_ec_core::{Curve, SignatureScheme};
@@ -378,7 +388,9 @@ fn zkp_key_ownership() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Performance Optimization
 
-### Example 10: Batch Signature Verification
+**⚠️ WARNING: Performance examples may not accurately reflect secure implementations due to underlying vulnerabilities.**
+
+### Example 10: Batch Signature Verification (EXPERIMENTAL - May not be secure)
 
 ```rust
 use forge_ec_core::{Curve, SignatureScheme};
@@ -445,7 +457,9 @@ fn batch_verification_benchmark() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Integration Examples
 
-### Example 11: Web Server Integration
+**⚠️ WARNING: Integration examples demonstrate insecure patterns that should not be used in real applications.**
+
+### Example 11: Web Server Integration (EXPERIMENTAL - Not for production servers)
 
 ```rust
 use forge_ec_core::{Curve, SignatureScheme};
@@ -551,6 +565,8 @@ fn database_integration_example() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 ## Running the Examples
+
+**⚠️ SECURITY WARNING: Running these examples may expose your system to experimental cryptographic code with known vulnerabilities.**
 
 All examples can be run using:
 

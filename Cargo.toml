@@ -7,6 +7,7 @@ members = [
     "forge-ec-encoding",
     "forge-ec-hash",
     "forge-ec-rng",
+    "forge-ec-examples",
 ]
 resolver = "2"
 

@@ -1,48 +1,49 @@
-use forge_ec_core::{Curve, Scalar, SignatureScheme};
+use forge_ec_core::{Curve, SignatureScheme, PointAffine, FieldElement};
 use forge_ec_curves::ed25519::{Ed25519, Scalar as Ed25519Scalar};
-use forge_ec_signature::eddsa::{Ed25519Signature};
+use forge_ec_signature::eddsa::{EdDsa, Ed25519Signature};
+use forge_ec_hash::sha2::Sha512;
 use forge_ec_rng::os_rng::OsRng;
+use digest::Digest;
 use rand_core::RngCore;
 
 fn main() {
     println!("EdDSA (Ed25519) Signature Example");
     println!("================================");
 
-    println!("Note: The Ed25519 implementation is not fully implemented in the library.");
-    println!("This is a simplified example that demonstrates the API structure.");
-
     // Generate a new key pair
     let mut rng = OsRng::new();
+    let secret_key = Ed25519Scalar::random(&mut rng);
+    let public_key = Ed25519::multiply(&Ed25519::generator(), &secret_key);
+    let public_key_affine = Ed25519::to_affine(&public_key);
 
-    // Generate a random seed for Ed25519
-    let mut seed = [0u8; 32];
-    rng.fill_bytes(&mut seed);
-
-    println!("Generated random seed for Ed25519 key");
-
-    // In a real implementation, we would derive the public key from the seed
-    // For demonstration purposes, we'll create a dummy public key
-    let public_key = [0u8; 32];
-
-    println!("Derived public key from seed");
+    println!("Generated new Ed25519 key pair");
 
     // Sign a message
     let message = b"This is a test message for EdDSA signing";
-
-    // In a real implementation, we would use the Ed25519 algorithm to sign the message
-    // For demonstration purposes, we'll create a dummy signature
-    let signature = [0u8; 64];
+    let signature = EdDsa::<Ed25519, Sha512>::sign(&secret_key, message);
 
     println!("Created signature for message");
 
-    // In a real implementation, we would verify the signature
-    // For demonstration purposes, we'll just print a success message
-    println!("Signature verification: success (simulated)");
+    // Verify the signature
+    let valid = EdDsa::<Ed25519, Sha512>::verify(&public_key_affine, message, &signature);
+    println!("Signature verification: {}", if valid { "success" } else { "failed" });
 
-    println!("\nNote: To use a real Ed25519 implementation, you would need to:");
-    println!("1. Complete the Ed25519 implementation in the forge-ec-curves crate");
-    println!("2. Implement the EdDSA trait for Ed25519 in the forge-ec-signature crate");
-    println!("3. Use the completed implementation to sign and verify messages");
+    // Use the specialized Ed25519 implementation
+    let sk_bytes = secret_key.to_bytes();
+    let pk_bytes = Ed25519Signature::derive_public_key(&sk_bytes);
+    
+    println!("\nUsing specialized Ed25519 implementation:");
+    
+    let ed25519_sig = Ed25519Signature::sign(&sk_bytes, message);
+    println!("Created Ed25519 signature");
+    
+    let valid = Ed25519Signature::verify(&pk_bytes, message, &ed25519_sig);
+    println!("Ed25519 signature verification: {}", if valid { "success" } else { "failed" });
+
+    // Try to verify a modified message (should fail)
+    let modified_message = b"This is a MODIFIED message for EdDSA signing";
+    let valid = EdDsa::<Ed25519, Sha512>::verify(&public_key_affine, modified_message, &signature);
+    println!("\nModified message verification: {}", if valid { "success" } else { "failed (expected)" });
 }
 
 fn print_hex(bytes: &[u8]) {

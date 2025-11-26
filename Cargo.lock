@@ -164,6 +164,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-ec-examples"
+version = "0.1.0"
+dependencies = [
+ "der",
+ "digest",
+ "forge-ec-core",
+ "forge-ec-curves",
+ "forge-ec-encoding",
+ "forge-ec-hash",
+ "forge-ec-rng",
+ "forge-ec-signature",
+ "hex",
+ "rand_core",
+ "sha2",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "forge-ec-hash"
 version = "0.1.0"
 dependencies = [

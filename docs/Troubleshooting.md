@@ -1,6 +1,8 @@
 # Troubleshooting
 
-This guide helps you diagnose and resolve common issues when using Forge EC.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities. Troubleshooting is NOT recommended. Replace this library with audited alternatives instead.**
+
+This guide provides information about known issues in Forge EC. **Due to critical security flaws, this library should not be used in any production system.**
 
 ## Quick Diagnostics
 
@@ -446,26 +448,27 @@ When reporting issues, include:
 
 ## Known Issues and Workarounds
 
-### Current Known Issues
+### Current Known Issues (CRITICAL SECURITY FLAWS)
 
-1. **ECDSA Verification**: Some verification tests temporarily disabled
-   - **Workaround**: Use EdDSA or Schnorr for critical applications
-   - **Status**: Fix in progress
+1. **ECDSA Verification**: **CRITICAL BUG** - Verification accepts invalid signatures
+    - **Workaround**: Do not use ECDSA - it will accept forged signatures
+    - **Status**: Complete rewrite required, no current workaround
 
-2. **Hash-to-Curve Tests**: Point validation issues
-   - **Workaround**: Avoid hash-to-curve operations in production
-   - **Status**: RFC 9380 compliance improvements underway
+2. **Hash-to-Curve Tests**: **CRITICAL BUG** - Point validation completely fails
+    - **Workaround**: Do not use hash-to-curve operations - they accept invalid points
+    - **Status**: Complete reimplementation required
 
-3. **Test Hanging**: Some tests may hang indefinitely
-   - **Workaround**: Use timeout when running tests
-   - **Status**: Root cause investigation ongoing
+3. **Test Hanging**: Tests hang due to underlying cryptographic bugs
+    - **Workaround**: Use timeout, but this doesn't fix the security issues
+    - **Status**: Caused by fundamental cryptographic flaws
 
-### Planned Fixes
+### Required Fixes (Complete Library Replacement Recommended)
 
-- ECDSA verification logic debugging
-- Hash-to-curve point validation improvements
-- Test infrastructure reliability enhancements
-- Documentation example updates
+- **Complete ECDSA reimplementation** - current verification is fundamentally broken
+- **Full hash-to-curve rewrite** - current implementation accepts invalid cryptographic inputs
+- **Professional security audit** - essential before any production consideration
+- **Comprehensive rewrite** - current codebase contains systemic security flaws
+- **Replace with audited library** - `rust-crypto`, `dalek-cryptography`, or `ring` recommended
 
 ## Performance Optimization
 
@@ -509,11 +512,15 @@ Contact: Create a private GitHub issue or email (when available).
 
 ## Conclusion
 
-Most issues with Forge EC can be resolved by:
+**Due to critical security vulnerabilities, Forge EC cannot be safely used in any production system.** The recommended solution is:
 
-1. Ensuring proper dependencies and feature flags
-2. Using the correct API patterns
-3. Validating inputs appropriately
-4. Following security best practices
+1. **Immediately replace Forge EC** with audited, production-ready alternatives:
+   - `rust-crypto` ecosystem libraries
+   - `dalek-cryptography` for Ed25519/Curve25519
+   - `ring` or `aws-lc-rs` for general cryptography
 
-If you encounter issues not covered here, please contribute to this troubleshooting guide by submitting improvements or reporting new issues.
+2. **Conduct a security audit** of any systems that have used Forge EC
+
+3. **Regenerate all cryptographic keys** and replace any signatures or encrypted data
+
+The issues with Forge EC are fundamental cryptographic flaws that cannot be "troubleshooted" - the library requires complete replacement.

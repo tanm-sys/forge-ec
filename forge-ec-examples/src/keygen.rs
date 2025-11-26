@@ -1,34 +1,48 @@
-use forge_ec_core::{Curve, Scalar, SignatureScheme};
-use forge_ec_curves::secp256k1::{Secp256k1, Scalar as Secp256k1Scalar};
+use forge_ec_core::{Curve, SignatureScheme, Scalar as ScalarTrait};
+use forge_ec_curves::secp256k1::Secp256k1;
+use forge_ec_signature::ecdsa::Ecdsa;
+use forge_ec_encoding::der::{EcPrivateKey, EcPublicKey};
 use forge_ec_rng::os_rng::OsRng;
-use rand_core::RngCore;
+use sha2::Sha256;
 
 fn main() {
-    println!("Key Generation Example");
-    println!("=====================");
-
-    println!("Note: This is a simplified example that demonstrates the API structure.");
-    println!("Some features like DER encoding are not fully implemented in the library.");
-
     // Generate a new key pair
-    let mut rng = OsRng::new();
-    let secret_key = Secp256k1Scalar::random(&mut rng);
+    let secret_key = <Secp256k1 as Curve>::Scalar::random(OsRng);
     let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
     let public_key_affine = Secp256k1::to_affine(&public_key);
 
     println!("Generated new secp256k1 key pair");
 
-    // Display the key pair
-    println!("\nSecret key (bytes):");
-    print_hex(&secret_key.to_bytes());
+    // Sign a message
+    let message = b"Hello, Cryptography!";
+    let signature = Ecdsa::<Secp256k1, Sha256>::sign(&secret_key, message);
 
-    println!("\nPublic key (bytes):");
-    print_hex(&public_key_affine.to_bytes());
+    println!("Created signature for message");
 
-    println!("\nNote: In a real application, you would:");
-    println!("1. Export keys in standard formats (DER, PEM, etc.)");
-    println!("2. Implement proper key management (secure storage, rotation, etc.)");
-    println!("3. Use the keys for cryptographic operations (signing, verification, etc.)");
+    // Verify the signature
+    let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, message, &signature);
+    println!("Signature verification: {}", if valid { "success" } else { "failed" });
+
+    // Export keys in DER format
+    let secp_oid = der::asn1::ObjectIdentifier::new("1.3.132.0.10")
+        .expect("valid secp256k1 OID");
+    let private_key_der = EcPrivateKey::new(
+        &secret_key.to_bytes(),
+        Some(secp_oid.clone()),
+        Some(&public_key_affine.to_bytes()),
+    )
+    .to_der()
+    .unwrap();
+
+    let public_key_der = EcPublicKey::new(secp_oid, &public_key_affine.to_bytes())
+    .to_der()
+    .unwrap();
+
+    println!("\nDER-encoded private key:");
+    print_hex(&private_key_der);
+
+    println!("\nDER-encoded public key:");
+    print_hex(&public_key_der);
 }
 
 fn print_hex(bytes: &[u8]) {
@@ -39,4 +53,4 @@ fn print_hex(bytes: &[u8]) {
         print!("{:02x} ", byte);
     }
     println!();
-}
+} 

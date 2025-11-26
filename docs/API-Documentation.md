@@ -1,6 +1,8 @@
 # API Documentation
 
-Complete reference for Forge EC's public API. This document covers all traits, types, and functions available to users.
+**⚠️ CRITICAL SECURITY WARNING: This API documentation is for an experimental library containing known security vulnerabilities. Do not use any APIs described here in production systems.**
+
+Complete reference for Forge EC's public API. This document covers all traits, types, and functions available to users. **All APIs are experimental and may contain security bugs.**
 
 ## Core Traits
 
@@ -260,7 +262,9 @@ fn x25519_key_exchange(private_key: &[u8; 32], public_key: &[u8; 32]) -> [u8; 32
 
 ## Signature Schemes
 
-### ECDSA
+### ECDSA (KNOWN VULNERABILITIES - Do Not Use)
+
+**⚠️ WARNING: ECDSA implementation contains critical bugs in signature verification. Invalid signatures may be accepted as valid.**
 
 Elliptic Curve Digital Signature Algorithm.
 
@@ -290,7 +294,9 @@ impl<C: Curve> Signature<C> {
 }
 ```
 
-### EdDSA
+### EdDSA (EXPERIMENTAL - Limited Testing)
+
+**⚠️ WARNING: EdDSA implementation is experimental and has not been thoroughly tested for security vulnerabilities.**
 
 Edwards-curve Digital Signature Algorithm.
 
@@ -314,7 +320,9 @@ impl Ed25519Signature {
 }
 ```
 
-### Schnorr
+### Schnorr (EXPERIMENTAL - Framework Only)
+
+**⚠️ WARNING: Schnorr implementation is incomplete and should not be used for cryptographic operations.**
 
 Schnorr signature scheme (BIP-340 compatible).
 

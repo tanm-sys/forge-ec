@@ -1,6 +1,8 @@
 # Quick Start Guide
 
-Get up and running with Forge EC in minutes. This guide covers the most common use cases with practical examples.
+**🚨 CRITICAL SECURITY WARNING: This library contains known security vulnerabilities. Do not use any code from this guide in production systems.**
+
+Get up and running with Forge EC in minutes. This guide covers the most common use cases with practical examples. **All examples are experimental and may contain security bugs.**
 
 ## Prerequisites
 
