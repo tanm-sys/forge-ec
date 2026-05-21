@@ -1885,3 +1885,31 @@ pub mod test_utils {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn test_error_display() {
+        use alloc::string::ToString;
+
+        assert_eq!(Error::InvalidEncoding.to_string(), "Invalid encoding format");
+        assert_eq!(Error::InvalidSignature.to_string(), "Invalid signature");
+        assert_eq!(Error::InvalidPublicKey.to_string(), "Invalid public key");
+        assert_eq!(Error::InvalidPrivateKey.to_string(), "Invalid private key");
+        assert_eq!(Error::PointNotOnCurve.to_string(), "Point not on the curve");
+        assert_eq!(Error::InvalidFieldElement.to_string(), "Invalid field element");
+        assert_eq!(Error::InvalidScalar.to_string(), "Invalid scalar value");
+        assert_eq!(Error::InvalidCurveParameters.to_string(), "Invalid curve parameters");
+        assert_eq!(Error::CofactorError.to_string(), "Cofactor-related error");
+        assert_eq!(Error::DomainSeparationFailure.to_string(), "Domain separation failure");
+        assert_eq!(Error::InvalidHashToCurveParameters.to_string(), "Invalid hash-to-curve parameters");
+        assert_eq!(Error::KeyExchangeError.to_string(), "Key exchange error");
+        assert_eq!(Error::ValidationError.to_string(), "Validation error");
+        assert_eq!(Error::RandomGenerationFailed.to_string(), "Random number generation failed");
+        assert_eq!(Error::UnsupportedOperation.to_string(), "Operation not supported");
+        assert_eq!(Error::GenericError.to_string(), "Generic error");
+    }
+}
