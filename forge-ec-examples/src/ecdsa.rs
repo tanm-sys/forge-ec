@@ -1,10 +1,11 @@
-use forge_ec_core::{Curve, SignatureScheme, PointAffine, FieldElement};
-use forge_ec_curves::secp256k1::{Secp256k1, Scalar as Secp256k1Scalar};
-use forge_ec_signature::ecdsa::Ecdsa;
+#![allow(warnings)]
+use digest::Digest;
+use forge_ec_core::{Curve, FieldElement, PointAffine, SignatureScheme};
+use forge_ec_curves::secp256k1::{Scalar as Secp256k1Scalar, Secp256k1};
 use forge_ec_encoding::der::EcdsaSignature;
 use forge_ec_hash::sha2::Sha256;
 use forge_ec_rng::os_rng::OsRng;
-use digest::Digest;
+use forge_ec_signature::ecdsa::Ecdsa;
 use rand_core::RngCore;
 
 fn main() {
@@ -40,8 +41,12 @@ fn main() {
 
     // Try to verify a modified message (should fail)
     let modified_message = b"This is a MODIFIED message for ECDSA signing";
-    let valid = Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, modified_message, &signature);
-    println!("\nModified message verification: {}", if valid { "success" } else { "failed (expected)" });
+    let valid =
+        Ecdsa::<Secp256k1, Sha256>::verify(&public_key_affine, modified_message, &signature);
+    println!(
+        "\nModified message verification: {}",
+        if valid { "success" } else { "failed (expected)" }
+    );
 }
 
 fn print_hex(bytes: &[u8]) {

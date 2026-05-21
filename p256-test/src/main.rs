@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::ops::{Add, Mul, Neg, Sub};
 use subtle::{Choice, ConstantTimeEq};
 

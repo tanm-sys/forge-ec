@@ -76,7 +76,8 @@ pub fn encode_pem(data: &[u8], label: &str) -> String {
 pub fn decode_pem(pem: &str) -> Result<(Vec<u8>, String), PemError> {
     // Find the header
     let header_start = pem.find("-----BEGIN ").ok_or(PemError::MissingHeader)?;
-    let header_end_marker = pem[header_start + 11..].find("-----").ok_or(PemError::MissingHeader)?;
+    let header_end_marker =
+        pem[header_start + 11..].find("-----").ok_or(PemError::MissingHeader)?;
     let label_slice = &pem[header_start + 11..header_start + 11 + header_end_marker];
     let label = String::from(label_slice);
 
@@ -186,5 +187,23 @@ mod tests {
         // Check that the decoded data and label match the original
         assert_eq!(decoded, data);
         assert_eq!(decoded_label, label);
+    }
+
+    #[test]
+    fn test_pem_malformed_edge_cases() {
+        // Empty string
+        assert!(decode_pem("").is_err());
+
+        // Completely missing header and footer
+        assert!(decode_pem("just some garbage or base64").is_err());
+
+        // Incomplete header
+        assert!(decode_pem("-----BEGIN LABEL").is_err());
+
+        // Just raw base64 (no header/footer)
+        assert!(decode_pem("AQIDBAUGBwg=").is_err());
+
+        // Missing header end marker
+        assert!(decode_pem("-----BEGIN LABEL\nAQIDBAUGBwg=\n-----END LABEL-----").is_err());
     }
 }

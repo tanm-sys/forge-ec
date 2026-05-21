@@ -1,10 +1,11 @@
-use forge_ec_core::{Curve, SignatureScheme, PointAffine, Scalar as ScalarTrait};
+#![allow(warnings)]
+use forge_ec_core::{Curve, PointAffine, Scalar as ScalarTrait, SignatureScheme};
 use forge_ec_curves::p256::P256;
-use forge_ec_signature::ecdsa::Ecdsa;
 use forge_ec_encoding::der::{EcPrivateKey, EcPublicKey, EcdsaSignature};
-use forge_ec_encoding::pem::{PemEncodable, encode_pem, decode_pem};
+use forge_ec_encoding::pem::{decode_pem, encode_pem, PemEncodable};
 use forge_ec_hash::sha2::Sha256;
 use forge_ec_rng::os_rng::OsRng;
+use forge_ec_signature::ecdsa::Ecdsa;
 
 fn main() {
     println!("OpenSSL Interoperability Example");
@@ -19,8 +20,8 @@ fn main() {
     println!("Generated new P-256 key pair");
 
     // Export private key in PEM format (PKCS#8)
-    let curve_oid = der::asn1::ObjectIdentifier::new("1.2.840.10045.3.1.7")
-        .expect("valid P-256 OID");
+    let curve_oid =
+        der::asn1::ObjectIdentifier::new("1.2.840.10045.3.1.7").expect("valid P-256 OID");
     let private_key_der = EcPrivateKey::new(
         &secret_key.to_bytes(),
         Some(curve_oid.clone()),
@@ -34,9 +35,8 @@ fn main() {
     println!("{}", private_key_pem);
 
     // Export public key in PEM format
-    let public_key_der = EcPublicKey::new(curve_oid, &public_key_affine.to_bytes())
-    .to_der()
-    .unwrap();
+    let public_key_der =
+        EcPublicKey::new(curve_oid, &public_key_affine.to_bytes()).to_der().unwrap();
 
     let public_key_pem = encode_pem(&public_key_der, "PUBLIC KEY");
     println!("\nPEM-encoded public key (compatible with OpenSSL):");

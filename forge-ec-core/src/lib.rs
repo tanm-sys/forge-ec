@@ -924,7 +924,7 @@ pub trait Curve: Sized + Copy + Clone + Debug {
 
     /// Performs multi-scalar multiplication.
     ///
-    /// Computes the sum of scalar[i] * point[i] for all i.
+    /// Computes the sum of scalar\[i\] * point\[i\] for all i.
     ///
     /// This is more efficient than performing each multiplication separately.
     ///

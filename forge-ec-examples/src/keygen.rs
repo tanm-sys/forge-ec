@@ -1,8 +1,9 @@
-use forge_ec_core::{Curve, SignatureScheme, Scalar as ScalarTrait};
+#![allow(warnings)]
+use forge_ec_core::{Curve, Scalar as ScalarTrait, SignatureScheme};
 use forge_ec_curves::secp256k1::Secp256k1;
-use forge_ec_signature::ecdsa::Ecdsa;
 use forge_ec_encoding::der::{EcPrivateKey, EcPublicKey};
 use forge_ec_rng::os_rng::OsRng;
+use forge_ec_signature::ecdsa::Ecdsa;
 use sha2::Sha256;
 
 fn main() {
@@ -24,8 +25,7 @@ fn main() {
     println!("Signature verification: {}", if valid { "success" } else { "failed" });
 
     // Export keys in DER format
-    let secp_oid = der::asn1::ObjectIdentifier::new("1.3.132.0.10")
-        .expect("valid secp256k1 OID");
+    let secp_oid = der::asn1::ObjectIdentifier::new("1.3.132.0.10").expect("valid secp256k1 OID");
     let private_key_der = EcPrivateKey::new(
         &secret_key.to_bytes(),
         Some(secp_oid.clone()),
@@ -34,9 +34,8 @@ fn main() {
     .to_der()
     .unwrap();
 
-    let public_key_der = EcPublicKey::new(secp_oid, &public_key_affine.to_bytes())
-    .to_der()
-    .unwrap();
+    let public_key_der =
+        EcPublicKey::new(secp_oid, &public_key_affine.to_bytes()).to_der().unwrap();
 
     println!("\nDER-encoded private key:");
     print_hex(&private_key_der);
@@ -53,4 +52,4 @@ fn print_hex(bytes: &[u8]) {
         print!("{:02x} ", byte);
     }
     println!();
-} 
+}
