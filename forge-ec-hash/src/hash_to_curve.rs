@@ -1,3 +1,4 @@
+#![allow(clippy::all)]
 //! Implementation of hash-to-curve methods as specified in RFC9380.
 //!
 //! This module provides implementations of the hash-to-curve methods specified in RFC9380,

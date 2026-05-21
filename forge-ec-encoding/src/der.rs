@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_assignments, clippy::all)]
 //! DER encoding for keys and signatures.
 //!
 //! This module provides DER encoding and decoding for ECDSA keys and signatures

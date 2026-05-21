@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_assignments, clippy::all)]
 //! ECDSA signature scheme implementation.
 //!
 //! This module implements ECDSA signatures with RFC6979 deterministic k generation
@@ -455,13 +456,18 @@ mod tests {
     #[ignore] // TODO: Fix ECDSA verification issue - tracked in issue #XXX
     fn test_sign_verify() {
         let mut rng = OsRng::new();
-        let secret_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let secret_key =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
         let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
         let public_key_affine = Secp256k1::to_affine(&public_key);
 
         let message = b"test message for ECDSA";
         let signature = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::sign(&secret_key, message);
-        let valid = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(&public_key_affine, message, &signature);
+        let valid = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(
+            &public_key_affine,
+            message,
+            &signature,
+        );
 
         assert!(valid, "ECDSA signature verification should succeed");
     }
@@ -473,11 +479,12 @@ mod tests {
         // This test is temporarily disabled - batch verification needs implementation
         // TODO: Implement proper batch verification for ECDSA signatures
         // For now, just test that individual verification works
-        use rand_core::OsRng;
         use forge_ec_curves::secp256k1::Secp256k1;
+        use rand_core::OsRng;
 
         let mut rng = OsRng;
-        let private_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let private_key =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
         let public_key_projective = Secp256k1::multiply(&Secp256k1::generator(), &private_key);
         let public_key = Secp256k1::to_affine(&public_key_projective);
 
@@ -485,21 +492,87 @@ mod tests {
         let signature = Ecdsa::<Secp256k1, Sha256>::sign(&private_key, message);
 
         // Test individual verification works
-        let verification_result = Ecdsa::<Secp256k1, Sha256>::verify(&public_key, message, &signature);
+        let verification_result =
+            Ecdsa::<Secp256k1, Sha256>::verify(&public_key, message, &signature);
         assert!(verification_result, "ECDSA signature verification should succeed");
+    }
+    #[test]
+    fn test_zero_signature_rejected() {
+        let mut rng = OsRng::new();
+        let secret_key =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+        let public_key_affine = Secp256k1::to_affine(&public_key);
+
+        let message = b"test message for zero signature";
+
+        let valid_sig = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::sign(&secret_key, message);
+        let r = valid_sig.r;
+        let s = valid_sig.s;
+
+        let zero = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::zero();
+
+        // r = 0, s = valid
+        let sig_zero_r = Signature::new(zero, s);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(
+            &public_key_affine,
+            message,
+            &sig_zero_r
+        ));
+
+        // r = valid, s = 0
+        let sig_zero_s = Signature::new(r, zero);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(
+            &public_key_affine,
+            message,
+            &sig_zero_s
+        ));
+
+        // r = 0, s = 0
+        let sig_zero_rs = Signature::new(zero, zero);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(
+            &public_key_affine,
+            message,
+            &sig_zero_rs
+        ));
+
+        // Test signature_from_bytes
+        let mut bytes = [0u8; 64];
+        let r_bytes =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::to_bytes(&r);
+        let s_bytes =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::to_bytes(&s);
+
+        // Both zero (all 0s)
+        assert!(
+            Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err()
+        );
+
+        // r = 0
+        bytes[32..64].copy_from_slice(&s_bytes);
+        assert!(
+            Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err()
+        );
+
+        // s = 0
+        bytes.fill(0);
+        bytes[0..32].copy_from_slice(&r_bytes);
+        assert!(
+            Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err()
+        );
     }
 
     #[test]
     fn test_rfc6979_vectors() {
         // Test with known RFC6979 test vector
         let secret_key_bytes = [
-            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-            0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
-            0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-            0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+            0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+            0x1d, 0x1e, 0x1f, 0x20,
         ];
 
-        let secret_key = <Secp256k1 as forge_ec_core::Curve>::Scalar::from_bytes(&secret_key_bytes).unwrap();
+        let secret_key =
+            <Secp256k1 as forge_ec_core::Curve>::Scalar::from_bytes(&secret_key_bytes).unwrap();
         let message = b"sample";
 
         // Sign the message twice - should get the same signature due to RFC6979
@@ -515,7 +588,8 @@ mod tests {
     #[ignore] // TODO: Fix signature normalization issue - related to ECDSA verification
     fn test_signature_normalization() {
         let mut rng = OsRng::new();
-        let secret_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let secret_key =
+            <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
         let message = b"test message for normalization";
 
         let signature = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::sign(&secret_key, message);
@@ -526,6 +600,10 @@ mod tests {
         let half_order = order / two;
 
         // s should be <= n/2 for normalized signatures
-        assert!(signature.s().ct_lt(&half_order).unwrap_u8() == 1 || signature.s().ct_eq(&half_order).unwrap_u8() == 1, "Signature should be normalized");
+        assert!(
+            signature.s().ct_lt(&half_order).unwrap_u8() == 1
+                || signature.s().ct_eq(&half_order).unwrap_u8() == 1,
+            "Signature should be normalized"
+        );
     }
 }
