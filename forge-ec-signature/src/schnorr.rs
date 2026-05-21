@@ -158,7 +158,7 @@ impl<C: Curve, D: Digest + Clone + BlockSizeUser> SignatureScheme for Schnorr<C,
 
     fn signature_from_bytes(bytes: &[u8]) -> Result<Self::Signature> {
         // Check that the input has the correct length
-        if bytes.len() < 64 {
+        if bytes.len() != 64 {
             return Err(Error::InvalidSignature);
         }
 
@@ -799,5 +799,17 @@ mod tests {
         // TODO: Implement proper batch verification for BIP-340 Schnorr signatures
         let verification_result = BipSchnorr::verify(&expected_public_key_array, msg, &signature);
         assert!(verification_result, "BIP-340 signature verification should succeed");
+    }
+
+
+    #[test]
+    fn test_signature_from_bytes_invalid_length() {
+        let invalid_bytes_short = vec![0u8; 63];
+        let result = Schnorr::<Secp256k1, Sha256>::signature_from_bytes(&invalid_bytes_short);
+        assert!(result.is_err());
+
+        let invalid_bytes_long = vec![0u8; 65];
+        let result = Schnorr::<Secp256k1, Sha256>::signature_from_bytes(&invalid_bytes_long);
+        assert!(result.is_err());
     }
 }
