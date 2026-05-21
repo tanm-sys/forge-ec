@@ -452,6 +452,18 @@ mod tests {
     use forge_ec_rng::os_rng::OsRng;
 
     #[test]
+    fn test_signature_creation() {
+        let mut rng = OsRng::new();
+        let r = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let s = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+
+        let signature = Signature::<Secp256k1>::new(r, s);
+
+        assert_eq!(signature.r().ct_eq(&r).unwrap_u8(), 1);
+        assert_eq!(signature.s().ct_eq(&s).unwrap_u8(), 1);
+    }
+
+    #[test]
     #[ignore] // TODO: Fix ECDSA verification issue - tracked in issue #XXX
     fn test_sign_verify() {
         let mut rng = OsRng::new();
