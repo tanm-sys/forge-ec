@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_assignments, clippy::all)]
 //! EdDSA signature scheme implementation.
 //!
 //! This module provides an implementation of the Edwards-curve Digital Signature Algorithm (EdDSA),

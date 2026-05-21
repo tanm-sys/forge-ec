@@ -539,7 +539,10 @@ mod tests {
         let bytes = compressed.to_bytes();
 
         // Check that we get a valid compressed point format
-        assert!(bytes[0] == 0x02 || bytes[0] == 0x03, "Compressed point should start with 0x02 or 0x03");
+        assert!(
+            bytes[0] == 0x02 || bytes[0] == 0x03,
+            "Compressed point should start with 0x02 or 0x03"
+        );
         assert_eq!(bytes.len(), 33, "Compressed point should be 33 bytes");
     }
 

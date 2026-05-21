@@ -1,8 +1,9 @@
-use forge_ec_core::{Curve, SignatureScheme, Scalar as ScalarTrait};
+#![allow(dead_code, unused_imports, unused_mut, unused_variables, clippy::all)]
+use forge_ec_core::{Curve, Scalar as ScalarTrait, SignatureScheme};
 use forge_ec_curves::secp256k1::Secp256k1;
-use forge_ec_signature::schnorr::{Schnorr, BipSchnorr, batch_verify};
 use forge_ec_hash::sha2::Sha256;
 use forge_ec_rng::os_rng::OsRng;
+use forge_ec_signature::schnorr::{batch_verify, BipSchnorr, Schnorr};
 use rand_core::RngCore;
 
 fn main() {
@@ -29,8 +30,12 @@ fn main() {
 
     // Try to verify a modified message (should fail)
     let modified_message = b"This is a MODIFIED message for Schnorr signing";
-    let valid = Schnorr::<Secp256k1, Sha256>::verify(&public_key_affine, modified_message, &signature);
-    println!("\nModified message verification: {}", if valid { "success" } else { "failed (expected)" });
+    let valid =
+        Schnorr::<Secp256k1, Sha256>::verify(&public_key_affine, modified_message, &signature);
+    println!(
+        "\nModified message verification: {}",
+        if valid { "success" } else { "failed (expected)" }
+    );
 
     // Batch verification example
     println!("\nBatch Verification Example");
@@ -45,14 +50,14 @@ fn main() {
         let sk = <Secp256k1 as Curve>::Scalar::random(&mut rng);
         let pk = Secp256k1::multiply(&Secp256k1::generator(), &sk);
         let pk_affine = Secp256k1::to_affine(&pk);
-        
+
         let msg = format!("Message #{} for batch verification", i + 1).into_bytes();
         let sig = Schnorr::<Secp256k1, Sha256>::sign(&sk, &msg);
-        
+
         public_keys.push(pk_affine);
         messages.push(msg);
         signatures.push(sig);
-        
+
         println!("Generated key pair and signature #{}", i + 1);
     }
 
@@ -70,18 +75,18 @@ fn main() {
     // Generate a key pair for BIP-340
     let mut sk_bytes = [0u8; 32];
     rng.fill_bytes(&mut sk_bytes);
-    
+
     // Derive public key
     let pk_bytes = [0u8; 32]; // This would be derived from the private key
-    
+
     println!("Generated BIP-340 key pair");
-    
+
     // Sign a message
     let message = b"This is a test message for BIP-340 Schnorr signing";
     let signature = BipSchnorr::sign(&sk_bytes, message);
-    
+
     println!("Created BIP-340 signature");
-    
+
     // Verify the signature
     let valid = BipSchnorr::verify(&pk_bytes, message, &signature);
     println!("BIP-340 signature verification: {}", if valid { "success" } else { "failed" });

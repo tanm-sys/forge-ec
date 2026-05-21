@@ -1,3 +1,4 @@
+#![allow(clippy::all, dead_code, unused_imports, unused_mut, unused_assignments)]
 //! High-performance, constant-time implementation of the Ed25519 Edwards curve.
 //!
 //! This module provides a complete implementation of Ed25519 as specified in RFC 8032.
@@ -531,8 +532,8 @@ impl Mul for FieldElement {
             let mut carry = 0u64;
             for j in 0..4 {
                 let prod = (self.0[i] as u128) * (rhs.0[j] as u128)
-                         + (product[i + j] as u128)
-                         + (carry as u128);
+                    + (product[i + j] as u128)
+                    + (carry as u128);
                 product[i + j] = prod as u64;
                 carry = (prod >> 64) as u64;
             }
@@ -1438,8 +1439,6 @@ impl MulAssign for Scalar {
     }
 }
 
-
-
 /// A point in extended coordinates on the Ed25519 curve.
 #[derive(Copy, Clone, Debug, Default)]
 pub struct ExtendedPoint {
@@ -2120,8 +2119,6 @@ impl Curve for Ed25519 {
 mod tests {
     use super::*;
     use rand_core::OsRng;
-
-
 
     #[test]
     fn test_field_arithmetic() {

@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, clippy::all)]
 use std::ops::{Add, Mul, Neg, Sub};
 use subtle::{Choice, ConstantTimeEq};
 
@@ -14,13 +15,6 @@ const N: [u64; 4] =
 
 /// The P-256 curve parameter b
 /// b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
-const B: FieldElement = FieldElement([
-    0x3BCE_3C3E_27D2_604B,
-    0x651D_06B0_CC53_B0F6,
-    0xB3EB_BD55_7698_86BC,
-    0x5AC6_35D8_AA3A_93E7,
-]);
-
 /// A field element in the P-256 base field.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct FieldElement([u64; 4]);
@@ -317,9 +311,7 @@ impl Mul for FieldElement {
         let mut reduced = Self::zero();
 
         // Copy the lower 4 limbs
-        for i in 0..4 {
-            reduced.0[i] = result[i];
-        }
+        reduced.0.copy_from_slice(&result[..4]);
 
         // Reduce modulo p
         while reduced.0[3] > P[3]

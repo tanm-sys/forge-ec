@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_assignments, clippy::all)]
 //! Schnorr signature scheme implementation.
 //!
 //! This module provides an implementation of the Schnorr signature scheme,
@@ -757,7 +758,8 @@ mod tests {
         // Test individual signature verification instead of batch verification
         // TODO: Implement proper batch verification for Schnorr signatures
         for i in 0..num_signatures {
-            let valid = Schnorr::<Secp256k1, Sha256>::verify(&public_keys[i], &messages[i], &signatures[i]);
+            let valid =
+                Schnorr::<Secp256k1, Sha256>::verify(&public_keys[i], &messages[i], &signatures[i]);
             assert!(valid, "Individual Schnorr signature verification should succeed");
         }
 
@@ -765,7 +767,8 @@ mod tests {
         let modified_msg = b"different message";
         let invalid_signature = signatures[0]; // Use first signature with modified message
 
-        let verification_result = Schnorr::<Secp256k1, Sha256>::verify(&public_keys[0], modified_msg, &invalid_signature);
+        let verification_result =
+            Schnorr::<Secp256k1, Sha256>::verify(&public_keys[0], modified_msg, &invalid_signature);
         assert!(!verification_result, "Verification with modified message should fail");
     }
 

@@ -13,8 +13,6 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
 
 pub mod blake2;
 pub mod hash_to_curve;
