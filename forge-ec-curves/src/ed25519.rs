@@ -90,41 +90,6 @@ const D: [u64; 4] = [
     0x2406_875C_C61A_8E3C, // (d >> 192) mod 2^64
 ];
 
-/// The Ed25519 base point x-coordinate
-///
-/// This is the x-coordinate of the standard base point used for Ed25519.
-/// Currently unused but kept for future point arithmetic implementations.
-#[allow(dead_code)]
-const BASE_POINT_X: [u64; 4] = [
-    0x1AD5_258F_602D_56C9, // x mod 2^64
-    0x2F25_D2FC_D265_8E1B, // (x >> 64) mod 2^64
-    0x6823_7A3C_0F13_6C79, // (x >> 128) mod 2^64
-    0x216D_AAAA_AAAA_AAA9, // (x >> 192) mod 2^64
-];
-
-/// The Ed25519 base point y-coordinate
-///
-/// This is the y-coordinate of the standard base point used for Ed25519.
-/// Currently unused but kept for future point arithmetic implementations.
-#[allow(dead_code)]
-const BASE_POINT_Y: [u64; 4] = [
-    0x6666_6666_6666_6658, // y mod 2^64
-    0x6666_6666_6666_6666, // (y >> 64) mod 2^64
-    0x6666_6666_6666_6666, // (y >> 128) mod 2^64
-    0x6666_6666_6666_6666, // (y >> 192) mod 2^64
-];
-
-/// Precomputed value: 2*d mod p
-///
-/// This is used in point addition formulas for efficiency.
-/// Currently unused but kept for future optimized point arithmetic implementations.
-#[allow(dead_code)]
-const D2: [u64; 4] = [
-    0xEBD6_9B94_26BD_BFDF, // 2*d mod 2^64
-    0x01C0_2935_0507_62AC, // (2*d >> 64) mod 2^64
-    0x331D_01E5_DDE7_A260, // (2*d >> 128) mod 2^64
-    0x480D_0EB9_8C35_1C78, // (2*d >> 192) mod 2^64
-];
 
 /// Precomputed value: sqrt(-1) mod p
 ///
