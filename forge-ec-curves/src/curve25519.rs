@@ -13,13 +13,6 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 // Removed unused imports - sha2 and hmac are not actually used in the current implementation
 
-/// The Curve25519 base field modulus
-/// p = 2^255 - 19
-/// Note: This constant is used in the reduce() method as a hardcoded value
-#[allow(dead_code)]
-const P: [u64; 4] =
-    [0xFFFF_FFFF_FFFF_FFED, 0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF_FFFF_FFFF, 0x7FFF_FFFF_FFFF_FFFF];
-
 /// The Curve25519 scalar field modulus (curve order)
 /// l = 2^252 + 27742317777372353535851937790883648493
 const L: [u64; 4] =
