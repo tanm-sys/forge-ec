@@ -9,7 +9,7 @@
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use forge_ec_core::{Curve, FieldElement as CoreFieldElement, PointAffine, PointProjective};
-use std::{eprintln, vec, vec::Vec};
+use std::{vec, vec::Vec};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroize;
 
@@ -184,7 +184,7 @@ impl FieldElement {
     }
 
     /// Performs final reduction and returns the result.
-    fn finalize_reduction(mut low: [u64; 4]) -> Self {
+    fn finalize_reduction(low: [u64; 4]) -> Self {
         // Check if we need final reduction
         let carry_from_high = 0u64; // We don't track this in the current implementation
         let needs_reduction = carry_from_high > 0 || Self::compare_with_p(&low) >= 0;

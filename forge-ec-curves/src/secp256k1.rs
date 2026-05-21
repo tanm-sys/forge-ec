@@ -114,12 +114,7 @@ impl FieldElement {
         // secp256k1's modulus p = 2^256 - 2^32 - 977 ≡ 3 (mod 4)
 
         // (p+1)/4 in binary
-        let exp = [
-            0xFF0C,
-            0xFFFF,
-            0xFFFE,
-            0x3FFF,
-        ];
+        let exp = [0xFF0C, 0xFFFF, 0xFFFE, 0x3FFF];
 
         // Compute a^((p+1)/4)
         let sqrt = self.pow(&exp);
@@ -222,12 +217,7 @@ impl FieldElement {
 
         // R^2 mod p for secp256k1
         // Correct value: R^2 mod p where R = 2^256 and p is the secp256k1 prime
-        const R_SQUARED: [u64; 4] = [
-            0x000E9F61,
-            0x07A20000,
-            0x00000100,
-            0x00000000,
-        ];
+        const R_SQUARED: [u64; 4] = [0x000E9F61, 0x07A20000, 0x00000100, 0x00000000];
 
         // Multiply by R^2 mod p
         let r_squared = Self(R_SQUARED);
@@ -2010,10 +2000,7 @@ impl Scalar {
         self.0[3] > N[3]
             || (self.0[3] == N[3] && self.0[2] > N[2])
             || (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] > N[1])
-            || (self.0[3] == N[3]
-                && self.0[2] == N[2]
-                && self.0[1] == N[1]
-                && self.0[0] >= N[0])
+            || (self.0[3] == N[3] && self.0[2] == N[2] && self.0[1] == N[1] && self.0[0] >= N[0])
     }
 
     /// Reduces a large wide integer using bit-by-bit subtraction algorithm.
@@ -2295,7 +2282,6 @@ impl forge_ec_core::Scalar for Scalar {
 
         CtOption::new(Self(limbs), is_valid)
     }
-
 
     fn to_bytes(&self) -> [u8; 32] {
         // Convert to bytes manually to avoid recursion
@@ -2612,14 +2598,16 @@ impl Curve for Secp256k1 {
             0x029BFCDB2DCE28D9,
             0x55A06295CE870B07,
             0x79BE667EF9DCBBAC,
-        ]).to_montgomery();
+        ])
+        .to_montgomery();
 
         let gy = FieldElement::from_raw([
             0x9C47D08FFB10D4B8,
             0xFD17B448A6855419,
             0x5DA4FBFC0E1108A8,
             0x483ADA7726A3C465,
-        ]).to_montgomery();
+        ])
+        .to_montgomery();
 
         ProjectivePoint { x: gx, y: gy, z: FieldElement::one() }
     }
