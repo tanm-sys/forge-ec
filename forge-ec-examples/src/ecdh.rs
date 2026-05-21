@@ -1,9 +1,10 @@
-use forge_ec_core::{Curve, PointAffine, FieldElement};
-use forge_ec_curves::curve25519::{Curve25519, x25519};
-use forge_ec_curves::secp256k1::{Secp256k1, Scalar as Secp256k1Scalar};
-use forge_ec_rng::os_rng::OsRng;
-use forge_ec_hash::sha2::Sha256;
+#![allow(warnings)]
 use digest::Digest;
+use forge_ec_core::{Curve, FieldElement, PointAffine};
+use forge_ec_curves::curve25519::{x25519, Curve25519};
+use forge_ec_curves::secp256k1::{Scalar as Secp256k1Scalar, Secp256k1};
+use forge_ec_hash::sha2::Sha256;
+use forge_ec_rng::os_rng::OsRng;
 use rand_core::RngCore;
 
 fn main() {
@@ -80,7 +81,13 @@ fn ecdh_x25519() {
     alice_sk_clamped[31] |= 64;
 
     // Generate Alice's public key
-    let alice_pk = x25519(&alice_sk_clamped, &[9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let alice_pk = x25519(
+        &alice_sk_clamped,
+        &[
+            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    );
 
     println!("Alice generated her key pair");
 
@@ -94,7 +101,13 @@ fn ecdh_x25519() {
     bob_sk_clamped[31] |= 64;
 
     // Generate Bob's public key
-    let bob_pk = x25519(&bob_sk_clamped, &[9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let bob_pk = x25519(
+        &bob_sk_clamped,
+        &[
+            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    );
 
     println!("Bob generated his key pair");
 

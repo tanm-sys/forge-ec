@@ -76,7 +76,8 @@ pub fn encode_pem(data: &[u8], label: &str) -> String {
 pub fn decode_pem(pem: &str) -> Result<(Vec<u8>, String), PemError> {
     // Find the header
     let header_start = pem.find("-----BEGIN ").ok_or(PemError::MissingHeader)?;
-    let header_end_marker = pem[header_start + 11..].find("-----").ok_or(PemError::MissingHeader)?;
+    let header_end_marker =
+        pem[header_start + 11..].find("-----").ok_or(PemError::MissingHeader)?;
     let label_slice = &pem[header_start + 11..header_start + 11 + header_end_marker];
     let label = String::from(label_slice);
 
