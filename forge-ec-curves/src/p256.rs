@@ -149,11 +149,13 @@ impl FieldElement {
             let shifted_value = Self::compute_shifted_value(high[i], shift_limb);
 
             if subtract {
-                let (diff, borrow) = Self::subtract_with_carry(low[target_index], shifted_value, carry_borrow);
+                let (diff, borrow) =
+                    Self::subtract_with_carry(low[target_index], shifted_value, carry_borrow);
                 low[target_index] = diff;
                 carry_borrow = borrow;
             } else {
-                let (sum, carry) = Self::add_with_carry(low[target_index], shifted_value, carry_borrow);
+                let (sum, carry) =
+                    Self::add_with_carry(low[target_index], shifted_value, carry_borrow);
                 low[target_index] = sum;
                 carry_borrow = carry;
             }
@@ -215,7 +217,8 @@ impl FieldElement {
         for i in 0..4 {
             let mut carry = 0u64;
             for j in 0..4 {
-                let product = (a.0[i] as u128) * (b.0[j] as u128) + (t[i + j] as u128) + (carry as u128);
+                let product =
+                    (a.0[i] as u128) * (b.0[j] as u128) + (t[i + j] as u128) + (carry as u128);
                 t[i + j] = product as u64;
                 carry = (product >> 64) as u64;
             }
@@ -238,9 +241,7 @@ impl FieldElement {
             // t[i..i+4] += m * P (mod 2^64), propagating the carry within the row
             let mut carry = 0u64;
             for j in 0..4 {
-                let product = (m as u128) * (P[j] as u128)
-                    + (t[i + j] as u128)
-                    + (carry as u128);
+                let product = (m as u128) * (P[j] as u128) + (t[i + j] as u128) + (carry as u128);
                 t[i + j] = product as u64;
                 carry = (product >> 64) as u64;
             }
@@ -322,12 +323,7 @@ impl FieldElement {
         // sqrt(a) = a^((p+1)/4) mod p
 
         // Compute (p+1)/4
-        let exp = [
-            0xC000_0000,
-            0x4000_0000,
-            0x4000_0000_0000_0000,
-            0x4000_0000_C000_0000,
-        ];
+        let exp = [0xC000_0000, 0x4000_0000, 0x4000_0000_0000_0000, 0x4000_0000_C000_0000];
 
         // Compute a^((p+1)/4)
         let sqrt = self.pow(&exp);
@@ -369,28 +365,28 @@ impl FieldElement {
         CtOption::new(inv, Choice::from(1))
     }
 
-	/// Raises this field element to the power of the given exponent.
-	///
-	/// `exp` is interpreted as a 256-bit little-endian integer (least-significant
-	/// limb first).
-	pub fn pow(&self, exp: &[u64; 4]) -> Self {
-	    // Binary exponentiation (square-and-multiply) over 256 bits.
-	    let mut result = Self::one();
-	    let mut base = *self;
+    /// Raises this field element to the power of the given exponent.
+    ///
+    /// `exp` is interpreted as a 256-bit little-endian integer (least-significant
+    /// limb first).
+    pub fn pow(&self, exp: &[u64; 4]) -> Self {
+        // Binary exponentiation (square-and-multiply) over 256 bits.
+        let mut result = Self::one();
+        let mut base = *self;
 
-	    for &word in exp.iter() {
-	        let mut e = word;
-	        for _ in 0..64 {
-	            if (e & 1) == 1 {
-	                result *= base;
-	            }
-	            base = base.square();
-	            e >>= 1;
-	        }
-	    }
+        for &word in exp.iter() {
+            let mut e = word;
+            for _ in 0..64 {
+                if (e & 1) == 1 {
+                    result *= base;
+                }
+                base = base.square();
+                e >>= 1;
+            }
+        }
 
-	    result
-	}
+        result
+    }
 }
 
 impl ConditionallySelectable for FieldElement {
@@ -507,9 +503,8 @@ impl Mul for FieldElement {
         for i in 0..4 {
             let mut carry = 0u128;
             for j in 0..4 {
-                let product = (self.0[i] as u128) * (rhs.0[j] as u128)
-                    + (wide[i + j] as u128)
-                    + carry;
+                let product =
+                    (self.0[i] as u128) * (rhs.0[j] as u128) + (wide[i + j] as u128) + carry;
                 wide[i + j] = product as u64;
                 carry = product >> 64;
             }
@@ -835,8 +830,7 @@ impl forge_ec_core::FieldElement for FieldElement {
 
         // Check if the element is a quadratic residue
         // For p ≡ 3 (mod 4), a is a quadratic residue if a^((p-1)/2) ≡ 1 (mod p)
-        let p_minus_1_over_2 =
-            [0x80000000, 0x7FFFFFFF, 0x80000000, 0x7FFFFFFF];
+        let p_minus_1_over_2 = [0x80000000, 0x7FFFFFFF, 0x80000000, 0x7FFFFFFF];
 
         let legendre = self.pow(&p_minus_1_over_2);
         let is_quadratic_residue = legendre.ct_eq(&Self::one());
@@ -929,12 +923,8 @@ impl Scalar {
         // 2^256 - n = 0x00000000FFFFFFFF00000000000000004319055258E8617B0C46353D039CDAAF
         //
         // In little-endian 64-bit limbs:
-        const TWO_256_MINUS_N: [u64; 4] = [
-            0x0C46353D039CDAAF,
-            0x4319055258E8617B,
-            0x0000000000000000,
-            0x00000000FFFFFFFF,
-        ];
+        const TWO_256_MINUS_N: [u64; 4] =
+            [0x0C46353D039CDAAF, 0x4319055258E8617B, 0x0000000000000000, 0x00000000FFFFFFFF];
 
         let low = [wide[0], wide[1], wide[2], wide[3]];
         let high = [wide[4], wide[5], wide[6], wide[7]];
@@ -2454,9 +2444,21 @@ mod tests {
         // x^2 limbs: [12074202155401100, 3726334282074508753, 9331909631644438744, 11022199779588240050]
         // x^3 limbs: [6985818112209442057, 5293983511093485517, 13285487596276262425, 4350650246863171228]
         // 3*x limbs: [15988812018543642563, 7280764249650076386, 16876875322344915671, 4703857913423513302]
-        assert_eq!(x_squared.0, [12074202155401100, 3726334282074508753, 9331909631644438744, 11022199779588240050], "x^2 mismatch");
-        assert_eq!(x_cubed.0, [6985818112209442057, 5293983511093485517, 13285487596276262425, 4350650246863171228], "x^3 mismatch");
-        assert_eq!(three_x.0, [15988812018543642563, 7280764249650076386, 16876875322344915671, 4703857913423513302], "3*x mismatch");
+        assert_eq!(
+            x_squared.0,
+            [12074202155401100, 3726334282074508753, 9331909631644438744, 11022199779588240050],
+            "x^2 mismatch"
+        );
+        assert_eq!(
+            x_cubed.0,
+            [6985818112209442057, 5293983511093485517, 13285487596276262425, 4350650246863171228],
+            "x^3 mismatch"
+        );
+        assert_eq!(
+            three_x.0,
+            [15988812018543642563, 7280764249650076386, 16876875322344915671, 4703857913423513302],
+            "3*x mismatch"
+        );
 
         // Now test x^3 - 3x
         let x_cubed_minus_3x = x_cubed - three_x;
@@ -2469,7 +2471,11 @@ mod tests {
 
         // Expected from Python:
         // x^3 - 3x + b limbs: [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789]
-        assert_eq!(right.0, [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789], "x^3 - 3x + b mismatch");
+        assert_eq!(
+            right.0,
+            [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789],
+            "x^3 - 3x + b mismatch"
+        );
 
         // Compute y^2
         let y_squared = y.square();
@@ -2477,7 +2483,11 @@ mod tests {
 
         // Expected from Python:
         // y^2 limbs: [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789]
-        assert_eq!(y_squared.0, [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789], "y^2 mismatch");
+        assert_eq!(
+            y_squared.0,
+            [13753198298469232017, 5299206390010787296, 9373276401007028734, 6187767046927055789],
+            "y^2 mismatch"
+        );
 
         // They should be equal
         assert!(bool::from(y_squared.ct_eq(&right)), "y^2 should equal x^3 - 3x + b");
@@ -2521,7 +2531,10 @@ mod tests {
         eprintln!("g + g + g = {:?}", P256::to_affine(&g_plus_g_plus_g));
 
         // Check if g + g2 equals g + g + g
-        assert!(bool::from(P256::to_affine(&g_plus_g2).ct_eq(&P256::to_affine(&g_plus_g_plus_g))), "g + g2 should equal g + g + g");
+        assert!(
+            bool::from(P256::to_affine(&g_plus_g2).ct_eq(&P256::to_affine(&g_plus_g_plus_g))),
+            "g + g2 should equal g + g + g"
+        );
 
         assert!(bool::from(P256::to_affine(&g3).ct_eq(&P256::to_affine(&g_plus_g2))));
 

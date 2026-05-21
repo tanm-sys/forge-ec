@@ -1385,7 +1385,6 @@ impl Zeroize for Scalar {
     }
 }
 
-
 /// A point in affine coordinates on the Curve25519 curve.
 /// For Montgomery curves, we typically only use the u-coordinate.
 #[derive(Copy, Clone, Debug)]
