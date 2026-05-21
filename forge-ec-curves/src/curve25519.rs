@@ -1385,14 +1385,6 @@ impl Zeroize for Scalar {
     }
 }
 
-/// A point in Montgomery coordinates (u, v) on the Curve25519 curve.
-#[derive(Copy, Clone, Debug)]
-#[allow(dead_code)]
-#[derive(Default)]
-pub struct MontgomeryPoint {
-    u: FieldElement,
-    v: FieldElement,
-}
 
 /// A point in affine coordinates on the Curve25519 curve.
 /// For Montgomery curves, we typically only use the u-coordinate.
