@@ -488,6 +488,51 @@ mod tests {
         let verification_result = Ecdsa::<Secp256k1, Sha256>::verify(&public_key, message, &signature);
         assert!(verification_result, "ECDSA signature verification should succeed");
     }
+    #[test]
+    fn test_zero_signature_rejected() {
+        let mut rng = OsRng::new();
+        let secret_key = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::Scalar>::random(&mut rng);
+        let public_key = Secp256k1::multiply(&Secp256k1::generator(), &secret_key);
+        let public_key_affine = Secp256k1::to_affine(&public_key);
+
+        let message = b"test message for zero signature";
+
+        let valid_sig = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::sign(&secret_key, message);
+        let r = valid_sig.r;
+        let s = valid_sig.s;
+
+        let zero = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::zero();
+
+        // r = 0, s = valid
+        let sig_zero_r = Signature::new(zero, s);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(&public_key_affine, message, &sig_zero_r));
+
+        // r = valid, s = 0
+        let sig_zero_s = Signature::new(r, zero);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(&public_key_affine, message, &sig_zero_s));
+
+        // r = 0, s = 0
+        let sig_zero_rs = Signature::new(zero, zero);
+        assert!(!Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::verify(&public_key_affine, message, &sig_zero_rs));
+
+        // Test signature_from_bytes
+        let mut bytes = [0u8; 64];
+        let r_bytes = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::to_bytes(&r);
+        let s_bytes = <forge_ec_curves::secp256k1::Scalar as forge_ec_core::FieldElement>::to_bytes(&s);
+
+        // Both zero (all 0s)
+        assert!(Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err());
+
+        // r = 0
+        bytes[32..64].copy_from_slice(&s_bytes);
+        assert!(Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err());
+
+        // s = 0
+        bytes.fill(0);
+        bytes[0..32].copy_from_slice(&r_bytes);
+        assert!(Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::signature_from_bytes(&bytes).is_err());
+    }
+
 
     #[test]
     fn test_rfc6979_vectors() {
