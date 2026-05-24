@@ -490,6 +490,15 @@ mod tests {
     }
 
     #[test]
+    fn test_zero_private_key() {
+        let secret_key_bytes = [0u8; 32];
+        let secret_key = <Secp256k1 as forge_ec_core::Curve>::Scalar::from_bytes(&secret_key_bytes).unwrap();
+        let message = b"sample";
+        let result = Ecdsa::<Secp256k1, forge_ec_hash::sha2::Sha256>::sign_internal(&secret_key, message);
+        assert_eq!(result.unwrap_err(), forge_ec_core::Error::InvalidPrivateKey);
+    }
+
+    #[test]
     fn test_rfc6979_vectors() {
         // Test with known RFC6979 test vector
         let secret_key_bytes = [
