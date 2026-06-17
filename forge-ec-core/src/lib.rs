@@ -1885,3 +1885,22 @@ pub mod test_utils {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_domain_separation_tag_new() {
+        let dst = DomainSeparationTag::new("suite_id_test", "dst_test");
+        assert_eq!(dst.suite_id, "suite_id_test");
+        assert_eq!(dst.dst, "dst_test");
+    }
+
+    #[test]
+    fn test_domain_separation_tag_as_bytes() {
+        let dst = DomainSeparationTag::new("suite", "tag");
+        let bytes = dst.as_bytes();
+        assert_eq!(bytes, b"suitetag");
+    }
+}
